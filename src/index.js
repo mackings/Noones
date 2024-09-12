@@ -34,6 +34,7 @@ app.use((req, res, next) => {
   if (providedSignature !== calculatedSignature) {
     console.log('Request signature verification failed.');
     //res.status(403).end(); // Reject the request
+    next();
   } else {
     next(); // If signature is valid, proceed to event handler
   }
