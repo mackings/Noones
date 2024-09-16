@@ -5,7 +5,7 @@ const port = 3000;
 const bodyParser = require('body-parser');
 
 // Your API secret from https://noones.com/p2p/account/developer page
-const apiSecret = 'oj62Z4JVa6HFReU5fVm9ADM1DcklHreuQ2vR41QcPmTdbCC3F';
+const apiSecret = 'j62Z4JVa6HFReU5fVm9ADM1DcklHreuQ2vR41QcPmTdbCC3F';
 
 app.use(bodyParser.json());
 
