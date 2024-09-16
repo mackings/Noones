@@ -40,7 +40,7 @@ app.use((req, res, next) => {
   }
 });
 
-// Event handling
+// Event handlings
 app.post('*', async (req, res) => {
   console.log('New event received:');
   console.log(req.body); // Log the received event
