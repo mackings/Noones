@@ -7,7 +7,8 @@ const bodyParser = require('body-parser');
 
 
 // Your API secret from https://noones.com/p2p/account/developer page
-const apiSecret = 'j62Z4JVa6HFReU5fVm9ADM1DcklHreuQ2vR41QcPmTdbCC3F';
+//const apiSecret = 'j62Z4JVa6HFReU5fVm9ADM1DcklHreuQ2vR41QcPmTdbCC3F';
+  const apiSecret = 'ocHVeF5JhwRH8Dtg2p5BccuZRM3WUPn3nxiGwviGIMDWoIu1';
 
 app.use(bodyParser.json());
 
@@ -35,6 +36,8 @@ app.use((req, res, next) => {
   // Check if signatures match
   if (providedSignature !== calculatedSignature) {
     console.log('Request signature verification failed.');
+    console.log(providedSignature);
+    console.log(calculatedSignature);
     //res.status(403).end(); // Reject the request
     next();
   } else {
