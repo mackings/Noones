@@ -5,7 +5,7 @@ const app = express();
 const port = 3000;
 
 // Replace with your actual NoOnes public key and webhook target URL
-const NOONES_PUBLIC_KEY = 'oWDUZ6Im3l8TlvS1PpWvHFXX8LS7mkk7brbprpXECTro49wH'; // Public key from NoOnes
+const NOONES_PUBLIC_KEY = 'fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k='; // Public key from NoOnes
 const WEBHOOK_TARGET_URL = process.env.WEBHOOK_TARGET_URL || 'https://b-backend-xe8q.onrender.com'; // Your webhook URL
 
 // Middleware to capture raw request body needed for signature validation
