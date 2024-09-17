@@ -30,6 +30,9 @@ app.use((req, res, next) => {
 
 
 app.use((req, res, next) => {
+
+  const apiSecret = accountSecrets[accountId];
+  console.log(apiSecret);
   const providedSignature = req.get('X-Noones-Signature');
   const calculatedSignature = crypto
   .createHmac('sha256', apiSecret)
@@ -44,7 +47,7 @@ app.use((req, res, next) => {
     return res.status(400).send('Invalid account.');
   }
 
-  const apiSecret = accountSecrets[accountId];
+
 
   
   // Check if signatures match
