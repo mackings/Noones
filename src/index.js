@@ -1,58 +1,58 @@
 const crypto = require('crypto');
+const nacl = require('tweetnacl'); // NoOnes uses tweetnacl for signature validation
 const express = require('express');
 const app = express();
 const port = 3000;
-const bodyParser = require('body-parser');
 
+// Replace with your actual NoOnes public key and webhook target URL
+const NOONES_PUBLIC_KEY = 'oWDUZ6Im3l8TlvS1PpWvHFXX8LS7mkk7brbprpXECTro49wH'; // Public key from NoOnes
+const WEBHOOK_TARGET_URL = process.env.WEBHOOK_TARGET_URL || 'https://b-backend-xe8q.onrender.com'; // Your webhook URL
 
-
-// Your API secret from https://noones.com/p2p/account/developer page
-//const apiSecret = 'j62Z4JVa6HFReU5fVm9ADM1DcklHreuQ2vR41QcPmTdbCC3F';
-  const apiSecret = 'ocHVeF5JhwRH8Dtg2p5BccuZRM3WUPn3nxiGwviGIMDWoIu1';
-
-app.use(bodyParser.json());
-
-// Middleware to handle address verification request
+// Middleware to capture raw request body needed for signature validation
 app.use((req, res, next) => {
-  // The address verification request doesn't contain a payload and request signature
-  if (!Object.keys(req.body).length && !req.get('X-Noones-Signature')) {
-    console.log('Address verification request received.');
-    const challengeHeader = 'X-Noones-Request-Challenge';
-    res.set(challengeHeader, req.get(challengeHeader)); // Echo back the challenge
-    res.end(); // End the response
-  } else {
-    next(); // If not address verification, move to next middleware
-  }
+  req.rawBody = '';
+  req.on('data', chunk => {
+    req.rawBody += chunk;
+  });
+  req.on('end', () => {
+    next();
+  });
 });
+
+// Function to validate NoOnes signature
+const isValidSignature = (signature, rawBody) => {
+  const signatureValidationPayload = `${WEBHOOK_TARGET_URL}:${rawBody}`;
+  
+  return nacl.sign.detached.verify(
+    Buffer.from(signatureValidationPayload, 'utf8'),
+    Buffer.from(signature, 'base64'),
+    Buffer.from(NOONES_PUBLIC_KEY, 'base64')
+  );
+};
 
 // Middleware to verify event notification signature
 app.use((req, res, next) => {
   const providedSignature = req.get('X-Noones-Signature');
-  const calculatedSignature = crypto
-    .createHmac('sha256', apiSecret)
-    .update(JSON.stringify(req.body))
-    .digest('hex');
   
-  // Check if signatures match
-  if (providedSignature !== calculatedSignature) {
-    console.log('Request signature verification failed.');
-    console.log(providedSignature);
-    console.log(calculatedSignature);
-    //res.status(403).end(); // Reject the request
-    next();
-  } else {
-    next(); // If signature is valid, proceed to event handler
+  if (!providedSignature) {
+    console.log('No signature provided in the request');
+    return res.status(400).send('Signature required');
   }
+
+  if (!isValidSignature(providedSignature, req.rawBody)) {
+    console.log('Request signature verification failed.');
+    return res.status(403).send('Invalid signature');
+  }
+
+  next(); // If signature is valid, proceed to event handler
 });
 
-// Event handlings
-app.post('*', async (req, res) => {
+// Event handler
+app.post('*', (req, res) => {
   console.log('New event received:');
   console.log(req.body); // Log the received event
-  // Process the event here...
-  
   res.end(); // End the response after processing
 });
 
 // Start the server
-app.listen(port, () => console.log(`Example app listening at http://localhost:${port}`));
+app.listen(port, () => console.log(`App listening at http://localhost:${port}`));
