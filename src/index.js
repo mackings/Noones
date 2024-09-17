@@ -30,6 +30,20 @@ const isValidSignature = (signature, rawBody) => {
   );
 };
 
+
+app.use((req, res, next) => {
+  console.log('Incoming headers:', req.headers);  // Log headers for debugging
+
+  const providedSignature = req.get('X-Noones-Signature');
+  
+  if (!providedSignature) {
+    console.log('No signature provided in the request');
+    return res.status(400).send('Signature required');
+  }
+
+  next();
+});
+
 // Middleware to verify event notification signature
 app.use((req, res, next) => {
   const providedSignature = req.get('X-Noones-Signature');
