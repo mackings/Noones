@@ -36,35 +36,36 @@ app.use((req, res, next) => {
 
 // Middleware to verify event notification signature for multiple accounts
 app.use((req, res, next) => {
-
   const providedSignature = req.get('X-Noones-Signature');
-  const accountId = req.get('X-Account-ID'); 
+  const accountId = req.get('X-Account-ID') || req.headers['x-account-id']; // Fallback to lowercase header if necessary
 
+  console.log('Received headers:', req.headers); // Log all headers for debugging
   console.log(`Received account ID: ${accountId}`);
+
   if (!accountId || !accountSecrets[accountId]) {
     console.log('Unknown account or missing account ID.');
     return res.status(400).send('Invalid account.');
   }
 
-  const apiSecret = accountSecrets[accountId]; // Retrieve the correct API secret for the account
+  const apiSecret = accountSecrets[accountId];
   const calculatedSignature = crypto
     .createHmac('sha256', apiSecret)
     .update(JSON.stringify(req.body))
     .digest('hex');
 
-  // Check if signatures match
   if (providedSignature !== calculatedSignature) {
-
     console.log(`Request signature verification failed for account: ${accountId}`);
     console.log(`Provided signature: ${providedSignature}`);
     console.log(`Calculated signature: ${calculatedSignature}`);
     return res.status(403).send('Invalid signature.');
-    
   }
 
   console.log(`Signature verification succeeded for account: ${accountId}`);
-  next(); // Proceed to event handler if signature is valid
+  next();
 });
+
+
+
 
 // Event handling
 app.post('*', async (req, res) => {
