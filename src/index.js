@@ -31,16 +31,18 @@ app.use((req, res, next) => {
 
 app.use((req, res, next) => {
 
+
+  const accountId = req.get('X-Account-ID') || req.headers['x-account-id'];
+  console.log(`Received account ID: ${accountId}`);
+
   const apiSecret = accountSecrets[accountId];
   console.log(apiSecret);
+  
   const providedSignature = req.get('X-Noones-Signature');
   const calculatedSignature = crypto
   .createHmac('sha256', apiSecret)
   .update(JSON.stringify(req.body))
   .digest('hex');
-
-  const accountId = req.get('X-Account-ID') || req.headers['x-account-id'];
-  console.log(`Received account ID: ${accountId}`);
 
   if (!accountId || !accountSecrets[accountId]) {
     console.log('Unknown account or missing account ID.');
