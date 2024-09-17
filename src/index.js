@@ -1,12 +1,14 @@
 const crypto = require('crypto');
 const express = require('express');
 const bodyParser = require('body-parser');
-const dotenv = require('dotenv').config(); // Load environment variables from .env file
-
+const dotenv = require('dotenv').config();
+const cors = require('cors');
+const http = require('http');
 const app = express();
 const port = 3000;
 
-// Store API secrets for different accounts in a map
+
+// Load API secrets for multiple accounts from environment variables
 const accountSecrets = {
   'account1': process.env.ACCOUNT1_API_SECRET,
   'account2': process.env.ACCOUNT2_API_SECRET,
@@ -15,18 +17,12 @@ const accountSecrets = {
   'account5': process.env.ACCOUNT5_API_SECRET,
 };
 
-// Print only the loaded API secrets
-console.log('Loaded API secrets:', {
-  account1: process.env.ACCOUNT1_API_SECRET,
-  account2: process.env.ACCOUNT2_API_SECRET,
-  account3: process.env.ACCOUNT3_API_SECRET,
-  account4: process.env.ACCOUNT4_API_SECRET,
-  account5: process.env.ACCOUNT5_API_SECRET,
-});
+console.log('Loaded API secrets:', accountSecrets);
 
+app.use(cors());
 app.use(bodyParser.json());
 
-// Middleware to handle address verification request
+// Middleware to handle address verification requests
 app.use((req, res, next) => {
   if (!Object.keys(req.body).length && !req.get('X-Noones-Signature')) {
     console.log('Address verification request received.');
@@ -34,7 +30,7 @@ app.use((req, res, next) => {
     res.set(challengeHeader, req.get(challengeHeader)); // Echo back the challenge
     res.end(); // End the response
   } else {
-    next(); // If not address verification, move to next middleware
+    next(); // If not an address verification, move to next middleware
   }
 });
 
@@ -57,10 +53,9 @@ app.use((req, res, next) => {
   // Check if signatures match
   if (providedSignature !== calculatedSignature) {
     console.log(`Request signature verification failed for account: ${accountId}`);
-    console.log(providedSignature);
-    console.log(calculatedSignature);
-    next();
-    //return res.status(403).send('Invalid signature.');
+    console.log(`Provided signature: ${providedSignature}`);
+    console.log(`Calculated signature: ${calculatedSignature}`);
+    return res.status(403).send('Invalid signature.');
   }
 
   console.log(`Signature verification succeeded for account: ${accountId}`);
@@ -78,5 +73,15 @@ app.post('*', async (req, res) => {
   res.end(); // End the response after processing
 });
 
+// Keep-alive mechanism
+const keepAlive = () => {
+  http.get(`http://localhost:${port}`);
+  console.log('Keep-alive ping sent.');
+};
+
+setInterval(keepAlive, 120000); // Keep alive every 2 minutes
+
 // Start the server
-app.listen(port, () => console.log(`Server running at http://localhost:${port}`));
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
