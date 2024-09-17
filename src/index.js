@@ -9,13 +9,12 @@ const port = 3000;
 
 
 // Load API secrets for multiple accounts from environment variables
+
 const accountSecrets = {
   'account1': process.env.ACCOUNT1_API_SECRET,
   'account2': process.env.ACCOUNT2_API_SECRET,
-  'account3': process.env.ACCOUNT3_API_SECRET,
-  'account4': process.env.ACCOUNT4_API_SECRET,
-  'account5': process.env.ACCOUNT5_API_SECRET,
 };
+
 
 console.log('Loaded API secrets:', accountSecrets);
 
@@ -24,6 +23,7 @@ app.use(bodyParser.json());
 
 // Middleware to handle address verification requests
 app.use((req, res, next) => {
+
   if (!Object.keys(req.body).length && !req.get('X-Noones-Signature')) {
     console.log('Address verification request received.');
     const challengeHeader = 'X-Noones-Request-Challenge';
@@ -36,9 +36,11 @@ app.use((req, res, next) => {
 
 // Middleware to verify event notification signature for multiple accounts
 app.use((req, res, next) => {
-  const providedSignature = req.get('X-Noones-Signature');
-  const accountId = req.get('X-Account-ID'); // Account identifier from request header
 
+  const providedSignature = req.get('X-Noones-Signature');
+  const accountId = req.get('X-Account-ID'); 
+
+  console.log(`Received account ID: ${accountId}`);
   if (!accountId || !accountSecrets[accountId]) {
     console.log('Unknown account or missing account ID.');
     return res.status(400).send('Invalid account.');
@@ -52,10 +54,12 @@ app.use((req, res, next) => {
 
   // Check if signatures match
   if (providedSignature !== calculatedSignature) {
+
     console.log(`Request signature verification failed for account: ${accountId}`);
     console.log(`Provided signature: ${providedSignature}`);
     console.log(`Calculated signature: ${calculatedSignature}`);
     return res.status(403).send('Invalid signature.');
+    
   }
 
   console.log(`Signature verification succeeded for account: ${accountId}`);
