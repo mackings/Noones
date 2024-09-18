@@ -62,7 +62,7 @@ app.use((req, res, next) => {
 // Middleware to validate webhook signature
 
 app.use((req, res, next) => {
-    const signature = req.get('X-NoOnes-Signature');
+    const signature = req.get('X-Noones-Signature');
     const signatureValidationPayload = `${process.env.WEBHOOK_TARGET_URL}:${req.rawBody}`;
     const publickeys = "fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=";
 
@@ -94,14 +94,16 @@ app.use((req, res, next) => {
 
 // Middleware to handle webhook validation request
 app.post('/webhook', (req, res) => {
-    if (!Object.keys(req.body).length && req.get('X-NoOnes-Request-Challenge')) {
-        res.set('X-NoOnes-Request-Challenge', req.get('X-NoOnes-Request-Challenge'));
+    if (!Object.keys(req.body).length && req.get('X-Noones-Request-Challenge')) {
+        res.set('X-Noones-Request-Challenge', req.get('X-Noones-Request-Challenge'));
         res.status(200).end();
     } else {
         console.log('Webhook event received:', req.body);
         res.status(200).end();
     }
 });
+
+
 
 app.listen(port, () => console.log(`App listening at http://localhost:${port}`));
 
