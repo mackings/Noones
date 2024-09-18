@@ -10,7 +10,7 @@ const port = 3000; // Set your desired port
 let accessToken = null;
 let tokenExpiry = 0;
 
-const publicKey = 'fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k='; // Replace with your actual public key
+const publicKey = 'jiL7JmBC7AZt7KIBx6ngzDhMcFY29Afcq1siKtVbjnjPHvSV'; // Replace with your actual public key
 const webhookTargetUrl = process.env.WEBHOOK_TARGET_URL; 
 
 // Function to get access token
