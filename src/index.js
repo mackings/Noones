@@ -34,6 +34,7 @@ const getAccessToken = async () => {
     }
 };
 
+
 const refreshToken = async () => {
     const tokenData = await getAccessToken();
     accessToken = tokenData.access_token;
@@ -47,19 +48,24 @@ const getValidAccessToken = async () => {
     return accessToken;
 };
 
-app.use(bodyParser.json());
-app.use(function(req, res, next) {
-    req.rawBody = '';
-    req.on('data', function(chunk) {
-        req.rawBody += chunk;
-    });
-    next();
-});
+
+
+
+// app.use(bodyParser.json());
+// app.use(function(req, res, next) {
+//     req.rawBody = '';
+//     req.on('data', function(chunk) {
+//         req.rawBody += chunk;
+//     });
+//     next();
+// });
+
+app.use('/webhook', express.raw({ type: '*/*' }));
 
 
 function isValidSignature(signature, rawBody) {
     const signatureValidationPayload = `${webhookTargetUrl}:${rawBody}`;
-    console.log(signatureValidationPayload);
+    console.log('Signature validation payload:', signatureValidationPayload);
     return nacl.sign.detached.verify(
         Buffer.from(signatureValidationPayload, 'utf8'),
         Buffer.from(signature, 'base64'),
@@ -67,22 +73,25 @@ function isValidSignature(signature, rawBody) {
     );
 }
 
+
 app.post('/webhook', (req, res) => {
     const isValidationRequest = req.headers['x-noones-request-challenge'] !== undefined;
     if (isValidationRequest) {
         const challenge = req.headers['x-noones-request-challenge'];
-        console.log(challenge);
+        console.log('Received validation request, challenge:', challenge);
         res.setHeader('x-noones-request-challenge', challenge);
         res.status(200).end();
         return;
     }
 
     const signature = req.headers['x-noones-signature'];
-    const rawBody = req.rawBody;
-    console.log(signature);
-    console.log(rawBody);
+    const rawBody = req.body.toString('utf8');  // Convert buffer to string
+
+    console.log('Received signature:', signature);
+    console.log('Received raw body:', rawBody);
 
     if (!signature || !isValidSignature(signature, rawBody)) {
+        console.log('Invalid signature');
         return res.status(400).send('Invalid signature');
     }
 
