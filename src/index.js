@@ -35,6 +35,7 @@ const getAccessToken = async () => {
     }
 };
 
+
 // Refresh the access token
 const refreshToken = async () => {
     const tokenData = await getAccessToken();
@@ -63,13 +64,15 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
     const signature = req.get('X-NoOnes-Signature');
     const signatureValidationPayload = `${process.env.WEBHOOK_TARGET_URL}:${req.rawBody}`;
+    const publickeys = "fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=";
 
     // Log values for debugging
     console.log('Signature:', signature);
     console.log('Signature Validation Payload:', signatureValidationPayload);
-    console.log('Public Key:', process.env.NOONES_PUBLIC_KEY);
+    console.log('Public Key:', publickeys);
+    console.log('Signature Url:',signatureValidationPayload);
 
-    if (!signature || !signatureValidationPayload || !process.env.NOONES_PUBLIC_KEY) {
+    if (!signature || !signatureValidationPayload || !publickeys) {
         console.error('Missing required parameters for signature validation.');
         return res.status(400).send('Invalid request');
     }
