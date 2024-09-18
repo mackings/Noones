@@ -10,12 +10,14 @@ const port = 3000; // Set your desired port
 let accessToken = null;
 let tokenExpiry = 0;
 
-const publicKey = 'jiL7JmBC7AZt7KIBx6ngzDhMcFY29Afcq1siKtVbjnjPHvSV'; // Replace with your actual public key
+const publicKey = 'jiL7JmBC7AZt7KIBx6ngzDhMcFY29Afcq1siKtVbjnjPHvSV';
 const webhookTargetUrl = process.env.WEBHOOK_TARGET_URL; 
 
 // Function to get access token
 
+
 const getAccessToken = async () => {
+
     const tokenEndpoint = 'https://auth.noones.com/oauth2/token';
     const clientId = 'jiL7JmBC7AZt7KIBx6ngzDhMcFY29Afcq1siKtVbjnjPHvSV';
     const clientSecret = 'qzhw1I1uEmyK0ORKRU3XRnn7F2ENCOHYAxukdDge8AUJoXYP';
@@ -46,7 +48,7 @@ const refreshToken = async () => {
     tokenExpiry = Date.now() + tokenData.expires_in * 1000;
 };
 
-// Use this function to get a valid access token
+//  function to get a valid access token
 const getValidAccessToken = async () => {
     if (!accessToken || Date.now() > tokenExpiry) {
         await refreshToken();
@@ -57,10 +59,10 @@ const getValidAccessToken = async () => {
 
 
 // Middleware to parse raw body for webhook signature validation
+
 app.use(bodyParser.json());
-app.use(bodyParser.raw({ type: '*/*' }));
 app.use((req, res, next) => {
-    req.rawBody = req.body.toString(); // Convert raw body buffer to string
+    req.rawBody = req.body.toString(); 
     next();
 });
 
@@ -113,6 +115,7 @@ app.post('/webhook', (req, res) => {
 app.listen(port, () => console.log(`App listening at http://localhost:${port}`));
 
 const useAccessToken = async () => {
+
     try {
         const token = await getValidAccessToken();
         console.log('Access token:', token);

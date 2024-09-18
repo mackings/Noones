@@ -4,7 +4,6 @@ const app = express();
 const port = 3000;
 const bodyParser = require('body-parser');
 
-// Secret from Noones developer page
 //const apiSecret = 'FmWKLVTETTYWXfoMjoOkUxF7xvYm8pl8';
 const apiSecret = "qzhw1I1uEmyK0ORKRU3XRnn7F2ENCOHYAxukdDge8AUJoXYP"
 
@@ -19,11 +18,10 @@ app.use((req, res, next) => {
     res.set(challengeHeader, req.get(challengeHeader)); // Echo back the challenge
     res.end();
   } else {
-    next(); // If not address verification, move to the next middleware
+    next();
   }
 });
 
-// Middleware to verify event notification signature
 app.use((req, res, next) => {
   const providedSignature = req.get('X-Noones-Signature');
   
