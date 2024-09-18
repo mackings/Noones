@@ -198,14 +198,19 @@ const isValidSignature = (signature, rawBody) => {
     const signatureValidationPayload = `${webhookTargetUrl}:${rawBody}`;
     console.log('Signature validation payload:', signatureValidationPayload);
 
+    const payloadBuffer = Buffer.from(signatureValidationPayload, 'utf8'); // Correctly define payloadBuffer
+    const signatureBuffer = Buffer.from(signature, 'base64');
+    const publicKeyBuffer = Buffer.from(publicKey, 'base64');
+
+    // Debugging information
     console.log('Payload buffer:', payloadBuffer);
     console.log('Signature buffer:', signatureBuffer);
     console.log('Public key buffer:', publicKeyBuffer);
-    
+
     return nacl.sign.detached.verify(
-        Buffer.from(signatureValidationPayload, 'utf8'),
-        Buffer.from(signature, 'base64'),
-        Buffer.from(publicKey, 'base64')
+        payloadBuffer,
+        signatureBuffer,
+        publicKeyBuffer
     );
 };
 
