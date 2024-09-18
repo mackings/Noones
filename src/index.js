@@ -156,8 +156,19 @@ const webhookTargetUrl = 'https://b-backend-xe8q.onrender.com';
 let accessToken = null;
 let tokenExpiry = 0;
 
-// Middleware to parse raw body
-app.use('/webhook', express.raw({ type: '*/*' }));
+app.use(function(req, res, next) {
+    req.rawBody = '';
+
+    req.on('data', function(chunk) {
+        req.rawBody += chunk;
+    });
+
+    req.on('end', function() {
+        req.rawBody = Buffer.from(req.rawBody, 'utf8').toString();
+        next();
+    });
+});
+
 
 const getAccessToken = async () => {
     const tokenEndpoint = 'https://auth.noones.com/oauth2/token';
@@ -193,24 +204,16 @@ const getValidAccessToken = async () => {
     return accessToken;
 };
 
+
 // Signature validation function
 const isValidSignature = (signature, rawBody) => {
-    const signatureValidationPayload = `${webhookTargetUrl}:${rawBody}`;
-    console.log('Signature validation payload:', signatureValidationPayload);
-
-    const payloadBuffer = Buffer.from(signatureValidationPayload, 'utf8'); // Correctly define payloadBuffer
-    const signatureBuffer = Buffer.from(signature, 'base64');
-    const publicKeyBuffer = Buffer.from(publicKey, 'base64');
-
-    // Debugging information
-    console.log('Payload buffer:', payloadBuffer);
-    console.log('Signature buffer:', signatureBuffer);
-    console.log('Public key buffer:', publicKeyBuffer);
+    const message = `${webhookTargetUrl}:${rawBody}`;
+    console.log('Signature validation payload:', message);
 
     return nacl.sign.detached.verify(
-        payloadBuffer,
-        signatureBuffer,
-        publicKeyBuffer
+        Buffer.from(message, 'utf8'),
+        Buffer.from(signature, 'base64'),
+        Buffer.from(publicKey, 'base64')
     );
 };
 
@@ -230,27 +233,23 @@ app.post('/webhook', (req, res) => {
     const signature = req.get('x-noones-signature');
     if (!signature) {
         console.warn('No signature');
-        res.status(403).json({ status: 'error', message: 'No signature header' });
-        return;
+        return res.status(403).json({ status: 'error', message: 'No signature header' });
     }
 
     // Ensure body is not empty for signature validation
-    if (!req.body || req.body.length === 0) {
+    if (!req.rawBody || req.rawBody.trim() === '') {
         console.warn('Empty body');
-        res.status(400).json({ status: 'error', message: 'Empty body' });
-        return;
+        return res.status(400).json({ status: 'error', message: 'Empty body' });
     }
 
-    const rawBody = req.body.toString('utf8'); // Convert buffer to string for signature validation
-
     // Validate signature
-    if (!isValidSignature(signature, rawBody)) {
-        console.log('Invalid signature');
+    if (!isValidSignature(signature, req.rawBody)) {
+        console.warn('Invalid signature');
         return res.status(400).send('Invalid signature');
     }
 
     // Handle valid webhook events
-    console.log('Valid webhook received:', req.body);
+    console.debug('Valid webhook received:', req.body);
     res.status(200).send('Webhook received');
 });
 
