@@ -13,6 +13,7 @@ const webhookTargetUrl = 'https://b-backend-xe8q.onrender.com';
 let accessToken = null;
 let tokenExpiry = 0;
 
+
 const getAccessToken = async () => {
     const tokenEndpoint = 'https://auth.noones.com/oauth2/token';
     const clientId = 'jiL7JmBC7AZt7KIBx6ngzDhMcFY29Afcq1siKtVbjnjPHvSV';
@@ -51,15 +52,6 @@ const getValidAccessToken = async () => {
 
 
 
-// app.use(bodyParser.json());
-// app.use(function(req, res, next) {
-//     req.rawBody = '';
-//     req.on('data', function(chunk) {
-//         req.rawBody += chunk;
-//     });
-//     next();
-// });
-
 app.use('/webhook', express.raw({ type: '*/*' }));
 
 
@@ -73,22 +65,41 @@ function isValidSignature(signature, rawBody) {
     );
 }
 
-
 app.post('/webhook', (req, res) => {
-    const isValidationRequest = req.headers['x-noones-request-challenge'] !== undefined;
+
+    // const isValidationRequest = req.headers['x-noones-request-challenge'] !== undefined;
+    // if (isValidationRequest) {
+    //     const challenge = req.headers['x-noones-request-challenge'];
+    //     console.log('Received validation request, challenge:', challenge);
+    //     res.setHeader('x-noones-request-challenge', challenge);
+    //     res.status(200).end();
+    //     return;
+    // }
+
+    // const signature = req.headers['x-noones-signature'];
+    // const rawBody = req.body.toString('utf8');  // Convert buffer to string
+
+    // console.log('Received signature:', signature);
+    // console.log('Received raw body:', rawBody);
+
+    res.set('X-Noones-Request-Challenge', req.headers['X-Noones-Request-Challenge']);
+    console.log('Webhook received with headers:', req.headers);
+  
+    const isValidationRequest = req.body.type === undefined;
     if (isValidationRequest) {
-        const challenge = req.headers['x-noones-request-challenge'];
-        console.log('Received validation request, challenge:', challenge);
-        res.setHeader('x-noones-request-challenge', challenge);
-        res.status(200).end();
-        return;
+      console.debug('Validation request arrived');
+      res.json({ status: 'ok' });
+      return;
+    }
+  
+    const signature = req.get('X-Noones-Signature');
+    if (!signature) {
+      console.warn('No signature');
+      res.status(403).json({ status: 'error', message: 'No signature header' });
+      return;
     }
 
-    const signature = req.headers['x-noones-signature'];
-    const rawBody = req.body.toString('utf8');  // Convert buffer to string
-
-    console.log('Received signature:', signature);
-    console.log('Received raw body:', rawBody);
+    //Codes
 
     if (!signature || !isValidSignature(signature, rawBody)) {
         console.log('Invalid signature');
