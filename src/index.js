@@ -1,63 +1,112 @@
-const crypto = require('crypto');
 const express = require('express');
-const app = express();
-const port = 3000;
 const bodyParser = require('body-parser');
+const axios = require('axios');
+const querystring = require('querystring');
+const nacl = require('tweetnacl'); // Ensure you have this package installed
 
-// Secret from Noones developer page
-//const apiSecret = 'FmWKLVTETTYWXfoMjoOkUxF7xvYm8pl8';
-const apiSecret = "qzhw1I1uEmyK0ORKRU3XRnn7F2ENCOHYAxukdDge8AUJoXYP"
+const app = express();
+const port = 3000; // Set your desired port
 
-// Body parsing middleware
+let accessToken = null;
+let tokenExpiry = 0;
+
+// Function to get access token
+
+const getAccessToken = async () => {
+    const tokenEndpoint = 'https://auth.noones.com/oauth2/token';
+    const clientId = 'jiL7JmBC7AZt7KIBx6ngzDhMcFY29Afcq1siKtVbjnjPHvSV';
+    const clientSecret = 'qzhw1I1uEmyK0ORKRU3XRnn7F2ENCOHYAxukdDge8AUJoXYP';
+
+    try {
+        const response = await axios.post(tokenEndpoint, querystring.stringify({
+            grant_type: 'client_credentials',
+            client_id: clientId,
+            client_secret: clientSecret,
+        }), {
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
+
+        return response.data;
+    } catch (error) {
+        console.log(error);
+        console.error('Error getting access token:', error.response ? error.response.data : error.message);
+        throw error;
+    }
+};
+
+// Refresh the access token
+const refreshToken = async () => {
+    const tokenData = await getAccessToken();
+    accessToken = tokenData.access_token;
+    tokenExpiry = Date.now() + tokenData.expires_in * 1000;
+};
+
+// Use this function to get a valid access token
+const getValidAccessToken = async () => {
+    if (!accessToken || Date.now() > tokenExpiry) {
+        await refreshToken();
+    }
+    return accessToken;
+};
+
+// Middleware to parse raw body for webhook signature validation
 app.use(bodyParser.json());
-
-// Middleware for address verification
 app.use((req, res, next) => {
-  if (!Object.keys(req.body).length && !req.get('X-Noones-Signature')) {
-    console.log('Address verification request received.');
-    const challengeHeader = 'X-Noones-Request-Challenge';
-    res.set(challengeHeader, req.get(challengeHeader)); // Echo back the challenge
-    res.end();
-  } else {
-    next(); // If not address verification, move to the next middleware
-  }
+    req.rawBody = '';
+    req.on('data', chunk => req.rawBody += chunk);
+    req.on('end', () => next());
 });
 
-// Middleware to verify event notification signature
+// Middleware to validate webhook signature
+
 app.use((req, res, next) => {
-  const providedSignature = req.get('X-Noones-Signature');
-  
-  // Convert request body to string in the same format that Noones sent
-  const requestBody = JSON.stringify(req.body);
-  const calculatedSignature = crypto
-    .createHmac('sha256', apiSecret)
-    .update(requestBody)
-    .digest('hex');
-  
-  // Log for debugging
-  console.log('Provided Signature:', providedSignature);
-  console.log('Calculated Signature:', calculatedSignature);
-  console.log('Request Body:', requestBody);
+    const signature = req.get('X-NoOnes-Signature');
+    const signatureValidationPayload = `${process.env.WEBHOOK_TARGET_URL}:${req.rawBody}`;
 
-  // Check if signatures match
-  if (providedSignature !== calculatedSignature) {
-    console.log('Request signature verification failed.');
-    res.status(403).end(); // Reject the request
-    //next();
-  } else {
-    console.log('Signatures Passed');
-    next(); 
-  }
+    const isValidSignature = nacl.sign.detached.verify(
+        Buffer.from(signatureValidationPayload, 'utf8'),
+        Buffer.from(signature, 'base64'),
+        Buffer.from(process.env.NOONES_PUBLIC_KEY, 'base64') // Replace with your public key
+    );
+
+    if (!isValidSignature) {
+        console.log('Signature validation failed.');
+        res.status(403).send('Invalid signature');
+    } else {
+        console.log('Signature validation passed.');
+        next();
+    }
 });
 
-// Event handler
-app.post('*', async (req, res) => {
-  console.log('New event received:');
-  console.log(req.body); // Log the received event
-  // Process the event here...
-
-  res.end(); // End the response after processing
+// Middleware to handle webhook validation request
+app.post('/webhook', (req, res) => {
+    if (!Object.keys(req.body).length && req.get('X-NoOnes-Request-Challenge')) {
+        res.set('X-NoOnes-Request-Challenge', req.get('X-NoOnes-Request-Challenge'));
+        res.status(200).end();
+    } else {
+        console.log('Webhook event received:', req.body);
+        res.status(200).end();
+    }
 });
 
-// Start the server
 app.listen(port, () => console.log(`App listening at http://localhost:${port}`));
+
+// Example of using the access token
+const useAccessToken = async () => {
+    try {
+        const token = await getValidAccessToken();
+        console.log('Access token:', token);
+
+        // Example API call using the access token
+        const response = await axios.get('https://api.noones.com/your-endpoint', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        console.log('API response:', response.data);
+    } catch (error) {
+        console.error('Error using access token:', error.response ? error.response.data : error.message);
+    }
+};
+
+// Call this function when needed to use the access token
+useAccessToken();
