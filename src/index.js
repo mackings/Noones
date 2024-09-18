@@ -65,51 +65,74 @@ function isValidSignature(signature, rawBody) {
     );
 }
 
+
+
+// app.post('/webhook', (req, res) => {
+
+//     const isValidationRequest = req.headers['x-noones-request-challenge'] !== undefined;
+//     if (isValidationRequest) {
+//         const challenge = req.headers['x-noones-request-challenge'];
+//         console.log('Received validation request, challenge:', challenge);
+//         res.setHeader('x-noones-request-challenge', challenge);
+//         res.status(200).end();
+//         return;
+//     }
+
+//     const signature = req.headers['x-noones-signature'];
+//     const rawBody = req.body.toString('utf8');  // Convert buffer to string
+
+//     console.log('Received signature:', signature);
+//     console.log('Received raw body:', rawBody);
+
+//     if (!signature || !isValidSignature(signature, rawBody)) {
+//         console.log('Invalid signature');
+//         return res.status(400).send('Invalid signature');
+//     }
+
+//     // Handle other webhook events
+//     console.log('Valid webhook received:', req.body);
+//     res.status(200).send('Webhook received');
+// });
+
 app.post('/webhook', (req, res) => {
-
-    // const isValidationRequest = req.headers['x-noones-request-challenge'] !== undefined;
-    // if (isValidationRequest) {
-    //     const challenge = req.headers['x-noones-request-challenge'];
-    //     console.log('Received validation request, challenge:', challenge);
-    //     res.setHeader('x-noones-request-challenge', challenge);
-    //     res.status(200).end();
-    //     return;
-    // }
-
-    // const signature = req.headers['x-noones-signature'];
-    // const rawBody = req.body.toString('utf8');  // Convert buffer to string
-
-    // console.log('Received signature:', signature);
-    // console.log('Received raw body:', rawBody);
-
-    res.set('X-Noones-Request-Challenge', req.headers['X-Noones-Request-Challenge']);
-    console.log('Webhook received with headers:', req.headers);
-  
-    const isValidationRequest = req.body.type === undefined;
+    // Handle validation requests
+    const isValidationRequest = req.headers['x-noones-request-challenge'] !== undefined;
     if (isValidationRequest) {
-      console.debug('Validation request arrived');
-      res.json({ status: 'ok' });
+      const challenge = req.headers['x-noones-request-challenge'];
+      console.log('Received validation request, challenge:', challenge);
+      res.setHeader('x-noones-request-challenge', challenge);
+      res.status(200).end();
       return;
     }
   
+    // Proceed if not a validation request
     const signature = req.get('X-Noones-Signature');
     if (!signature) {
       console.warn('No signature');
       res.status(403).json({ status: 'error', message: 'No signature header' });
       return;
     }
-
-    //Codes
-
-    if (!signature || !isValidSignature(signature, rawBody)) {
-        console.log('Invalid signature');
-        return res.status(400).send('Invalid signature');
+  
+    // Ensure body is not empty for signature validation
+    if (!req.body || Object.keys(req.body).length === 0) {
+      console.warn('Empty body');
+      res.status(400).json({ status: 'error', message: 'Empty body' });
+      return;
     }
-
-    // Handle other webhook events
+  
+    const rawBody = JSON.stringify(req.body); // Convert body to string for signature validation
+  
+    // Validate signature (assuming isValidSignature is a utility function)
+    if (!isValidSignature(signature, rawBody)) {
+      console.log('Invalid signature');
+      return res.status(400).send('Invalid signature');
+    }
+  
+    // Handle valid webhook events
     console.log('Valid webhook received:', req.body);
     res.status(200).send('Webhook received');
-});
+  });
+  
 
 app.listen(port, () => {
     console.log(`Server is listening on port ${port}`);
