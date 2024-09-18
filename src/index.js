@@ -55,8 +55,10 @@ app.use(function(req, res, next) {
     next();
 });
 
+
 function isValidSignature(signature, rawBody) {
     const signatureValidationPayload = `${webhookTargetUrl}:${rawBody}`;
+    console.log(signatureValidationPayload);
     return nacl.sign.detached.verify(
         Buffer.from(signatureValidationPayload, 'utf8'),
         Buffer.from(signature, 'base64'),
@@ -66,9 +68,9 @@ function isValidSignature(signature, rawBody) {
 
 app.post('/webhook', (req, res) => {
     const isValidationRequest = req.headers['x-noones-request-challenge'] !== undefined;
-    
     if (isValidationRequest) {
         const challenge = req.headers['x-noones-request-challenge'];
+        console.log(challenge);
         res.setHeader('x-noones-request-challenge', challenge);
         res.status(200).end();
         return;
@@ -76,6 +78,8 @@ app.post('/webhook', (req, res) => {
 
     const signature = req.headers['x-noones-signature'];
     const rawBody = req.rawBody;
+    console.log(signature);
+    console.log(rawBody);
 
     if (!signature || !isValidSignature(signature, rawBody)) {
         return res.status(400).send('Invalid signature');
