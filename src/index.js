@@ -1,6 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const axios = require('axios');
+const axios = require("axios");
 const querystring = require('querystring');
 const nacl = require('tweetnacl'); // Ensure you have this package installed
 
@@ -27,6 +27,7 @@ const getAccessToken = async () => {
         });
 
         return response.data;
+        
     } catch (error) {
         console.log(error);
         console.error('Error getting access token:', error.response ? error.response.data : error.message);
