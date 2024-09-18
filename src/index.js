@@ -10,6 +10,9 @@ const port = 3000; // Set your desired port
 let accessToken = null;
 let tokenExpiry = 0;
 
+const publicKey = 'fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k='; // Replace with your actual public key
+const webhookTargetUrl = process.env.WEBHOOK_TARGET_URL; 
+
 // Function to get access token
 
 const getAccessToken = async () => {
@@ -51,58 +54,50 @@ const getValidAccessToken = async () => {
     return accessToken;
 };
 
+
+
 // Middleware to parse raw body for webhook signature validation
 app.use(bodyParser.json());
+app.use(bodyParser.raw({ type: '*/*' }));
 app.use((req, res, next) => {
-    req.rawBody = '';
-    req.on('data', chunk => req.rawBody += chunk);
-    req.on('end', () => {
-        console.log('Headers:', req.headers); // Log all headers
-        console.log('Raw Body:', req.rawBody); // Log raw body for debugging
-        next();
-    });
+    req.rawBody = req.body.toString(); // Convert raw body buffer to string
+    next();
 });
 
-// Middleware to validate webhook signature
 
 // Middleware to validate webhook signature
+
 app.use((req, res, next) => {
-    const signature = req.get('X-Noones-Signature');
-    const signatureValidationPayload = `${process.env.WEBHOOK_TARGET_URL}:${req.rawBody}`;
-    const publicKey = "fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=";
+    const providedSignature = req.get('X-Noones-Signature');
+    if (!providedSignature) {
+        console.log('No signature provided.');
+        return res.status(403).send('No signature provided');
+    }
 
-    // Log values for debugging
-    console.log('Signature:', signature);
+    const signatureValidationPayload = `${webhookTargetUrl}:${req.rawBody}`;
+    const isValidSignature = nacl.sign.detached.verify(
+        Buffer.from(signatureValidationPayload, 'utf8'),
+        Buffer.from(providedSignature, 'base64'),
+        Buffer.from(publicKey, 'base64')
+    );
+
+    // Log for debugging
+    console.log('Provided Signature:', providedSignature);
     console.log('Signature Validation Payload:', signatureValidationPayload);
-    console.log('Public Key:', publicKey);
 
-    if (!signature || !signatureValidationPayload || !publicKey) {
-        console.error('Missing required parameters for signature validation.');
-        return res.status(400).send('Invalid request');
+    if (!isValidSignature) {
+        console.log('Signature validation failed.');
+        return res.status(403).send('Invalid signature');
     }
 
-    try {
-        const isValidSignature = nacl.sign.detached.verify(
-            Buffer.from(signatureValidationPayload, 'utf8'),
-            Buffer.from(signature, 'base64'),
-            Buffer.from(publicKey, 'base64')
-        );
-
-        if (!isValidSignature) {
-            console.log('Signature validation failed.');
-            res.status(403).send('Invalid signature');
-        } else {
-            console.log('Signature validation passed.');
-            next();
-        }
-    } catch (error) {
-        console.error('Error during signature validation:', error);
-        res.status(500).send('Internal Server Error');
-    }
+    console.log('Signature validation passed.');
+    next();
 });
+
 
 
 // Middleware to handle webhook validation request
+
 app.post('/webhook', (req, res) => {
     if (!Object.keys(req.body).length && req.get('X-Noones-Request-Challenge')) {
         res.set('X-Noones-Request-Challenge', req.get('X-Noones-Request-Challenge'));
