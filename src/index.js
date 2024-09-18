@@ -64,6 +64,16 @@ app.use((req, res, next) => {
     const signature = req.get('X-NoOnes-Signature');
     const signatureValidationPayload = `${process.env.WEBHOOK_TARGET_URL}:${req.rawBody}`;
 
+    // Log values for debugging
+    console.log('Signature:', signature);
+    console.log('Signature Validation Payload:', signatureValidationPayload);
+    console.log('Public Key:', process.env.NOONES_PUBLIC_KEY);
+
+    if (!signature || !signatureValidationPayload || !process.env.NOONES_PUBLIC_KEY) {
+        console.error('Missing required parameters for signature validation.');
+        return res.status(400).send('Invalid request');
+    }
+
     const isValidSignature = nacl.sign.detached.verify(
         Buffer.from(signatureValidationPayload, 'utf8'),
         Buffer.from(signature, 'base64'),
@@ -98,7 +108,7 @@ const useAccessToken = async () => {
         console.log('Access token:', token);
 
         // Example API call using the access token
-        const response = await axios.get('https://api.noones.com/user/info', {
+        const response = await axios.get('https://api.noones.com/noones/v1/user/info', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
