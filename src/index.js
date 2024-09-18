@@ -150,7 +150,7 @@ const nacl = require('tweetnacl');
 const app = express();
 const port = 3000;
 
-const publicKey = 'dwRTVx5ksV2UXq1JGZEusw0vTDcxdkmi4H53xiyfDmBYYuqo';  // Updated public key
+const publicKey = 'fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=';  // Updated public key
 const webhookTargetUrl = 'https://b-backend-xe8q.onrender.com';
 
 let accessToken = null;
