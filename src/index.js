@@ -197,6 +197,11 @@ const getValidAccessToken = async () => {
 const isValidSignature = (signature, rawBody) => {
     const signatureValidationPayload = `${webhookTargetUrl}:${rawBody}`;
     console.log('Signature validation payload:', signatureValidationPayload);
+
+    console.log('Payload buffer:', payloadBuffer);
+    console.log('Signature buffer:', signatureBuffer);
+    console.log('Public key buffer:', publicKeyBuffer);
+    
     return nacl.sign.detached.verify(
         Buffer.from(signatureValidationPayload, 'utf8'),
         Buffer.from(signature, 'base64'),
