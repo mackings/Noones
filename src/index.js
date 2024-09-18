@@ -14,8 +14,8 @@ let tokenExpiry = 0;
 //const publicKey = 'jiL7JmBC7AZt7KIBx6ngzDhMcFY29Afcq1siKtVbjnjPHvSV';
 //const publicKey = " hd9MdXk5tBtgjE242eh9zgkeNP0Ho2vO";
 
-const publicKey = 'FmWKLVTETTYWXfoMjoOkUxF7xvYm8pl8';
-const webhookTargetUrl = 'https://b-backend-xe8q.onrender.com/noones/webhook'; 
+const publicKey = 'fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=';
+const webhookTargetUrl = 'https://b-backend-xe8q.onrender.com'; 
 
 
 // Function to get access token
@@ -52,6 +52,7 @@ const refreshToken = async () => {
 };
 
 //  function to get a valid access token
+
 const getValidAccessToken = async () => {
     if (!accessToken || Date.now() > tokenExpiry) {
         await refreshToken();
@@ -84,17 +85,24 @@ function isValidSignature(signature, host, originalUrl, rawBody) {
 }
 
 
-app.post('/noones/webhook', async (req, res) => {
-    const providedSignature = req.get('X-Noones-Signature');
-    if (!providedSignature) {
-        console.log('No signature provided.');
-        return res.status(403).json({ status: 'error', message: 'No signature header' });
-    }
+app.post('/webhook', async (req, res) => {
 
-    if (!isValidSignature(providedSignature, req.get('host'), req.originalUrl, req.rawBody)) {
-        console.log('Invalid signature');
-        return res.status(403).json({ status: 'error', message: 'Invalid signature' });
+    const isValidationRequest = req.body.type === undefined;
+    if (isValidationRequest) {
+        res.set("X-NoOnes-Request-Challenge", req.headers['x-noones-request-challenge']);
+
+        return;
     }
+    // const providedSignature = req.get('X-Noones-Signature');
+    // if (!providedSignature) {
+    //     console.log('No signature provided.');
+    //     return res.status(403).json({ status: 'error', message: 'No signature header' });
+    // }
+
+    // if (!isValidSignature(providedSignature, req.get('host'), req.originalUrl, req.rawBody)) {
+    //     console.log('Invalid signature');
+    //     return res.status(403).json({ status: 'error', message: 'Invalid signature' });
+    // }
 
     console.debug('Webhook event received:', req.body);
 
