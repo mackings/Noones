@@ -12,8 +12,10 @@ let tokenExpiry = 0;
 
 
 //const publicKey = 'jiL7JmBC7AZt7KIBx6ngzDhMcFY29Afcq1siKtVbjnjPHvSV';
-const publicKey = " hd9MdXk5tBtgjE242eh9zgkeNP0Ho2vO";
-const webhookTargetUrl = process.env.WEBHOOK_TARGET_URL; 
+//const publicKey = " hd9MdXk5tBtgjE242eh9zgkeNP0Ho2vO";
+
+const publicKey = 'jiL7JmBC7AZt7KIBx6ngzDhMcFY29Afcq1siKtVbjnjPHvSV';
+const webhookTargetUrl = 'https://b-backend-xe8q.onrender.com/webhook'; 
 
 
 // Function to get access token
