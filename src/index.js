@@ -62,54 +62,87 @@ const getValidAccessToken = async () => {
 // Middleware to parse raw body for webhook signature validation
 
 app.use(bodyParser.json());
-app.use((req, res, next) => {
-    req.rawBody = req.body.toString(); 
+app.use(function(req, res, next) {
+    req.rawBody = '';
+
+    req.on('data', function(chunk) {
+        req.rawBody += chunk;
+    });
+
     next();
+});
+
+
+
+function isValidSignature(signature, host, originalUrl, rawBody) {
+    const message = `${webhookTargetUrl}:${rawBody}`;
+    return nacl.sign.detached.verify(
+        Buffer.from(message, 'utf8'),
+        Buffer.from(signature, 'base64'),
+        Buffer.from(publicKey, 'base64')
+    );
+}
+
+
+app.post('/noones/webhook', async (req, res) => {
+    const providedSignature = req.get('X-Noones-Signature');
+    if (!providedSignature) {
+        console.log('No signature provided.');
+        return res.status(403).json({ status: 'error', message: 'No signature header' });
+    }
+
+    if (!isValidSignature(providedSignature, req.get('host'), req.originalUrl, req.rawBody)) {
+        console.log('Invalid signature');
+        return res.status(403).json({ status: 'error', message: 'Invalid signature' });
+    }
+
+    console.debug('Webhook event received:', req.body);
+
 });
 
 
 // Middleware to validate webhook signature
 
-app.use((req, res, next) => {
-    const providedSignature = req.get('X-Noones-Signature');
-    if (!providedSignature) {
-        console.log('No signature provided.');
-        return res.status(403).send('No signature provided');
-    }
+// app.use((req, res, next) => {
+//     const providedSignature = req.get('X-Noones-Signature');
+//     if (!providedSignature) {
+//         console.log('No signature provided.');
+//         return res.status(403).send('No signature provided');
+//     }
 
-    const signatureValidationPayload = `${webhookTargetUrl}:${req.rawBody}`;
-    const isValidSignature = nacl.sign.detached.verify(
-        Buffer.from(signatureValidationPayload, 'utf8'),
-        Buffer.from(providedSignature, 'base64'),
-        Buffer.from(publicKey, 'base64')
-    );
+//     const signatureValidationPayload = `${webhookTargetUrl}:${req.rawBody}`;
+//     const isValidSignature = nacl.sign.detached.verify(
+//         Buffer.from(signatureValidationPayload, 'utf8'),
+//         Buffer.from(providedSignature, 'base64'),
+//         Buffer.from(publicKey, 'base64')
+//     );
 
-    // Log for debugging
-    console.log('Provided Signature:', providedSignature);
-    console.log('Signature Validation Payload:', signatureValidationPayload);
+//     // Log for debugging
+//     console.log('Provided Signature:', providedSignature);
+//     console.log('Signature Validation Payload:', signatureValidationPayload);
 
-    if (!isValidSignature) {
-        console.log('Signature validation failed.');
-        return res.status(403).send('Invalid signature');
-    }
+//     if (!isValidSignature) {
+//         console.log('Signature validation failed.');
+//         return res.status(403).send('Invalid signature');
+//     }
 
-    console.log('Signature validation passed.');
-    next();
-});
+//     console.log('Signature validation passed.');
+//     next();
+// });
 
 
 
-// Middleware to handle webhook validation request
+// // Middleware to handle webhook validation request
 
-app.post('/webhook', (req, res) => {
-    if (!Object.keys(req.body).length && req.get('X-Noones-Request-Challenge')) {
-        res.set('X-Noones-Request-Challenge', req.get('X-Noones-Request-Challenge'));
-        res.status(200).end();
-    } else {
-        console.log('Webhook event received:', req.body);
-        res.status(200).end();
-    }
-});
+// app.post('/webhook', (req, res) => {
+//     if (!Object.keys(req.body).length && req.get('X-Noones-Request-Challenge')) {
+//         res.set('X-Noones-Request-Challenge', req.get('X-Noones-Request-Challenge'));
+//         res.status(200).end();
+//     } else {
+//         console.log('Webhook event received:', req.body);
+//         res.status(200).end();
+//     }
+// });
 
 
 
