@@ -67,7 +67,7 @@ app.use((req, res, next) => {
     const isValidSignature = nacl.sign.detached.verify(
         Buffer.from(signatureValidationPayload, 'utf8'),
         Buffer.from(signature, 'base64'),
-        Buffer.from(process.env.NOONES_PUBLIC_KEY, 'base64') // Replace with your public key
+        Buffer.from('fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=', 'base64') // Replace with your public key
     );
 
     if (!isValidSignature) {
@@ -92,14 +92,13 @@ app.post('/webhook', (req, res) => {
 
 app.listen(port, () => console.log(`App listening at http://localhost:${port}`));
 
-// Example of using the access token
 const useAccessToken = async () => {
     try {
         const token = await getValidAccessToken();
         console.log('Access token:', token);
 
         // Example API call using the access token
-        const response = await axios.get('https://api.noones.com/your-endpoint', {
+        const response = await axios.get('https://api.noones.com/user/info', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
