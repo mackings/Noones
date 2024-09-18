@@ -10,12 +10,13 @@ const port = 3000; // Set your desired port
 let accessToken = null;
 let tokenExpiry = 0;
 
-const publicKey = 'jiL7JmBC7AZt7KIBx6ngzDhMcFY29Afcq1siKtVbjnjPHvSV';
+
+//const publicKey = 'jiL7JmBC7AZt7KIBx6ngzDhMcFY29Afcq1siKtVbjnjPHvSV';
+const publicKey = " hd9MdXk5tBtgjE242eh9zgkeNP0Ho2vO";
 const webhookTargetUrl = process.env.WEBHOOK_TARGET_URL; 
 
+
 // Function to get access token
-
-
 const getAccessToken = async () => {
 
     const tokenEndpoint = 'https://auth.noones.com/oauth2/token';
@@ -55,8 +56,6 @@ const getValidAccessToken = async () => {
     }
     return accessToken;
 };
-
-
 
 // Middleware to parse raw body for webhook signature validation
 
