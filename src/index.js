@@ -5,7 +5,8 @@ const port = 3000;
 const bodyParser = require('body-parser');
 
 // Secret from Noones developer page
-const apiSecret = 'FmWKLVTETTYWXfoMjoOkUxF7xvYm8pl8';
+//const apiSecret = 'FmWKLVTETTYWXfoMjoOkUxF7xvYm8pl8';
+const apiSecret = "qzhw1I1uEmyK0ORKRU3XRnn7F2ENCOHYAxukdDge8AUJoXYP"
 
 // Body parsing middleware
 app.use(bodyParser.json());
