@@ -56,41 +56,51 @@ app.use(bodyParser.json());
 app.use((req, res, next) => {
     req.rawBody = '';
     req.on('data', chunk => req.rawBody += chunk);
-    req.on('end', () => next());
+    req.on('end', () => {
+        console.log('Headers:', req.headers); // Log all headers
+        console.log('Raw Body:', req.rawBody); // Log raw body for debugging
+        next();
+    });
 });
 
 // Middleware to validate webhook signature
 
+// Middleware to validate webhook signature
 app.use((req, res, next) => {
     const signature = req.get('X-Noones-Signature');
     const signatureValidationPayload = `${process.env.WEBHOOK_TARGET_URL}:${req.rawBody}`;
-    const publickeys = "fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=";
+    const publicKey = "fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=";
 
     // Log values for debugging
     console.log('Signature:', signature);
     console.log('Signature Validation Payload:', signatureValidationPayload);
-    console.log('Public Key:', publickeys);
-    console.log('Signature Url:',signatureValidationPayload);
+    console.log('Public Key:', publicKey);
 
-    if (!signature || !signatureValidationPayload || !publickeys) {
+    if (!signature || !signatureValidationPayload || !publicKey) {
         console.error('Missing required parameters for signature validation.');
         return res.status(400).send('Invalid request');
     }
 
-    const isValidSignature = nacl.sign.detached.verify(
-        Buffer.from(signatureValidationPayload, 'utf8'),
-        Buffer.from(signature, 'base64'),
-        Buffer.from('fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=', 'base64') // Replace with your public key
-    );
+    try {
+        const isValidSignature = nacl.sign.detached.verify(
+            Buffer.from(signatureValidationPayload, 'utf8'),
+            Buffer.from(signature, 'base64'),
+            Buffer.from(publicKey, 'base64')
+        );
 
-    if (!isValidSignature) {
-        console.log('Signature validation failed.');
-        res.status(403).send('Invalid signature');
-    } else {
-        console.log('Signature validation passed.');
-        next();
+        if (!isValidSignature) {
+            console.log('Signature validation failed.');
+            res.status(403).send('Invalid signature');
+        } else {
+            console.log('Signature validation passed.');
+            next();
+        }
+    } catch (error) {
+        console.error('Error during signature validation:', error);
+        res.status(500).send('Internal Server Error');
     }
 });
+
 
 // Middleware to handle webhook validation request
 app.post('/webhook', (req, res) => {
