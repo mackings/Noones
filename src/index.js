@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const axios = require('axios');
 const querystring = require('querystring');
 const nacl = require('tweetnacl');
+const qs = require('qs');
 
 const app = express();
 const port = 3000;
@@ -150,9 +151,12 @@ const useAccessToken = async (username) => {
 
         const response = await axios.post(
             'https://api.noones.com/noones/v1/user/info', 
-            { username: 'ReadyFly894' },  // Sending username in the body
+           qs.stringify({ username: 'ReadyFly894' },),
             {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 
+                    'Authorization': `Bearer ${token}` ,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
             }
         );
 
