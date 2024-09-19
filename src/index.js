@@ -232,6 +232,15 @@ app.post('/webhook', (req, res) => {
       res.status(403).json({ status: 'error', message: 'No signature header' });
       return;
     }
+
+
+    console.log('Incoming webhook request body:', req.rawBody);
+
+    if (!req.rawBody || req.rawBody.trim() === '') {
+        console.warn('Empty body');
+        res.status(400).json({ status: 'error', message: 'Empty body' });
+        return;
+    }
   
     if (!isValidSignature(signature, req.get('host'), req.originalUrl, req.rawBody)) {
       console.warn('Invalid signature');
