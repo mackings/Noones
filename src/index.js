@@ -87,21 +87,22 @@ app.post('/webhook', (req, res) => {
   
     const signature = req.get('x-noones-signature');
     if (!signature) {
-      console.warn('No signature');
+      console.log('No signature');
       res.status(403).json({ status: 'error', message: 'No signature header' });
+      console.log("Noones Signature >>> ", signature);
       return;
     }
 
 
-    console.log('Incoming webhook request body:', req.rawBody);
+    console.log('Incoming webhook request body:', req.body);
 
     if (!req.rawBody || req.rawBody.trim() === '') {
-        console.warn('Empty body');
+        console.log('Empty body');
         res.status(400).json({ status: 'error', message: 'Empty body' });
         return;
     }
   
-    if (!isValidSignature(signature, req.get('host'), req.originalUrl, req.rawBody)) {
+    if (!isValidSignature(signature, req.get('host'), req.originalUrl, req.body)) {
       console.warn('Invalid signature');
       res.status(403).json({ status: 'error', message: 'Invalid signature' });
       return;
