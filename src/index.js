@@ -41,7 +41,7 @@ const getAccessToken = async () => {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         });
 
-        return response.data;
+        return response.data.access_token;
     } catch (error) {
         console.error('Error getting access token:', error.response ? error.response.data : error.message);
         throw error;
@@ -72,6 +72,32 @@ const isValidSignature = (signature, host, originalUrl, rawBody) => {
         Buffer.from(publicKey, 'base64')
     )
 }
+
+//Functions 
+
+const updateOfferPrice = async (offer_hash, margin) => {
+    try {
+        // Get the access token
+        const token = await getAccessToken();
+        console.log("Access Token Generated >>>>", token);
+
+        // Make the API call to update offer price
+        const response = await axios.post(
+            'https://api.noones.com/noones/v1/offer/update-price',
+            querystring.stringify({ offer_hash, margin }), // Sending the offer_hash and margin
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+        );
+
+        console.log('API response:', response.data);
+    } catch (error) {
+        console.error('Error updating offer price:', error.response ? error.response.data : error.message);
+    }
+};
 
 
 app.post('/webhook', async (req, res) => {
@@ -168,4 +194,4 @@ const useAccessToken = async (username) => {
 
 
 // Call this function when needed to use the access token
-useAccessToken();
+//useAccessToken();
