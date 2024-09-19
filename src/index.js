@@ -70,46 +70,103 @@ const isValidSignature = (signature, host, originalUrl, rawBody) => {
 }
 
 // Webhook endpoint
+// app.post('/webhook', (req, res) => {
+
+//     // Handle validation requests
+//     res.set('x-noones-request-challenge', req.headers['x-noones-request-challenge']);
+//     console.log('Webhook received with headers:', req.headers);
+
+//     const isValidationRequest = req.body === undefined;
+//     if (isValidationRequest) {
+//       console.debug('Validation request arrived');
+//       res.json({ status: 'ok' });
+//       return;
+//     }
+
+//     const signature = req.get('x-noones-signature');
+//     console.log("Noones Signature >>", signature);
+//     if (!signature) {
+//       console.warn('No signature');
+//       res.status(403).json({ status: 'error', message: 'No signature header' });
+//       return;
+//     }
+//     console.log('Incoming webhook request body:', req.rawBody);
+//     if (!req.rawBody || req.rawBody.trim() === '') {
+//         console.warn('Empty body');
+//         res.status(400).json({ status: 'error', message: 'Empty body' });
+//         return;
+//     }
+
+//     if (!isValidSignature(signature, req.get('host'), req.originalUrl, req.rawBody)) {
+//       console.warn('Invalid signature');
+//       res.status(403).json({ status: 'error', message: 'Invalid signature' });
+//       return;
+//     }
+
+//     //console.debug('\n---------------------');
+//     console.debug('New incoming webhook >>>>');
+//     console.debug(req.body);
+//     //console.debug('---------------------');
+
+//     // Handle valid webhook events
+//     console.debug('Valid webhook received:', req.body);
+//     res.status(200).send('Webhook received');
+// });
+
+
 app.post('/webhook', (req, res) => {
 
-    // Handle validation requests
-    res.set('x-noones-request-challenge', req.headers['x-noones-request-challenge']);
+    // Handle validation requests first
+    const challenge = req.headers['x-noones-request-challenge'];
+    if (challenge) {
+        console.log('Received validation request, challenge:', challenge);
+        res.set('x-noones-request-challenge', challenge);
+        res.status(200).end(); // Respond with 200 OK and end the request
+        return;
+    }
+
     console.log('Webhook received with headers:', req.headers);
 
-    const isValidationRequest = req.body === undefined;
-    if (isValidationRequest) {
-      console.debug('Validation request arrived');
-      res.json({ status: 'ok' });
-      return;
-    }
-
+    // Extract the signature from the headers
     const signature = req.get('x-noones-signature');
     console.log("Noones Signature >>", signature);
+
     if (!signature) {
-      console.warn('No signature');
-      res.status(403).json({ status: 'error', message: 'No signature header' });
-      return;
+        console.warn('No signature');
+        res.status(403).json({ status: 'error', message: 'No signature header' });
+        return;
     }
-    console.log('Incoming webhook request body:', req.rawBody);
+
+    // If no body is present, log and return error
     if (!req.rawBody || req.rawBody.trim() === '') {
         console.warn('Empty body');
         res.status(400).json({ status: 'error', message: 'Empty body' });
         return;
     }
 
+    // Validate the signature
     if (!isValidSignature(signature, req.get('host'), req.originalUrl, req.rawBody)) {
-      console.warn('Invalid signature');
-      res.status(403).json({ status: 'error', message: 'Invalid signature' });
-      return;
+        console.warn('Invalid signature');
+        res.status(403).json({ status: 'error', message: 'Invalid signature' });
+        return;
     }
 
-    //console.debug('\n---------------------');
-    console.debug('New incoming webhook >>>>');
-    console.debug(req.body);
-    //console.debug('---------------------');
+    // Log the raw body for debugging
+    console.debug('Incoming webhook request body:', req.rawBody);
+
+    // Parse the JSON body if necessary (assuming JSON format)
+    let parsedBody;
+    try {
+        parsedBody = JSON.parse(req.rawBody);
+        console.debug('Parsed webhook body:', parsedBody);
+    } catch (err) {
+        console.warn('Failed to parse webhook body as JSON.');
+        res.status(400).json({ status: 'error', message: 'Invalid JSON body' });
+        return;
+    }
 
     // Handle valid webhook events
-    console.debug('Valid webhook received:', req.body);
+    console.debug('Valid webhook received:', parsedBody);
     res.status(200).send('Webhook received');
 });
 
