@@ -1,4 +1,3 @@
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
@@ -8,14 +7,11 @@ const nacl = require('tweetnacl');
 const app = express();
 const port = 3000;
 
-const publicKey = 'fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=';
+const publicKey = 'fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=';  // Updated public key
 const webhookTargetUrl = 'https://b-backend-xe8q.onrender.com';
 
 let accessToken = null;
 let tokenExpiry = 0;
-
-app.use(express.json());
-app.use(bodyParser.json());
 
 app.use(function(req, res, next) {
     req.rawBody = '';
@@ -26,7 +22,6 @@ app.use(function(req, res, next) {
 
     next();
 });
-
 
 
 const getAccessToken = async () => {
@@ -70,54 +65,50 @@ const isValidSignature = (signature, host, originalUrl, rawBody) => {
     return nacl.sign.detached.verify(
         Buffer.from(message, 'utf8'),
         Buffer.from(signature, 'base64'),
-        Buffer.from(publicKey, 'base64')
+        Buffer.from(publicKey, 'base64') // TODdOss consider adding it as a constant?
     )
 }
 
 // Webhook endpoint
-
-
 app.post('/webhook', (req, res) => {
 
     // Handle validation requests
     res.set('x-noones-request-challenge', req.headers['x-noones-request-challenge']);
     console.log('Webhook received with headers:', req.headers);
-  
+
     const isValidationRequest = req.body === undefined;
     if (isValidationRequest) {
       console.debug('Validation request arrived');
-      console.log("Request Body >>>>> ",req.body);
       res.json({ status: 'ok' });
       return;
     }
-  
+
     const signature = req.get('x-noones-signature');
+    console.log("Noones Signature >>", signature);
     if (!signature) {
-      console.log('No signature');
+      console.warn('No signature');
       res.status(403).json({ status: 'error', message: 'No signature header' });
-      console.log("Noones Signature >>> ", signature);
       return;
     }
-
-
-    console.log('Incoming webhook request body:', req.body);
-
+    console.log('Incoming webhook request body:', req.rawBody);
     if (!req.rawBody || req.rawBody.trim() === '') {
-        console.log('Empty body');
+        console.warn('Empty body');
         res.status(400).json({ status: 'error', message: 'Empty body' });
         return;
     }
-  
-    if (!isValidSignature(signature, req.get('host'), req.originalUrl, req.body)) {
+
+    if (!isValidSignature(signature, req.get('host'), req.originalUrl, req.rawBody)) {
       console.warn('Invalid signature');
       res.status(403).json({ status: 'error', message: 'Invalid signature' });
       return;
     }
-  
-    //console.debug('\n---------------------');
 
+    //console.debug('\n---------------------');
     console.debug('New incoming webhook >>>>');
     console.debug(req.body);
+    //console.debug('---------------------');
+
+    // Handle valid webhook events
     console.debug('Valid webhook received:', req.body);
     res.status(200).send('Webhook received');
 });
