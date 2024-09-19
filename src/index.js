@@ -111,17 +111,28 @@ app.post('/webhook', async (req, res) => {
 
     // Log the raw body for debugging
 
+// Parse the JSON body if necessary (assuming JSON format)
 let parsedBody;
 try {
     parsedBody = JSON.parse(req.rawBody);
 } catch (err) {
-    console.warn('Failed to parse webhook body as JSON:', req.rawBody);  // Log raw body only on failure
+    console.warn('Failed to parse webhook body as JSON:', req.rawBody);
     res.status(400).json({ status: 'error', message: 'Invalid JSON body' });
     return;
 }
 
+// Check if bank_account exists and expand it for logging
+if (parsedBody?.payload?.text?.bank_account) {
+    console.debug('Bank account details found, including in the full webhook log.');
+    parsedBody.payload.text.bank_account = JSON.stringify(parsedBody.payload.text.bank_account, null, 2);
+}
+
+// Log the entire webhook including expanded bank_account
 console.debug('Valid webhook received:', parsedBody);
-res.status(200).send('Webhook received >>>>> ');
+
+// Respond to the webhook
+res.status(200).send('Webhook received');
+
 
 });
 
