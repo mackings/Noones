@@ -216,7 +216,7 @@ const isValidSignature = (signature, host, originalUrl, rawBody) => {
 app.post('/webhook', (req, res) => {
 
     // Handle validation requests
-    res.set('X-Noones-Request-Challenge', req.headers['x-noones-request-challenge']);
+    res.set('x-noones-request-challenge', req.headers['x-noones-request-challenge']);
     console.log('Webhook received with headers:', req.headers);
   
     const isValidationRequest = req.body.type === undefined;
