@@ -17,14 +17,14 @@ let tokenExpiry = 0;
 app.use(express.json());
 app.use(bodyParser.json());
 
-app.use((req, res, next) => {
+app.use(function(req, res, next) {
     req.rawBody = '';
-    req.on('data', (chunk) => {
+
+    req.on('data', function(chunk) {
         req.rawBody += chunk;
     });
-    req.on('end', () => {
-        next();
-    });
+
+    next();
 });
 
 
