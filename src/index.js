@@ -110,22 +110,19 @@ app.post('/webhook', async (req, res) => {
     }
 
     // Log the raw body for debugging
-    console.debug('Incoming webhook request body:', req.rawBody);
 
-    // Parse the JSON body if necessary (assuming JSON format)
-    let parsedBody;
-    try {
-        parsedBody = JSON.parse(req.rawBody);
-        console.debug('Parsed webhook body:', parsedBody);
-    } catch (err) {
-        console.warn('Failed to parse webhook body as JSON.');
-        res.status(400).json({ status: 'error', message: 'Invalid JSON body' });
-        return;
-    }
+let parsedBody;
+try {
+    parsedBody = JSON.parse(req.rawBody);
+} catch (err) {
+    console.warn('Failed to parse webhook body as JSON:', req.rawBody);  // Log raw body only on failure
+    res.status(400).json({ status: 'error', message: 'Invalid JSON body' });
+    return;
+}
 
-    // Handle valid webhook events
-    console.debug('Valid webhook received:', parsedBody);
-    res.status(200).send('Webhook received');
+console.debug('Valid webhook received:', parsedBody);
+res.status(200).send('Webhook received >>>>> ');
+
 });
 
 app.listen(port, () => {
