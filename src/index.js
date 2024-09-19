@@ -23,6 +23,8 @@ app.use(function(req, res, next) {
     next();
 });
 
+app.use(bodyParser.json());
+
 
 const getAccessToken = async () => {
     const tokenEndpoint = 'https://auth.noones.com/oauth2/token';
@@ -65,63 +67,19 @@ const isValidSignature = (signature, host, originalUrl, rawBody) => {
     return nacl.sign.detached.verify(
         Buffer.from(message, 'utf8'),
         Buffer.from(signature, 'base64'),
-        Buffer.from(publicKey, 'base64') // TODdOss consider adding it as a constant?
+        Buffer.from(publicKey, 'base64')
     )
 }
 
-// Webhook endpoint
-// app.post('/webhook', (req, res) => {
 
-//     // Handle validation requests
-//     res.set('x-noones-request-challenge', req.headers['x-noones-request-challenge']);
-//     console.log('Webhook received with headers:', req.headers);
-
-//     const isValidationRequest = req.body === undefined;
-//     if (isValidationRequest) {
-//       console.debug('Validation request arrived');
-//       res.json({ status: 'ok' });
-//       return;
-//     }
-
-//     const signature = req.get('x-noones-signature');
-//     console.log("Noones Signature >>", signature);
-//     if (!signature) {
-//       console.warn('No signature');
-//       res.status(403).json({ status: 'error', message: 'No signature header' });
-//       return;
-//     }
-//     console.log('Incoming webhook request body:', req.rawBody);
-//     if (!req.rawBody || req.rawBody.trim() === '') {
-//         console.warn('Empty body');
-//         res.status(400).json({ status: 'error', message: 'Empty body' });
-//         return;
-//     }
-
-//     if (!isValidSignature(signature, req.get('host'), req.originalUrl, req.rawBody)) {
-//       console.warn('Invalid signature');
-//       res.status(403).json({ status: 'error', message: 'Invalid signature' });
-//       return;
-//     }
-
-//     //console.debug('\n---------------------');
-//     console.debug('New incoming webhook >>>>');
-//     console.debug(req.body);
-//     //console.debug('---------------------');
-
-//     // Handle valid webhook events
-//     console.debug('Valid webhook received:', req.body);
-//     res.status(200).send('Webhook received');
-// });
-
-
-app.post('/webhook', (req, res) => {
+app.post('/webhook', async (req, res) => {
 
     // Handle validation requests first
     const challenge = req.headers['x-noones-request-challenge'];
     if (challenge) {
         console.log('Received validation request, challenge:', challenge);
         res.set('x-noones-request-challenge', challenge);
-        res.status(200).end(); // Respond with 200 OK and end the request
+        res.status(200).end();
         return;
     }
 
