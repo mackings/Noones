@@ -219,7 +219,7 @@ app.post('/webhook', (req, res) => {
     res.set('x-noones-request-challenge', req.headers['x-noones-request-challenge']);
     console.log('Webhook received with headers:', req.headers);
   
-    const isValidationRequest = req.body.type === undefined;
+    const isValidationRequest = req.body === undefined;
     if (isValidationRequest) {
       console.debug('Validation request arrived');
       res.json({ status: 'ok' });
