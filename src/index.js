@@ -62,6 +62,7 @@ const getValidAccessToken = async () => {
 
 
 // Signature validation function
+
 const isValidSignature = (signature, host, originalUrl, rawBody) => {
     const message = `https://${host}${originalUrl}:${rawBody}`;
     return nacl.sign.detached.verify(
@@ -109,9 +110,8 @@ app.post('/webhook', async (req, res) => {
         return;
     }
 
-    // Log the raw body for debugging
-
 // Parse the JSON body if necessary (assuming JSON format)
+
 
 let parsedBody;
 try {
@@ -123,6 +123,7 @@ try {
 }
 
 // Check if bank_account exists and expand it for logging
+
 if (parsedBody?.payload?.text?.bank_account) {
     console.debug('Bank account details found, including in the full webhook log.');
     parsedBody.payload.text.bank_account = JSON.stringify(parsedBody.payload.text.bank_account, null, 2);
@@ -140,3 +141,27 @@ res.status(200).send('Webhook received');
 app.listen(port, () => {
     console.log(`Server is listening on port ${port}`);
 });
+
+
+const useAccessToken = async (username) => {
+    try {
+        const token = await getValidAccessToken();
+        console.log("Access Token Generated >>>>");
+
+        const response = await axios.post(
+            'https://api.noones.com/noones/v1/user/info', 
+            { username: 'ReadyFly894' },  // Sending username in the body
+            {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }
+        );
+
+        console.log('API response:', response.data);
+    } catch (error) {
+        console.error('Error using access token:', error.response ? error.response.data : error.message);
+    }
+};
+
+
+// Call this function when needed to use the access token
+useAccessToken();
