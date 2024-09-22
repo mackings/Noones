@@ -32,6 +32,7 @@ const webhookHandler = async (req, res) => {
     }
 
     let parsedBody;
+
     try {
         parsedBody = JSON.parse(req.rawBody);
     } catch (err) {
@@ -39,15 +40,41 @@ const webhookHandler = async (req, res) => {
         res.status(400).json({ status: 'error', message: 'Invalid JSON body' });
         return;
     }
-
-    // Check if bank_account exists and expand it for logging
-    if (parsedBody?.payload?.text?.bank_account) {
-        console.debug('Bank account details found, including in the full webhook log.');
-        parsedBody.payload.text.bank_account = JSON.stringify(parsedBody.payload.text.bank_account, null, 2);
+    
+    // Define your trade started and message handler functions
+    const handleTradeStarted = (payload) => {
+        console.log('Handling trade started event:', payload);
+        // Call your specific function to process the trade start event
+        // processTradeStart(payload);
+    };
+    
+    const handleTradeMessage = (payload) => {
+        console.log('Handling trade message event:', payload);
+        // Check if the message contains bank account instruction or regular message
+        if (payload.type === 'bank-account-instruction') {
+            console.log('Bank account instruction received:', payload.text.bank_account);
+            // Call your specific function to handle bank account instructions
+            // handleBankAccountInstruction(payload);
+        } else {
+            console.log('Regular message received:', payload.text);
+            // Call your specific function to handle regular messages
+            // handleRegularMessage(payload);
+        }
+    };
+    
+    // Check the webhook type and call the respective handler function
+    const webhookType = parsedBody?.type;
+    
+    if (webhookType === 'trade.started') {
+        handleTradeStarted(parsedBody.payload);
+    } else if (webhookType === 'trade.chat_message_received') {
+        handleTradeMessage(parsedBody.payload);
+    } else {
+        console.debug('Unrecognized webhook type:', webhookType);
     }
-
-    // Log the entire webhook including expanded bank_account
+    
     console.debug('Valid webhook received:', parsedBody);
+    
 
     // Respond to the webhook
     res.status(200).send('Webhook received');

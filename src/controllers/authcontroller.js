@@ -18,7 +18,6 @@ const getRatesToken = async () => {
 };
 
 
-
 const updatePrice = async (req, res) => {
     const { offer_hash, margin } = req.body;
     try {
@@ -38,6 +37,7 @@ const updatePrice = async (req, res) => {
         res.status(500).json({ error: error.response ? error.response.data : error.message });
     }
 };
+
 
 const useAccessToken = async (req, res) => {
     try {
