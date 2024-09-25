@@ -1,4 +1,12 @@
+const express = require('express');
 const nacl = require('tweetnacl');
+const router = express.Router();
+const app = express();
+const dotenv = require('dotenv').config();
+const admin = require("firebase-admin");
+const axios = require("axios");
+const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
+const mongoose = require('mongoose');
 
 // Signature validation function
 const isValidSignature = (signature, host, originalUrl, rawBody, publicKey) => {
