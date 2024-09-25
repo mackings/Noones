@@ -31,7 +31,7 @@ const serviceAccount = {
 
 
   // Save functions from your existing code
-  
+
 const saveTradeToFirestore = async (payload) => {
     try {
         const docRef = db.collection('manualsystem').doc(payload.trade_hash);
@@ -156,7 +156,7 @@ const webhookHandler = async (req, res) => {
     
 
     // Respond to the webhook
-    res.status(200).send('Webhook received');
+   // res.status(200).send('Webhook received');
 };
 
 module.exports = { webhookHandler };
