@@ -120,7 +120,6 @@ const webhookHandler = async (req, res) => {
         await saveTradeToFirestore(payload);
     };
 
-
     const handleTradeMessage = async (payload) => {
         console.log('Handling trade message event:', payload);
         const messages = [{
@@ -139,6 +138,7 @@ const webhookHandler = async (req, res) => {
         await saveChatMessageToFirestore(payload, messages); 
     };
 
+
     // Check the webhook type and call the respective handler function
     const webhookType = parsedBody?.type;
 
@@ -154,7 +154,6 @@ const webhookHandler = async (req, res) => {
 
     res.status(200).send('Webhook received');
     
-
     // Respond to the webhook
    // res.status(200).send('Webhook received');
 };
