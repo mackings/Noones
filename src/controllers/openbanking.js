@@ -5,6 +5,7 @@ const router = express.Router();
 
 
 exports.handleRequest = async (req, res) => {
+    
     try {
       // Destructure the transfer data from the request body
       const { BeneficiaryAccount, beneficiaryBankCode, amount, ClientAccountNumber, beneficiaryName, NameEnquirySessionID, narration, ClientFeeCharge, SenderName } = req.body;
