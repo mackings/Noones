@@ -48,7 +48,7 @@ const serviceAccount = {
       });
   
       if (eligibleStaff.length === 0) {
-        console.log('Dropping Noones Trades for the Best >>>');
+        console.log('Noones Dropping Noones Trades for the Best >>>');
   
         // Save the trade in the unassignedTrades collection
         await db.collection('manualunassigned').add({
@@ -78,6 +78,7 @@ const serviceAccount = {
           trade_hash: tradePayload.trade_hash,
           fiat_amount_requested: tradePayload.fiat_amount_requested,
           assignedAt: assignedAt, // Assign the manual timestamp here
+          account:tradePayload.buyer_name,
           isPaid: false
         }),
       });
@@ -98,7 +99,7 @@ const serviceAccount = {
         { new: true } // Return the updated document
       );
   
-      console.log(`Trade ${tradePayload.trade_hash} assigned to ${assignedStaffId}.`);
+      console.log(`Noones Trade ${tradePayload.trade_hash} assigned to ${assignedStaffId}.`);
   
     } catch (error) {
       console.error('Error assigning trade to staff:', error);
