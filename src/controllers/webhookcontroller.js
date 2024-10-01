@@ -22,7 +22,6 @@ const serviceAccount = {
     client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
   };
 
-  
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
@@ -30,7 +29,82 @@ const serviceAccount = {
   const db = admin.firestore();
 
 
-  // Save functions from your existing code
+
+
+  const assignTradeToStaff = async (tradePayload) => {
+    try {
+      const staffSnapshot = await db.collection('staff').get();
+      let eligibleStaff = [];
+  
+      // Filter out staff with pending unpaid trades and those not clocked in
+      staffSnapshot.docs.forEach(doc => {
+        const staffData = doc.data();
+        const hasPendingTrades = staffData.assignedTrades.some(trade => !trade.isPaid);
+  
+        // Check if the staff is clocked in
+        if (!hasPendingTrades && staffData.clockedIn) {
+          eligibleStaff.push(doc);
+        }
+      });
+  
+      if (eligibleStaff.length === 0) {
+        console.log('Dropping Trades for the Best >>>');
+  
+        // Save the trade in the unassignedTrades collection
+        await db.collection('manualunassigned').add({
+          trade_hash: tradePayload.trade_hash,
+          fiat_amount_requested: tradePayload.fiat_amount_requested,
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        });
+  
+        return;
+      }
+  
+      // Find the staff with the least number of trades
+      let staffWithLeastTrades = eligibleStaff[0];
+      eligibleStaff.forEach(doc => {
+        if (doc.data().assignedTrades.length < staffWithLeastTrades.data().assignedTrades.length) {
+          staffWithLeastTrades = doc;
+        }
+      });
+  
+      const assignedStaffId = staffWithLeastTrades.id;
+      const staffRef = db.collection('Allstaff').doc(assignedStaffId);
+      const assignedAt = new Date();
+  
+      // Now update the assignedTrades array in Firestore
+      await staffRef.update({
+        assignedTrades: admin.firestore.FieldValue.arrayUnion({
+          trade_hash: tradePayload.trade_hash,
+          fiat_amount_requested: tradePayload.fiat_amount_requested,
+          assignedAt: assignedAt, // Assign the manual timestamp here
+          isPaid: false
+        }),
+      });
+  
+      // Now update the assignedTrades array in Mongoose
+      const tradeData = {
+        tradeId: tradePayload.trade_hash, // Assuming trade_hash as the unique trade ID
+        tradeDetails: {
+          fiat_amount_requested: tradePayload.fiat_amount_requested,
+          assignedAt: assignedAt,
+          isPaid: false,
+        },
+      };
+  
+      await Allstaff.findOneAndUpdate(
+        { _id: assignedStaffId }, // Match staff by ID
+        { $push: { assignedTrades: tradeData } }, // Push the trade data to the assignedTrades array
+        { new: true } // Return the updated document
+      );
+  
+      console.log(`Trade ${tradePayload.trade_hash} assigned to ${assignedStaffId}.`);
+  
+    } catch (error) {
+      console.error('Error assigning trade to staff:', error);
+    }
+  };
+
 
 const saveTradeToFirestore = async (payload) => {
     try {
@@ -44,6 +118,8 @@ const saveTradeToFirestore = async (payload) => {
         console.error('Error saving the trade to Firestore:', error);
     }
 };
+
+
 
 const saveChatMessageToFirestore = async (payload, messages) => {
     try {
@@ -150,12 +226,11 @@ const webhookHandler = async (req, res) => {
 
     }
 
+
+
     console.debug('Valid webhook received:', parsedBody);
 
     res.status(200).send('Webhook received');
-    
-    // Respond to the webhook
-   // res.status(200).send('Webhook received');
 };
 
 module.exports = { webhookHandler };

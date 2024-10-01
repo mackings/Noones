@@ -29,6 +29,27 @@ const addNewStaff = async (staffId, staffDetails) => {
     }
 };
 
+// Firestore function to update staff clockedIn status
+const updateClockedInStatus = async (staffId, status) => {
+    try {
+        const staffRef = db.collection('Allstaff').doc(staffId);
+
+        await staffRef.update({
+            clockedIn: status,
+        });
+
+        console.log(`Staff ${staffId} clocked in status updated to ${status}.`);
+    } catch (error) {
+        console.error('Error updating clockedIn status in Firestore:', error);
+        throw new Error('FirestoreUpdateError'); // Throw an error if Firestore update fails
+    }
+};
+
+
+
+
+
+
 // Register staff
 exports.registerStaff = async (req, res) => {
     try {
@@ -107,24 +128,6 @@ exports.loginStaff = async (req, res) => {
         return responseController.successResponse(res, 'Login successful', { token });
     } catch (error) {
         return responseController.errorResponse(res, 'Error logging in', error);
-    }
-};
-
-
-// Clock in
-// Firestore function to update staff clockedIn status
-const updateClockedInStatus = async (staffId, status) => {
-    try {
-        const staffRef = db.collection('Allstaff').doc(staffId);
-
-        await staffRef.update({
-            clockedIn: status,
-        });
-
-        console.log(`Staff ${staffId} clocked in status updated to ${status}.`);
-    } catch (error) {
-        console.error('Error updating clockedIn status in Firestore:', error);
-        throw new Error('FirestoreUpdateError'); // Throw an error if Firestore update fails
     }
 };
 
