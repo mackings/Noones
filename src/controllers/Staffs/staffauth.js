@@ -58,7 +58,7 @@ exports.registerStaff = async (req, res) => {
   
       await addNewStaff(newStaff.username.toString(), staffDetailsForFirestore);
   
-      // Return success response after both MongoDB and Firestore have been updated
+      // Return success response after both MongoDB and Firestore have been updateds
       return responseController.successResponse(res, 'Staff registered successfully', newStaff, 201);
     } catch (error) {
       console.error('Error registering staff:', error);
