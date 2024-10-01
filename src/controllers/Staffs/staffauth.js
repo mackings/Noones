@@ -56,7 +56,7 @@ exports.registerStaff = async (req, res) => {
         username 
       };
   
-      await addNewStaff(newStaff._id.toString(), staffDetailsForFirestore);
+      await addNewStaff(newStaff.username.toString(), staffDetailsForFirestore);
   
       // Return success response after both MongoDB and Firestore have been updated
       return responseController.successResponse(res, 'Staff registered successfully', newStaff, 201);
@@ -76,6 +76,7 @@ exports.registerStaff = async (req, res) => {
 
 
 // Login staff
+
 exports.loginStaff = async (req, res) => {
     try {
         const { username, password } = req.body;
