@@ -40,7 +40,6 @@ const serviceAccount = {
       staffSnapshot.docs.forEach(doc => {
         const staffData = doc.data();
         const hasPendingTrades = staffData.assignedTrades.some(trade => !trade.isPaid);
-  
         // Check if the staff is clocked in
         if (!hasPendingTrades && staffData.clockedIn) {
           eligibleStaff.push(doc);
@@ -48,7 +47,8 @@ const serviceAccount = {
       });
   
       if (eligibleStaff.length === 0) {
-        console.log('Noones Dropping Noones Trades for the Best >>>');
+
+        console.log('Noones Dropping Noones Trades for the Best >>>>>>>>>>>>>>>>>>');
   
         // Save the trade in the unassignedTrades collection
         await db.collection('manualunassigned').add({
@@ -78,7 +78,8 @@ const serviceAccount = {
           trade_hash: tradePayload.trade_hash,
           fiat_amount_requested: tradePayload.fiat_amount_requested,
           assignedAt: assignedAt, // Assign the manual timestamp here
-          account:tradePayload.buyer_name,
+          handle:tradePayload.buyer_name,
+          account:"Noones",
           isPaid: false
         }),
       });
@@ -115,7 +116,7 @@ const saveTradeToFirestore = async (payload) => {
             timestamp: admin.firestore.FieldValue.serverTimestamp(),
         });
         await assignTradeToStaff(payload);
-        console.log(`Noones Trade ${payload.trade_hash} saved to Firestore.`);
+        console.log(`Noones Trade ${payload.trade_hash} saved to Firestore DB >>>>>>>>>>>>>`);
     } catch (error) {
         console.error('Error saving the trade to Firestore:', error);
     }
