@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv').config();
-const Staff = require("../Model/staffs");
+const Staff = require("../Model/staffmodel");
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
 const responseController = require("../Utils/responses");
 const admin = require("firebase-admin");
@@ -18,7 +18,7 @@ const addNewStaff = async (staffId, staffDetails) => {
 
         await staffRef.set({
             ...staffDetails,
-            assignedTrades: [],
+            assignedTrades: [], // Initialize with empty trades
             timestamp: admin.firestore.FieldValue.serverTimestamp(),
         });
 
@@ -42,15 +42,26 @@ exports.registerStaff = async (req, res) => {
 
         // Hash the password and create the staff member in MongoDB
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newStaff = new Staff({ username, password: hashedPassword, name, email, role });
+        const newStaff = new Staff({
+            username,
+            password: hashedPassword,
+            name,
+            email,
+            role, // Use the role from request body
+            assignedTrades: [], // Initialize assignedTrades
+            paidTrades: [], // Initialize paidTrades if applicable
+            clockedIn: false, // Initialize clockedIn status
+        });
         await newStaff.save(); // Save to MongoDB
 
         // Add the staff to Firestore
         const staffDetailsForFirestore = {
             name,
             email,
-            role,
-            username
+            role, // Include role for Firestore
+            username,
+            assignedTrades: [], // Ensure this is included for Firestore
+            timestamp: new Date(), // Add timestamp if necessary
         };
 
         await addNewStaff(newStaff.username.toString(), staffDetailsForFirestore);
@@ -69,7 +80,6 @@ exports.registerStaff = async (req, res) => {
         return responseController.errorResponse(res, 'Error registering staff', error, 500);
     }
 };
-
 
 // Login staff
 
@@ -102,6 +112,24 @@ exports.loginStaff = async (req, res) => {
 
 
 // Clock in
+// Firestore function to update staff clockedIn status
+const updateClockedInStatus = async (staffId, status) => {
+    try {
+        const staffRef = db.collection('Allstaff').doc(staffId);
+
+        await staffRef.update({
+            clockedIn: status,
+        });
+
+        console.log(`Staff ${staffId} clocked in status updated to ${status}.`);
+    } catch (error) {
+        console.error('Error updating clockedIn status in Firestore:', error);
+        throw new Error('FirestoreUpdateError'); // Throw an error if Firestore update fails
+    }
+};
+
+
+// Clock in
 exports.clockIn = async (req, res) => {
     try {
         const { token } = req.body;
@@ -125,6 +153,9 @@ exports.clockIn = async (req, res) => {
         staff.dailyClockTimes.push({ clockInTime });
         staff.clockInTime = clockInTime; // Track the current session's clock-in time
         await staff.save();
+
+        // Update Firestore clockedIn status
+        await updateClockedInStatus(staff.username.toString(), true);
 
         return responseController.successResponse(res, 'Clocked in successfully', { clockInTime });
     } catch (error) {
@@ -158,8 +189,12 @@ exports.clockOut = async (req, res) => {
         staff.dailyClockTimes.push(lastClockIn); // Re-add the updated record
         await staff.save();
 
+        // Update Firestore clockedIn status
+        await updateClockedInStatus(staff.username.toString(), false);
+
         return responseController.successResponse(res, 'Clocked out successfully', { clockOutTime });
     } catch (error) {
         return responseController.errorResponse(res, 'Error clocking out', error);
     }
 };
+
