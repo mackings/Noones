@@ -8,6 +8,7 @@ const axios = require("axios");
 const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
 const mongoose = require('mongoose');
 const Allstaff = require("./Model/staffmodel");
+const { ObjectId } = mongoose.Types;
 
 
 const serviceAccount = {
@@ -40,24 +41,19 @@ const serviceAccount = {
       // Filter out staff with pending unpaid trades and those not clocked in
       staffSnapshot.docs.forEach(doc => {
         const staffData = doc.data();
-        const hasPendingTrades = staffData.assignedTrades.some(trade => !trade.isPaid);
-        // Check if the staff is clocked in
+        const hasPendingTrades = staffData.assignedTrades.some(trade => !trade.tradeDetails.isPaid); // Ensure correct field access
         if (!hasPendingTrades && staffData.clockedIn) {
           eligibleStaff.push(doc);
         }
       });
   
       if (eligibleStaff.length === 0) {
-
         console.log('Noones Dropping Noones Trades for the Best >>>>>>>>>>>>>>>>>>');
-  
-        // Save the trade in the unassignedTrades collection
         await db.collection('manualunassigned').add({
           trade_hash: tradePayload.trade_hash,
           fiat_amount_requested: tradePayload.fiat_amount_requested,
           timestamp: admin.firestore.FieldValue.serverTimestamp(),
         });
-  
         return;
       }
   
@@ -69,36 +65,37 @@ const serviceAccount = {
         }
       });
   
-      const assignedStaffId = staffWithLeastTrades.id;
+      const assignedStaffId = staffWithLeastTrades.id; // This is a string, so we need to convert it
       const staffRef = db.collection('Allstaff').doc(assignedStaffId);
       const assignedAt = new Date();
   
-      // Now update the assignedTrades array in Firestore
+      // Update the assignedTrades array in Firestore
       await staffRef.update({
         assignedTrades: admin.firestore.FieldValue.arrayUnion({
           trade_hash: tradePayload.trade_hash,
           fiat_amount_requested: tradePayload.fiat_amount_requested,
-          assignedAt: assignedAt, // Assign the manual timestamp here
-          handle:tradePayload.buyer_name,
-          account:"Noones",
-          isPaid: false
+          assignedAt: assignedAt,
+          handle: tradePayload.buyer_name,
+          account: "Noones",
+          isPaid: false,
         }),
       });
   
-      // Now update the assignedTrades array in Mongoose
+      // Update the assignedTrades array in MongoDB
       const tradeData = {
-        tradeId: tradePayload.trade_hash, // Assuming trade_hash as the unique trade ID
+        tradeId: tradePayload.trade_hash,
         tradeDetails: {
           fiat_amount_requested: tradePayload.fiat_amount_requested,
           assignedAt: assignedAt,
-          isPaid: false,
+          isPaid: false, // Added this inside tradeDetails
         },
       };
   
+      // Ensure assignedStaffId is converted to ObjectId
       await Allstaff.findOneAndUpdate(
-        { _id: assignedStaffId }, // Match staff by ID
-        { $push: { assignedTrades: tradeData } }, // Push the trade data to the assignedTrades array
-        { new: true } // Return the updated document
+        { _id: ObjectId(assignedStaffId) }, // Convert the string ID to ObjectId
+        { $push: { assignedTrades: tradeData } },
+        { new: true }
       );
   
       console.log(`Noones Trade ${tradePayload.trade_hash} assigned to ${assignedStaffId}.`);
