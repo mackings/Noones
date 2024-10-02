@@ -7,8 +7,6 @@ const admin = require("firebase-admin");
 const axios = require("axios");
 const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
 const mongoose = require('mongoose');
-const Allstaff = require("./Model/staffmodel");
-const { ObjectId } = mongoose.Types;
 
 
 const serviceAccount = {
@@ -29,192 +27,87 @@ const serviceAccount = {
   });
   
   const db = admin.firestore();
-  db.settings({ ignoreUndefinedProperties: true });
 
 
 
 
-
-// Firestore listener to detect new messages in the manualmessages collection
-
-// Listen for incoming messages in the manualmessages collection
-
-
-
-// Listen for incoming messages in the manualmessages collection
-db.collection('manualmessages').onSnapshot(snapshot => {
-  snapshot.docChanges().forEach(change => {
-    if (change.type === 'added') {
-      const messageData = change.doc.data();
-      const messageTradeHash = messageData.trade_hash;
-
-      // Ensure message data is valid and store the message
-      if (messageData && messageTradeHash) {
-        storeMessage(messageTradeHash, messageData);
-      } else {
-        console.error('Invalid message data received:', messageData);
-      }
-    }
-  });
-});
-
-// Listen for incoming trades in the trades collection
-db.collection('manualsystem').onSnapshot(snapshot => {
-  snapshot.docChanges().forEach(change => {
-    if (change.type === 'added') {
-      const tradeData = change.doc.data();
-      const tradeHash = tradeData.trade_hash;
-
-      // Ensure trade data is valid and store the trade
-      if (tradeData && tradeHash) {
-        storeTrade(tradeHash, tradeData);
-      } else {
-        console.error('Invalid trade data received:', tradeData);
-      }
-    }
-  });
-});
-
-// Function to store the message in Firestore
-const storeMessage = async (messageTradeHash, messageData) => {
-  try {
-    // Store the message in a dedicated collection
-    await db.collection('manualmessages').doc(messageTradeHash).set(messageData, { merge: true });
-    console.log(`Message stored for trade ${messageTradeHash}`);
-
-    // Once the message is stored, check if the trade is already available and assign it
-    await checkAndAssignTrade(messageTradeHash);
-  } catch (error) {
-    console.error('Error storing message:', error);
-  }
-};
-
-// Function to store the trade in Firestore
-const storeTrade = async (tradeHash, tradeData) => {
-  try {
-    // Store the trade in a dedicated collection
-    await db.collection('manualsystem').doc(tradeHash).set(tradeData, { merge: true });
-    console.log(`Trade stored with trade_hash: ${tradeHash}`);
-
-    // Once the trade is stored, check if a corresponding message exists
-    await checkAndAssignTrade(tradeHash);
-  } catch (error) {
-    console.error('Error storing trade:', error);
-  }
-};
-
-// Function to check if a message exists for the trade and assign it
-const checkAndAssignTrade = async (tradeHash) => {
-  try {
-    // Check if the trade exists
-    const tradeSnapshot = await db.collection('manualsystem').doc(tradeHash).get();
-    if (!tradeSnapshot.exists) {
-      console.log(`Trade ${tradeHash} not found. Skipping assignment.`);
-      return;
-    }
-
-    // Check if a message exists with the same trade_hash
-    const messageSnapshot = await db.collection('manualmessages').doc(tradeHash).get();
-    if (!messageSnapshot.exists) {
-      console.log(`No message found for trade ${tradeHash}, skipping assignment.`);
-      return;
-    }
-
-    const tradeData = tradeSnapshot.data();
-    const messageData = messageSnapshot.data();
-
-    // Ensure trade data has the required property before proceeding
-    if (!tradeData.payload || !tradeData.payload.fiat_amount_requested || !tradeData.payload.buyer_name) {
-      console.error(`Trade data is missing required fields for trade ${tradeHash}`);
-      return;
-    }
-
-    // Proceed with trade assignment if a message is found
-    console.log(`Assigning trade ${tradeHash} with corresponding message.`);
-    const tradePayload = {
-      trade_hash: tradeHash,
-      fiat_amount_requested: tradeData.payload.fiat_amount_requested,
-      buyer_name: tradeData.payload.buyer_name,
-    };
-
-    await assignTradeToStaff(tradePayload);
-
-  } catch (error) {
-    console.error('Error checking for messages or assigning trade:', error);
-  }
-};
-
-// Function to assign the trade to eligible staff
-const assignTradeToStaff = async (tradePayload) => {
-  try {
-    // Query for clocked-in staff who do not have pending unpaid trades
-    const staffSnapshot = await db.collection('Allstaff')
-      .where('clockedIn', '==', true) // Only staff who are clocked in
-      .get();
-
-    const eligibleStaff = staffSnapshot.docs.filter(doc => {
-      const staffData = doc.data();
-      // Check for pending unpaid trades
-      const hasPendingTrades = staffData.assignedTrades.some(trade => trade.tradeDetails && trade.tradeDetails.isPaid === false);
-      return !hasPendingTrades; // Only include staff without pending trades
-    });
-
-    if (eligibleStaff.length === 0) {
-      console.log('No eligible staff available to assign the trade.');
-      await db.collection('manualunassigned').add({
-        trade_hash: tradePayload.trade_hash,
-        fiat_amount_requested: tradePayload.fiat_amount_requested,
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+  const assignTradeToStaff = async (tradePayload) => {
+    try {
+      const staffSnapshot = await db.collection('Allstaff').get();
+      let eligibleStaff = [];
+  
+      // Filter out staff with pending unpaid trades and those not clocked in
+      staffSnapshot.docs.forEach(doc => {
+        const staffData = doc.data();
+        const hasPendingTrades = staffData.assignedTrades.some(trade => !trade.isPaid);
+        // Check if the staff is clocked in
+        if (!hasPendingTrades && staffData.clockedIn) {
+          eligibleStaff.push(doc);
+        }
       });
-      return;
+  
+      if (eligibleStaff.length === 0) {
+
+        console.log('Noones Dropping Noones Trades for the Best >>>>>>>>>>>>>>>>>>');
+  
+        // Save the trade in the unassignedTrades collection
+        await db.collection('manualunassigned').add({
+          trade_hash: tradePayload.trade_hash,
+          fiat_amount_requested: tradePayload.fiat_amount_requested,
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        });
+  
+        return;
+      }
+  
+      // Find the staff with the least number of trades
+      let staffWithLeastTrades = eligibleStaff[0];
+      eligibleStaff.forEach(doc => {
+        if (doc.data().assignedTrades.length < staffWithLeastTrades.data().assignedTrades.length) {
+          staffWithLeastTrades = doc;
+        }
+      });
+  
+      const assignedStaffId = staffWithLeastTrades.id;
+      const staffRef = db.collection('Allstaff').doc(assignedStaffId);
+      const assignedAt = new Date();
+  
+      // Now update the assignedTrades array in Firestore
+      await staffRef.update({
+        assignedTrades: admin.firestore.FieldValue.arrayUnion({
+          trade_hash: tradePayload.trade_hash,
+          fiat_amount_requested: tradePayload.fiat_amount_requested,
+          assignedAt: assignedAt, // Assign the manual timestamp here
+          handle:tradePayload.buyer_name,
+          account:"Noones",
+          isPaid: false
+        }),
+      });
+  
+      // Now update the assignedTrades array in Mongoose
+      const tradeData = {
+        tradeId: tradePayload.trade_hash, // Assuming trade_hash as the unique trade ID
+        tradeDetails: {
+          fiat_amount_requested: tradePayload.fiat_amount_requested,
+          assignedAt: assignedAt,
+          isPaid: false,
+        },
+      };
+  
+      await Allstaff.findOneAndUpdate(
+        { _id: assignedStaffId }, // Match staff by ID
+        { $push: { assignedTrades: tradeData } }, // Push the trade data to the assignedTrades array
+        { new: true } // Return the updated document
+      );
+  
+      console.log(`Noones Trade ${tradePayload.trade_hash} assigned to ${assignedStaffId}.`);
+  
+    } catch (error) {
+      console.error('Error assigning trade to staff:', error);
     }
+  };
 
-    // Find the staff with the least number of trades
-    let staffWithLeastTrades = eligibleStaff.reduce((prev, curr) => {
-      return (curr.data().assignedTrades.length < prev.data().assignedTrades.length) ? curr : prev;
-    });
 
-    const assignedStaffId = staffWithLeastTrades.id;
-    const staffRef = db.collection('Allstaff').doc(assignedStaffId);
-    const assignedAt = new Date();
-
-    // Update the assignedTrades array in Firestore
-    await staffRef.update({
-      assignedTrades: admin.firestore.FieldValue.arrayUnion({
-        trade_hash: tradePayload.trade_hash,
-        fiat_amount_requested: tradePayload.fiat_amount_requested,
-        assignedAt: assignedAt,
-        handle: tradePayload.buyer_name,
-        account: "Noones",
-        isPaid: false,
-      }),
-    });
-
-    // Update the assignedTrades array in MongoDB
-    const tradeData = {
-      tradeId: tradePayload.trade_hash,
-      tradeDetails: {
-        fiat_amount_requested: tradePayload.fiat_amount_requested,
-        assignedAt: assignedAt,
-        isPaid: false,
-      },
-    };
-
-    // Ensure assignedStaffId is converted to ObjectId before MongoDB update
-    await Allstaff.findOneAndUpdate(
-      { _id: new ObjectId(assignedStaffId) },
-      { $push: { assignedTrades: tradeData } },
-      { new: true }
-    );
-
-    console.log(`Trade ${tradePayload.trade_hash} assigned to staff ${assignedStaffId}.`);
-
-  } catch (error) {
-    console.error('Error assigning trade to staff:', error);
-  }
-};
-
-// Other functions for saving trades and messages
 const saveTradeToFirestore = async (payload) => {
     try {
         const docRef = db.collection('manualsystem').doc(payload.trade_hash);
@@ -222,12 +115,13 @@ const saveTradeToFirestore = async (payload) => {
             ...payload,
             timestamp: admin.firestore.FieldValue.serverTimestamp(),
         });
-        // Removed automatic assignment call here
+        await assignTradeToStaff(payload);
         console.log(`Noones Trade ${payload.trade_hash} saved to Firestore DB >>>>>>>>>>>>>`);
     } catch (error) {
         console.error('Error saving the trade to Firestore:', error);
     }
 };
+
 
 
 const saveChatMessageToFirestore = async (payload, messages) => {
@@ -255,7 +149,6 @@ const saveChatMessageToFirestore = async (payload, messages) => {
         console.error('Error saving chat messages to Firestore:', error);
     }
 };
-
 
 
 
