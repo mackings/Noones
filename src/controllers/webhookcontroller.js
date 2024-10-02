@@ -32,7 +32,6 @@ const serviceAccount = {
 
 
 
-
   const assignTradeToStaff = async (tradePayload) => {
     try {
       const staffSnapshot = await db.collection('Allstaff').get();
@@ -42,7 +41,6 @@ const serviceAccount = {
       staffSnapshot.docs.forEach(doc => {
         const staffData = doc.data();
         const hasPendingTrades = staffData.assignedTrades.some(trade => {
-          // Ensure tradeDetails exists before checking isPaid
           return trade.tradeDetails && trade.tradeDetails.isPaid === false;
         });
   
@@ -91,13 +89,13 @@ const serviceAccount = {
         tradeDetails: {
           fiat_amount_requested: tradePayload.fiat_amount_requested,
           assignedAt: assignedAt,
-          isPaid: false, // Ensure this is inside tradeDetails
+          isPaid: false,
         },
       };
   
       // Ensure assignedStaffId is converted to ObjectId
       await Allstaff.findOneAndUpdate(
-        { _id: ObjectId(assignedStaffId) },
+        { _id: new ObjectId(assignedStaffId) }, // Fixed ObjectId instantiation
         { $push: { assignedTrades: tradeData } },
         { new: true }
       );
@@ -109,7 +107,7 @@ const serviceAccount = {
     }
   };
   
-
+  
 
 const saveTradeToFirestore = async (payload) => {
     try {
