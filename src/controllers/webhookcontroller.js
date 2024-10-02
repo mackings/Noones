@@ -37,55 +37,108 @@ const serviceAccount = {
 
 // Firestore listener to detect new messages in the manualmessages collection
 
+// Listen for incoming messages in the manualmessages collection
+
 db.collection('manualmessages').onSnapshot(snapshot => {
   snapshot.docChanges().forEach(change => {
     if (change.type === 'added') {
       const messageData = change.doc.data();
-      const tradeHash = messageData.trade_hash;
-      assignTradeIfNotAssigned(tradeHash, messageData);
+      const messageTradeHash = messageData.trade_hash;
+
+      // Ensure message data is valid and store the message
+      if (messageData && messageTradeHash) {
+        storeMessage(messageTradeHash, messageData);
+      } else {
+        console.error('Invalid message data received:', messageData);
+      }
     }
   });
 });
 
-// Function to check if the trade is unassigned and assign it if necessary
-const assignTradeIfNotAssigned = async (tradeHash, messageData) => {
-  try {
-    // Check if the trade is already assigned in the manualunassigned collection
-    const unassignedTrade = await db.collection('manualunassigned')
-      .where('trade_hash', '==', tradeHash)
-      .get();
+// Listen for incoming trades in the trades collection
+db.collection('manualsystem').onSnapshot(snapshot => {
+  snapshot.docChanges().forEach(change => {
+    if (change.type === 'added') {
+      const tradeData = change.doc.data();
+      const tradeHash = tradeData.trade_hash;
 
-    if (unassignedTrade.empty) {
-      console.log(`Trade ${tradeHash} is already assigned or does not exist.`);
-      return; // The trade is already assigned, no need to reassign
+      // Ensure trade data is valid and store the trade
+      if (tradeData && tradeHash) {
+        storeTrade(tradeHash, tradeData);
+      } else {
+        console.error('Invalid trade data received:', tradeData);
+      }
+    }
+  });
+});
+
+// Function to store the message in Firestore
+const storeMessage = async (messageTradeHash, messageData) => {
+  try {
+    // Store the message in a dedicated collection
+    await db.collection('manualmessages').doc(messageTradeHash).set(messageData, { merge: true });
+    console.log(`Message stored for trade ${messageTradeHash}`);
+
+    // Once the message is stored, check if the trade is already available and assign it
+    await checkAndAssignTrade(messageTradeHash);
+  } catch (error) {
+    console.error('Error storing message:', error);
+  }
+};
+
+// Function to store the trade in Firestore
+const storeTrade = async (tradeHash, tradeData) => {
+  try {
+    // Store the trade in a dedicated collection
+    await db.collection('manualsystem').doc(tradeHash).set(tradeData, { merge: true });
+    console.log(`Trade stored with trade_hash: ${tradeHash}`);
+
+    // Once the trade is stored, check if a corresponding message exists and assign it
+    await checkAndAssignTrade(tradeHash);
+  } catch (error) {
+    console.error('Error storing trade:', error);
+  }
+};
+
+// Function to check if a message exists for the trade and assign it
+const checkAndAssignTrade = async (tradeHash) => {
+  try {
+    // Check if the trade exists
+    const tradeSnapshot = await db.collection('manualsystem').doc(tradeHash).get();
+    if (!tradeSnapshot.exists) {
+      console.log(`Trade ${tradeHash} not found. Skipping assignment.`);
+      return;
     }
 
-    // Prepare tradePayload and proceed to assign the trade
+    // Check if a message exists with the same trade_hash
+    const messageSnapshot = await db.collection('manualmessages').doc(tradeHash).get();
+    if (!messageSnapshot.exists) {
+      console.log(`No message found for trade ${tradeHash}, skipping assignment.`);
+      return;
+    }
+
+    const tradeData = tradeSnapshot.data();
+    const messageData = messageSnapshot.data();
+
+    // Proceed with trade assignment if a message is found
+    console.log(`Assigning trade ${tradeHash} with corresponding message.`);
     const tradePayload = {
       trade_hash: tradeHash,
-      fiat_amount_requested: messageData.fiat_amount_requested,
-      buyer_name: messageData.buyer_name
+      fiat_amount_requested: tradeData.payload.fiat_amount_requested,
+      buyer_name: tradeData.payload.buyer_name,
     };
 
     await assignTradeToStaff(tradePayload);
 
   } catch (error) {
-    console.error('Error checking or assigning trade:', error);
+    console.error('Error checking for messages or assigning trade:', error);
   }
 };
 
-
-
-// Function to assign trade to eligible staff
-
+// Function to assign the trade to eligible staff
 const assignTradeToStaff = async (tradePayload) => {
-  try {
-    // Ensure fiat_amount_requested is not undefined
-    if (!tradePayload.fiat_amount_requested) {
-      console.error('Error: fiat_amount_requested is missing for trade', tradePayload.trade_hash);
-      return;
-    }
 
+  try {
     // Query for clocked-in staff who do not have pending unpaid trades
     const staffSnapshot = await db.collection('Allstaff')
       .where('clockedIn', '==', true) // Only staff who are clocked in
@@ -146,7 +199,7 @@ const assignTradeToStaff = async (tradePayload) => {
       { new: true }
     );
 
-    console.log(`Noones Trade ${tradePayload.trade_hash} assigned to ${assignedStaffId}.`);
+    console.log(`Trade ${tradePayload.trade_hash} assigned to staff ${assignedStaffId}.`);
 
   } catch (error) {
     console.error('Error assigning trade to staff:', error);
