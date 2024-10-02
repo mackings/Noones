@@ -39,6 +39,9 @@ const serviceAccount = {
 
 // Listen for incoming messages in the manualmessages collection
 
+
+
+// Listen for incoming messages in the manualmessages collection
 db.collection('manualmessages').onSnapshot(snapshot => {
   snapshot.docChanges().forEach(change => {
     if (change.type === 'added') {
@@ -93,7 +96,7 @@ const storeTrade = async (tradeHash, tradeData) => {
     await db.collection('manualsystem').doc(tradeHash).set(tradeData, { merge: true });
     console.log(`Trade stored with trade_hash: ${tradeHash}`);
 
-    // Once the trade is stored, check if a corresponding message exists and assign it
+    // Once the trade is stored, check if a corresponding message exists
     await checkAndAssignTrade(tradeHash);
   } catch (error) {
     console.error('Error storing trade:', error);
@@ -120,6 +123,12 @@ const checkAndAssignTrade = async (tradeHash) => {
     const tradeData = tradeSnapshot.data();
     const messageData = messageSnapshot.data();
 
+    // Ensure trade data has the required property before proceeding
+    if (!tradeData.payload || !tradeData.payload.fiat_amount_requested || !tradeData.payload.buyer_name) {
+      console.error(`Trade data is missing required fields for trade ${tradeHash}`);
+      return;
+    }
+
     // Proceed with trade assignment if a message is found
     console.log(`Assigning trade ${tradeHash} with corresponding message.`);
     const tradePayload = {
@@ -137,7 +146,6 @@ const checkAndAssignTrade = async (tradeHash) => {
 
 // Function to assign the trade to eligible staff
 const assignTradeToStaff = async (tradePayload) => {
-
   try {
     // Query for clocked-in staff who do not have pending unpaid trades
     const staffSnapshot = await db.collection('Allstaff')
@@ -206,11 +214,7 @@ const assignTradeToStaff = async (tradePayload) => {
   }
 };
 
-
-  
-  
-  
-
+// Other functions for saving trades and messages
 const saveTradeToFirestore = async (payload) => {
     try {
         const docRef = db.collection('manualsystem').doc(payload.trade_hash);
@@ -218,13 +222,12 @@ const saveTradeToFirestore = async (payload) => {
             ...payload,
             timestamp: admin.firestore.FieldValue.serverTimestamp(),
         });
-        await assignTradeToStaff(payload);
+        // Removed automatic assignment call here
         console.log(`Noones Trade ${payload.trade_hash} saved to Firestore DB >>>>>>>>>>>>>`);
     } catch (error) {
         console.error('Error saving the trade to Firestore:', error);
     }
 };
-
 
 
 const saveChatMessageToFirestore = async (payload, messages) => {
@@ -252,6 +255,7 @@ const saveChatMessageToFirestore = async (payload, messages) => {
         console.error('Error saving chat messages to Firestore:', error);
     }
 };
+
 
 
 
