@@ -41,7 +41,11 @@ const serviceAccount = {
       // Filter out staff with pending unpaid trades and those not clocked in
       staffSnapshot.docs.forEach(doc => {
         const staffData = doc.data();
-        const hasPendingTrades = staffData.assignedTrades.some(trade => !trade.tradeDetails.isPaid); // Ensure correct field access
+        const hasPendingTrades = staffData.assignedTrades.some(trade => {
+          // Ensure tradeDetails exists before checking isPaid
+          return trade.tradeDetails && trade.tradeDetails.isPaid === false;
+        });
+  
         if (!hasPendingTrades && staffData.clockedIn) {
           eligibleStaff.push(doc);
         }
@@ -65,7 +69,7 @@ const serviceAccount = {
         }
       });
   
-      const assignedStaffId = staffWithLeastTrades.id; // This is a string, so we need to convert it
+      const assignedStaffId = staffWithLeastTrades.id;
       const staffRef = db.collection('Allstaff').doc(assignedStaffId);
       const assignedAt = new Date();
   
@@ -87,13 +91,13 @@ const serviceAccount = {
         tradeDetails: {
           fiat_amount_requested: tradePayload.fiat_amount_requested,
           assignedAt: assignedAt,
-          isPaid: false, // Added this inside tradeDetails
+          isPaid: false, // Ensure this is inside tradeDetails
         },
       };
   
       // Ensure assignedStaffId is converted to ObjectId
       await Allstaff.findOneAndUpdate(
-        { _id: ObjectId(assignedStaffId) }, // Convert the string ID to ObjectId
+        { _id: ObjectId(assignedStaffId) },
         { $push: { assignedTrades: tradeData } },
         { new: true }
       );
@@ -104,6 +108,7 @@ const serviceAccount = {
       console.error('Error assigning trade to staff:', error);
     }
   };
+  
 
 
 const saveTradeToFirestore = async (payload) => {
