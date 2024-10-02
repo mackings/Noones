@@ -29,6 +29,8 @@ const serviceAccount = {
   });
   
   const db = admin.firestore();
+  db.settings({ ignoreUndefinedProperties: true });
+
 
 
 
@@ -72,9 +74,18 @@ const assignTradeIfNotAssigned = async (tradeHash, messageData) => {
   }
 };
 
+
+
 // Function to assign trade to eligible staff
+
 const assignTradeToStaff = async (tradePayload) => {
   try {
+    // Ensure fiat_amount_requested is not undefined
+    if (!tradePayload.fiat_amount_requested) {
+      console.error('Error: fiat_amount_requested is missing for trade', tradePayload.trade_hash);
+      return;
+    }
+
     // Query for clocked-in staff who do not have pending unpaid trades
     const staffSnapshot = await db.collection('Allstaff')
       .where('clockedIn', '==', true) // Only staff who are clocked in
@@ -129,11 +140,11 @@ const assignTradeToStaff = async (tradePayload) => {
     };
 
     // Ensure assignedStaffId is converted to ObjectId before MongoDB update
-    // await Allstaff.findOneAndUpdate(
-    //   { _id: new ObjectId(assignedStaffId) },
-    //   { $push: { assignedTrades: tradeData } },
-    //   { new: true }
-    // );
+    await Allstaff.findOneAndUpdate(
+      { _id: new ObjectId(assignedStaffId) },
+      { $push: { assignedTrades: tradeData } },
+      { new: true }
+    );
 
     console.log(`Noones Trade ${tradePayload.trade_hash} assigned to ${assignedStaffId}.`);
 
@@ -141,6 +152,7 @@ const assignTradeToStaff = async (tradePayload) => {
     console.error('Error assigning trade to staff:', error);
   }
 };
+
 
   
   
