@@ -31,8 +31,9 @@ const serviceAccount = {
   const db = admin.firestore();
 
 
-  const assignTradeToStaff = async (tradePayload) => {
 
+
+  const assignTradeToStaff = async (tradePayload) => {
     try {
       const staffSnapshot = await db.collection('Allstaff').get();
       let eligibleStaff = [];
@@ -48,7 +49,7 @@ const serviceAccount = {
       });
   
       if (eligibleStaff.length === 0) {
-        console.log('Noones Dropping Noones Trades for the Best >>>>>>>>>>>>>>>>');
+        console.log('Noones Dropping Trades for the Best >>>>>>>>>>>>>>>>');
     
         // Save the trade in the unassignedTrades collection
         await db.collection('manualunassigned').add({
@@ -84,7 +85,8 @@ const serviceAccount = {
         }),
       });
   
-
+      // Retrieve the name from the staff document
+      const staffData = staffWithLeastTrades.data();
       const tradeData = {
         account: "Noones",
         amountPaid: null, // Not available at assignment
@@ -93,19 +95,27 @@ const serviceAccount = {
         handle: tradePayload.buyer_name,
         isPaid: false,
         markedAt: null,
-        name: "Macs",
+        name: staffData.name, // Use the name from the staff data
         trade_hash: tradePayload.trade_hash
       };
+  
+      console.log('Staff Data Name', staffData.name);
       
-      // Ensure you're using the correct field for the query
-      await Allstaff.findOneAndUpdate(
-        { username: tradeData.name }, // Matching with the username field
+      // Log the username before querying MongoDB
+      console.log('Attempting to find staff in MongoDB with username:', staffData.username);
+  
+      
+      const updatedStaff = await Allstaff.findOneAndUpdate(
+        { username: staffData.username }, // Use the username from the staff data
         { $push: { assignedTrades: tradeData } }, // Push the trade data to the assignedTrades array
         { new: true } // Return the updated document
       );
-      
   
-      console.log(`Noones Trade ${tradePayload.trade_hash} assigned to ${assignedStaffId}.`);
+      if (!updatedStaff) {
+        console.error('Trade assignment failed in MongoDB. Staff not found with username:', staffData.username);
+      } else {
+        console.log(`Noones Trade ${tradePayload.trade_hash} assigned to ${assignedStaffId}.`);
+      }
   
     } catch (error) {
       console.error('Error assigning trade to staff:', error);
