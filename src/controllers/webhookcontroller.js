@@ -86,12 +86,15 @@ const serviceAccount = {
   
       // Now update the assignedTrades array in Mongoose
       const tradeData = {
-        tradeId: tradePayload.trade_hash, // Assuming trade_hash as the unique trade ID
-        tradeDetails: {
-          fiat_amount_requested: tradePayload.fiat_amount_requested,
-          assignedAt: assignedAt,
-          isPaid: false,
-        },
+        account: "Noones",
+        amountPaid: null, // Not available at assignment
+        assignedAt: assignedAt,
+        fiat_amount_requested: tradePayload.fiat_amount_requested,
+        handle: tradePayload.buyer_name,
+        isPaid: false,
+        markedAt: null, // Can be updated later
+        name: "Macs", // Assuming you have this info
+        trade_hash: tradePayload.trade_hash
       };
   
       await Allstaff.findOneAndUpdate(
@@ -149,7 +152,6 @@ const saveChatMessageToFirestore = async (payload, messages) => {
         console.error('Error saving chat messages to Firestore:', error);
     }
 };
-
 
 
 // Signature validation function
