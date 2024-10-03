@@ -97,12 +97,14 @@ const serviceAccount = {
         name: "Macs",
         trade_hash: tradePayload.trade_hash
       };
-  
+      
+      // Ensure you're using the correct field for the query
       await Allstaff.findOneAndUpdate(
-        { name:  tradeData.name }, // Ensure the ID is a valid ObjectId
+        { username: tradeData.name }, // Matching with the username field
         { $push: { assignedTrades: tradeData } }, // Push the trade data to the assignedTrades array
         { new: true } // Return the updated document
       );
+      
   
       console.log(`Noones Trade ${tradePayload.trade_hash} assigned to ${assignedStaffId}.`);
   
