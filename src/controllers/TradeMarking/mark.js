@@ -1,9 +1,10 @@
 const admin = require('firebase-admin');
 const express = require('express');
 
-// Export the function to mark trades
+
 
 exports.markTradeAsPaid = async (req, res) => {
+    
   const { markedAt, trade_hash, name, amountPaid } = req.body;
 
   try {

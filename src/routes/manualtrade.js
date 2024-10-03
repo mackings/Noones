@@ -1,13 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const { handleRequest, retrieveTransactionLogs} = require("../controllers/openbanking"); // Fix this import
-const { markTradeAsPaid } = require('../controllers/Trade Marking/mark');
+const { markTradeAsPaid } = require('../controllers/TradeMarking/mark');
 
 router.post("/Transfer", handleRequest);
 router.post("/Transactions", retrieveTransactionLogs);
 
 //Trade Marking
-
-router.post("/Marktrade",markTradeAsPaid );
+router.post("/Trade/mark", markTradeAsPaid );
 
 module.exports = router;
