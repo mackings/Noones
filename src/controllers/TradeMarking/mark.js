@@ -109,7 +109,7 @@ exports.markTradeAsPaid = async (req, res) => {
     });
 
     if (!staffToUpdate) {
-      return res.status(404).json({ status: 'error', message: 'Trade not found.' });
+      return res.status(404).json({ status: 'error', message: 'Trade not found in Firestore.' });
     }
 
     // Update in Firestore
@@ -130,6 +130,10 @@ exports.markTradeAsPaid = async (req, res) => {
 
     // Save the updated assignedTrades array back to Firestore
     await staffRef.update({ assignedTrades });
+
+    // Log for debugging MongoDB query
+    console.log('Searching for staff in MongoDB with username:', staffToUpdate.username);
+    console.log('Searching for trade with hash:', trade_hash);
 
     // Now update in MongoDB
     const staffInMongo = await Allstaff.findOne({ username: staffToUpdate.username, 'assignedTrades.trade_hash': trade_hash });
@@ -168,3 +172,4 @@ exports.markTradeAsPaid = async (req, res) => {
     res.status(500).json({ status: 'error', message: 'Failed to mark trade as paid.', error });
   }
 };
+
