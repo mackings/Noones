@@ -85,8 +85,7 @@ const serviceAccount = {
       });
   
       // Convert Firestore string ID to MongoDB ObjectId
-      const assignedStaffMongoId = ObjectId(assignedStaffId);
-  
+     // const assignedStaffMongoId =  new ObjectId(assignedStaffId);
       // Now update the assignedTrades array in Mongoose
       const tradeData = {
         account: "Noones",
@@ -101,7 +100,7 @@ const serviceAccount = {
       };
   
       await Allstaff.findOneAndUpdate(
-        { _id: assignedStaffMongoId }, // Ensure the ID is a valid ObjectId
+        { _id:  new ObjectId }, // Ensure the ID is a valid ObjectId
         { $push: { assignedTrades: tradeData } }, // Push the trade data to the assignedTrades array
         { new: true } // Return the updated document
       );
