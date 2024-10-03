@@ -31,7 +31,6 @@ const serviceAccount = {
   const db = admin.firestore();
 
 
-
   const assignTradeToStaff = async (tradePayload) => {
 
     try {
