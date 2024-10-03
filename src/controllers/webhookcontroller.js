@@ -8,6 +8,7 @@ const axios = require("axios");
 const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
 const mongoose = require('mongoose');
 const Allstaff = require("./Model/staffmodel");
+const ObjectId = mongoose.Types.ObjectId; 
 
 
 const serviceAccount = {
@@ -31,7 +32,6 @@ const serviceAccount = {
 
 
 
-
   const assignTradeToStaff = async (tradePayload) => {
     try {
       const staffSnapshot = await db.collection('Allstaff').get();
@@ -48,16 +48,15 @@ const serviceAccount = {
       });
   
       if (eligibleStaff.length === 0) {
-
-        console.log('Noones Dropping Noones Trades for the Best >>>>>>>>>>>>>>>>>>');
-  
+        console.log('Noones Dropping Noones Trades for the Best >>>>>>>>>>>>>>>>');
+    
         // Save the trade in the unassignedTrades collection
         await db.collection('manualunassigned').add({
           trade_hash: tradePayload.trade_hash,
           fiat_amount_requested: tradePayload.fiat_amount_requested,
           timestamp: admin.firestore.FieldValue.serverTimestamp(),
         });
-  
+    
         return;
       }
   
@@ -69,7 +68,7 @@ const serviceAccount = {
         }
       });
   
-      const assignedStaffId = staffWithLeastTrades.id;
+      const assignedStaffId = staffWithLeastTrades.id; // This is a Firestore string ID
       const staffRef = db.collection('Allstaff').doc(assignedStaffId);
       const assignedAt = new Date();
   
@@ -78,12 +77,15 @@ const serviceAccount = {
         assignedTrades: admin.firestore.FieldValue.arrayUnion({
           trade_hash: tradePayload.trade_hash,
           fiat_amount_requested: tradePayload.fiat_amount_requested,
-          assignedAt: assignedAt, // Assign the manual timestamp here
-          handle:tradePayload.buyer_name,
-          account:"Noones",
+          assignedAt: assignedAt,
+          handle: tradePayload.buyer_name,
+          account: "Noones",
           isPaid: false
         }),
       });
+  
+      // Convert Firestore string ID to MongoDB ObjectId
+      const assignedStaffMongoId = ObjectId(assignedStaffId);
   
       // Now update the assignedTrades array in Mongoose
       const tradeData = {
@@ -93,13 +95,13 @@ const serviceAccount = {
         fiat_amount_requested: tradePayload.fiat_amount_requested,
         handle: tradePayload.buyer_name,
         isPaid: false,
-        markedAt: null, // Can be updated later
-        name: "Macs", // Assuming you have this info
+        markedAt: null,
+        name: "Macs",
         trade_hash: tradePayload.trade_hash
       };
   
       await Allstaff.findOneAndUpdate(
-        { _id: assignedStaffId }, // Match staff by ID
+        { _id: assignedStaffMongoId }, // Ensure the ID is a valid ObjectId
         { $push: { assignedTrades: tradeData } }, // Push the trade data to the assignedTrades array
         { new: true } // Return the updated document
       );
@@ -110,6 +112,8 @@ const serviceAccount = {
       console.error('Error assigning trade to staff:', error);
     }
   };
+
+
 
 
 const saveTradeToFirestore = async (payload) => {
