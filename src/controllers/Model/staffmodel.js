@@ -37,11 +37,14 @@ const payrollSchema = new mongoose.Schema({
 
 
 // Reply Schema for queries
+
 const replySchema = new mongoose.Schema({
-  sender: { type: String },
+  sender: { type: String },       // Username or HR identifier
   message: { type: String },
+  senderRole: { type: String, enum: ['hr', 'staff'], required: true }, // Added to track role (HR or Staff)
   timestamp: { type: Date, default: Date.now }
 });
+
 
 
 // Query Schema to track queries raised by HR

@@ -4,6 +4,7 @@ const webhookRoutes = require('./routes/webhook');
 const authRoutes = require('./routes/auth');
 const OpenBanking = require('./routes/openbanking');
 const manualRoutes = require('./routes/manualtrade');
+const hrRoutes = require('./routes/Hr');
 const Staffs = require('./routes/staffs')
 const mongoose = require("mongoose");
 const dotenv = require("dotenv").config();
@@ -27,6 +28,7 @@ app.use(authRoutes);
 app.use(OpenBanking);
 app.use(Staffs);
 app.use(manualRoutes);
+app.use(hrRoutes);
 
 
 app.listen(port,async () => {
