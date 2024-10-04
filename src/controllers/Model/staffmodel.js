@@ -1,67 +1,61 @@
 const mongoose = require("mongoose");
 
-
 // Trade Details Schema
-
 const tradeDetailsSchema = new mongoose.Schema({
-  account: { type: String, required: true },
+  account: { type: String },
   amountPaid: { type: String, default: null },
-  assignedAt: { type: Date, required: true },
-  fiat_amount_requested: { type: String, required: true },
-  handle: { type: String, required: true },
+  assignedAt: { type: Date },
+  fiat_amount_requested: { type: String },
+  handle: { type: String },
   isPaid: { type: Boolean, default: false },
   markedAt: { type: String, default: null },
-  name: { type: String, required: true },
-  trade_hash: { type: String, required: true }
+  name: { type: String },
+  trade_hash: { type: String }
 });
 
 // Payroll Schema to track payment details
 const payrollSchema = new mongoose.Schema({
-  date: { type: Date, required: true },
-  amount: { type: Number, required: true },
-  month: { type: String, required: true },
-  year: { type: Number, required: true }
+  date: { type: Date },
+  amount: { type: Number },
+  month: { type: String },
+  year: { type: Number }
 });
 
 // Reply Schema for queries
-
 const replySchema = new mongoose.Schema({
-  sender: { type: String, required: true },   
-  message: { type: String, required: true },  
-  timestamp: { type: Date, default: Date.now } 
+  sender: { type: String },
+  message: { type: String },
+  timestamp: { type: Date, default: Date.now }
 });
 
 // Query Schema to track queries raised by HR
-
 const querySchema = new mongoose.Schema({
-  queryText: { type: String, required: true },      
-  createdAt: { type: Date, default: Date.now },     
-  resolvedAt: { type: Date, default: null },       
+  queryText: { type: String },
+  createdAt: { type: Date, default: Date.now },
+  resolvedAt: { type: Date, default: null },
   status: { 
     type: String, 
-    enum: ['unresolved', 'resolved'],              
+    enum: ['unresolved', 'resolved'], 
     default: 'unresolved' 
   },
-  notes: { type: String, default: null },          
-  replies: [replySchema]              
+  notes: { type: String, default: null },
+  replies: [replySchema]
 });
 
 // Message Schema to track messages between HR and staff
-
 const messageSchema = new mongoose.Schema({
-  sender: { type: String, required: true },        
-  recipient: { type: String, required: true },     
-  message: { type: String, required: true },      
-  sentAt: { type: Date, default: Date.now },  
-  replies: [replySchema]   
+  sender: { type: String },
+  recipient: { type: String },
+  message: { type: String },
+  sentAt: { type: Date, default: Date.now },
+  replies: [replySchema]
 });
 
 const staffSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  username: { type: String, unique: true },
+  password: { type: String },
 
   // Track daily clock in/out times
-
   dailyClockTimes: [
     {
       clockInTime: { type: Date, default: null },
@@ -74,7 +68,7 @@ const staffSchema = new mongoose.Schema({
   paidTrades: [tradeDetailsSchema],
 
   // Staff role
-  role: { type: String, required: true },
+  role: { type: String },
 
   // Track clock-in status
   clockedIn: { type: Boolean, default: false },
@@ -82,32 +76,27 @@ const staffSchema = new mongoose.Schema({
   clockOutTime: { type: Date, default: null },
 
   // Additions for staff salary details
-
-  level: { type: String, required: true },              
-  basicSalary: { type: Number, required: true },       
-  pay: { type: Number, default: 0 },                    
-  incentives: { type: Number, default: 0 },              
-  debt: { type: Number, default: 0 },                    
-  penalties: { type: Number, default: 0 },             
-  payables: { type: Number, default: 0 },                
-  savings: { type: Number, default: 0 },                
-  deductions: { type: Number, default: 0 },              
-  netSalary: { type: Number, default: 0 },   
+  level: { type: String },
+  basicSalary: { type: Number },
+  pay: { type: Number, default: 0 },
+  incentives: { type: Number, default: 0 },
+  debt: { type: Number, default: 0 },
+  penalties: { type: Number, default: 0 },
+  payables: { type: Number, default: 0 },
+  savings: { type: Number, default: 0 },
+  deductions: { type: Number, default: 0 },
+  netSalary: { type: Number, default: 0 },
 
   // Payroll details
-  payroll: [payrollSchema],   
+  payroll: [payrollSchema],
 
   // Queries raised by HR
-
-  queries: [querySchema],        
+  queries: [querySchema],
 
   // Messages between HR and staff
-
-  messages: [messageSchema]    
+  messages: [messageSchema]
 });
 
 const Allstaff = mongoose.model('Staff', staffSchema);
-
-
 
 module.exports = Allstaff;
