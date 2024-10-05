@@ -1,12 +1,13 @@
 const axios = require('axios');
 const querystring = require('querystring');
-const qs = require('qs');
 
-const getRatesToken = async () => {
-    
-    const tokenEndpoint = 'https://auth.noones.com/oauth2/token';
-    const clientId = 'xQpyqheZ9o0hmPlGmUbazV5VWY1Cv63qXVhZy450IN11bgvR';
-    const clientSecret = '9R77pmoW58eJ2ZoVpWndDfdmLjDqQbfQ1UNa4DjGbqtpL0vp';
+// Function to get Paxful access token
+const getPaxfulToken = async () => {
+
+    const tokenEndpoint = 'https://accounts.paxful.com/oauth2/token';
+
+    const clientId =     '2HATIKk9764Vw2u2OQOOe1Q8vh6vEUom3piooipCQQKOsiP5';  
+    const clientSecret = 'v5gaTp66t8HgEfgNYlUTnzgu1To3f6nEwGqpSvRTfsuWewp6';
 
     const response = await axios.post(tokenEndpoint, querystring.stringify({
         grant_type: 'client_credentials',
@@ -15,16 +16,18 @@ const getRatesToken = async () => {
     }), {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
+
     return response.data.access_token;
 };
 
+// Function to update Paxful price
+exports.updatePaxfulPrice = async (req, res) => {
 
-const updatePrice = async (req, res) => {
     const { offer_hash, margin } = req.body;
     try {
-        const token = await getRatesToken();
+        const token = await getPaxfulToken();
         const response = await axios.post(
-            'https://api.noones.com/noones/v1/offer/update-price',
+            'https://api.paxful.com/paxful/v1/offer/update-price',
             querystring.stringify({ offer_hash, margin }),
             {
                 headers: {
@@ -35,17 +38,18 @@ const updatePrice = async (req, res) => {
         );
         res.json(response.data);
     } catch (error) {
+        console.error('Error updating Paxful price:', error);
         res.status(500).json({ error: error.response ? error.response.data : error.message });
     }
 };
 
-
-const useAccessToken = async (req, res) => {
+// Function to get Paxful user info
+exports.getPaxfulUserInfo = async (req, res) => {
     try {
-        const token = await getRatesToken();
+        const token = await getPaxfulToken();
         const response = await axios.post(
-            'https://api.noones.com/noones/v1/user/info',
-            qs.stringify({ username: req.body.username }),
+            'https://accounts.paxful.com/oauth2/userinfo',
+            querystring.stringify({ username: req.body.username }),
             {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -55,8 +59,7 @@ const useAccessToken = async (req, res) => {
         );
         res.json(response.data);
     } catch (error) {
+        console.error('Error fetching Paxful user info:', error);
         res.status(500).json({ error: error.response ? error.response.data : error.message });
     }
 };
-
-module.exports = { updatePrice, useAccessToken };

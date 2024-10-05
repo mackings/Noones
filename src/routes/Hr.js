@@ -4,7 +4,7 @@ const { sendQueryToStaff, getStaffQueries, respondToQuery, hrRespondToQuery } = 
 const router = express.Router();
 
 
-//PayRoll
+//PayRolls
 router.post('/createpayroll',createPayroll );
 router.get('/payroll/all', getAllStaffPayrolls);
 

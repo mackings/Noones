@@ -5,6 +5,7 @@ const authRoutes = require('./routes/auth');
 const OpenBanking = require('./routes/openbanking');
 const manualRoutes = require('./routes/manualtrade');
 const hrRoutes = require('./routes/Hr');
+const rateRoutes = require('./routes/rates');
 const Staffs = require('./routes/staffs')
 const mongoose = require("mongoose");
 const dotenv = require("dotenv").config();
@@ -29,6 +30,7 @@ app.use(OpenBanking);
 app.use(Staffs);
 app.use(manualRoutes);
 app.use(hrRoutes);
+app.use(rateRoutes);
 
 
 app.listen(port,async () => {

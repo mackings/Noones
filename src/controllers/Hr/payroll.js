@@ -45,6 +45,7 @@ exports.createPayroll = async (req, res) => {
 
 
 exports.getAllStaffPayrolls = async (req, res) => {
+    
     try {
         // Fetch all staff documents from the database, including only their payroll data and username
         const staffPayrolls = await Allstaff.find({}, 'username payroll');

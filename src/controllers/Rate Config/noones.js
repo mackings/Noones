@@ -3,9 +3,9 @@ const querystring = require('querystring');
 const qs = require('qs');
 
 const getRatesToken = async () => {
-    
+
     const tokenEndpoint = 'https://auth.noones.com/oauth2/token';
-    const clientId = 'xQpyqheZ9o0hmPlGmUbazV5VWY1Cv63qXVhZy450IN11bgvR';
+    const clientId = 'xQpyqheZ9o0hmPlGmUbazV5VWY1Cv63qXVhZy450IN11bgvR'; 
     const clientSecret = '9R77pmoW58eJ2ZoVpWndDfdmLjDqQbfQ1UNa4DjGbqtpL0vp';
 
     const response = await axios.post(tokenEndpoint, querystring.stringify({
@@ -15,11 +15,13 @@ const getRatesToken = async () => {
     }), {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
+
     return response.data.access_token;
 };
 
 
-const updatePrice = async (req, res) => {
+
+exports.updatePrice = async (req, res) => {
     const { offer_hash, margin } = req.body;
     try {
         const token = await getRatesToken();
@@ -35,12 +37,15 @@ const updatePrice = async (req, res) => {
         );
         res.json(response.data);
     } catch (error) {
+        console.error('Error updating price:', error);
         res.status(500).json({ error: error.response ? error.response.data : error.message });
     }
 };
 
 
-const useAccessToken = async (req, res) => {
+
+exports.getNoonesUserInfo= async (req, res) => {
+
     try {
         const token = await getRatesToken();
         const response = await axios.post(
@@ -55,8 +60,10 @@ const useAccessToken = async (req, res) => {
         );
         res.json(response.data);
     } catch (error) {
+        console.error('Error fetching user info:', error);
         res.status(500).json({ error: error.response ? error.response.data : error.message });
     }
 };
 
-module.exports = { updatePrice, useAccessToken };
+
+
