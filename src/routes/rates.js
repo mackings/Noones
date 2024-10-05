@@ -3,7 +3,6 @@ const { updatePaxfulPrice, getPaxfulUserInfo, getMultiplePaxfulUserInfo } = requ
 const router = express.Router();
 
 
-
 //Paxful 
 
 router.post("/update-rate/paxful", updatePaxfulPrice);

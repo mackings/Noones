@@ -97,7 +97,8 @@ exports.getMultiplePaxfulUserInfo = async (req, res) => {
         }
 
         // Return all account details
-        res.json(accountDetails);
+        res.status(200).json(accountDetails);
+        console.log(accountDetails);
     } catch (error) {
         console.error('Error fetching multiple Paxful user info:', error);
         res.status(500).json({ error: error.response ? error.response.data : error.message });
@@ -107,6 +108,7 @@ exports.getMultiplePaxfulUserInfo = async (req, res) => {
 // Function to get Paxful user info
 
 exports.getPaxfulUserInfo = async (req, res) => {
+
     try {
         const token = await getPaxfulToken();
         const response = await axios.post(
