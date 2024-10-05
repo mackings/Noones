@@ -2,12 +2,34 @@ const axios = require('axios');
 const querystring = require('querystring');
 
 // Function to get Paxful access token
-const getPaxfulToken = async () => {
 
+
+const accounts = [
+
+    {
+        clientId: '2HATIKk9764Vw2u2OQOOe1Q8vh6vEUom3piooipCQQKOsiP5',
+        clientSecret: 'v5gaTp66t8HgEfgNYlUTnzgu1To3f6nEwGqpSvRTfsuWewp6',
+        username: 'MeekWhistler588'
+    },
+
+    {
+        clientId: 'vO6rxHCcGSpvy8EfcbyoDLjnC24HHpKQwkEj0PmWhMKl0zoP',
+        clientSecret: 'og1wEN1ffZZ33K3D6XMenjSM7B6pIDJn2ahB2aPojXRsGf1B',
+        username: 'donviky19'
+    },
+
+    {
+        clientId: 'AEbsdy63Z21LwWQaB00rmY2hE4sHX792zekkfH6SnjnF1SsT',
+        clientSecret: '9wSG2iMUEwTrpExTtoq5N4TZ6ElQVvmukKSgSRJ57twGvMZd',
+        username: 'Turbopay'
+    },
+    // Add more accounts as needed
+];
+
+
+
+const getPaxfulToken = async (clientId, clientSecret) => {
     const tokenEndpoint = 'https://accounts.paxful.com/oauth2/token';
-
-    const clientId =     '2HATIKk9764Vw2u2OQOOe1Q8vh6vEUom3piooipCQQKOsiP5';  
-    const clientSecret = 'v5gaTp66t8HgEfgNYlUTnzgu1To3f6nEwGqpSvRTfsuWewp6';
 
     const response = await axios.post(tokenEndpoint, querystring.stringify({
         grant_type: 'client_credentials',
@@ -21,6 +43,7 @@ const getPaxfulToken = async () => {
 };
 
 // Function to update Paxful price
+
 exports.updatePaxfulPrice = async (req, res) => {
 
     const { offer_hash, margin } = req.body;
@@ -39,6 +62,44 @@ exports.updatePaxfulPrice = async (req, res) => {
         res.json(response.data);
     } catch (error) {
         console.error('Error updating Paxful price:', error);
+        res.status(500).json({ error: error.response ? error.response.data : error.message });
+    }
+};
+
+
+exports.getMultiplePaxfulUserInfo = async (req, res) => {
+    const accountDetails = [];
+
+    try {
+        // Loop through each account and fetch the user info
+
+        for (const account of accounts) {
+            const { clientId, clientSecret, username } = account;
+
+            const token = await getPaxfulToken(clientId, clientSecret);
+
+            const response = await axios.post(
+                'https://api.paxful.com/paxful/v1/user/info',
+                querystring.stringify({ username }),
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                }
+            );
+
+            // Push the user info to the results array
+            accountDetails.push({
+                username,
+                data: response.data
+            });
+        }
+
+        // Return all account details
+        res.json(accountDetails);
+    } catch (error) {
+        console.error('Error fetching multiple Paxful user info:', error);
         res.status(500).json({ error: error.response ? error.response.data : error.message });
     }
 };
