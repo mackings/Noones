@@ -44,11 +44,12 @@ exports.updatePaxfulPrice = async (req, res) => {
 };
 
 // Function to get Paxful user info
+
 exports.getPaxfulUserInfo = async (req, res) => {
     try {
         const token = await getPaxfulToken();
         const response = await axios.post(
-            'https://accounts.paxful.com/oauth2/userinfo',
+            'https://api.paxful.com/paxful/v1/user/info',
             querystring.stringify({ username: req.body.username }),
             {
                 headers: {
