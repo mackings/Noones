@@ -40,6 +40,7 @@ const getPaxfulToken = async (clientId, clientSecret) => {
     return response.data.access_token;
 };
 
+
 // Function to get offers for all accounts
 const getOffersForAllAccounts = async () => {
     const allOffers = [];
@@ -83,28 +84,10 @@ const getOffersForAllAccounts = async () => {
     return allOffers;
 };
 
-// Function to get the current margin of an offer
-const getOfferDetails = async (offer_hash, token) => {
-    console.log(`Fetching details for offer: ${offer_hash}`);
-    const response = await axios.post(
-        'https://api.paxful.com/paxful/v1/offer/details',
-        querystring.stringify({ offer_hash }),
-        {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-        }
-    );
 
-    const currentMargin = response.data.data.offer.margin; // Assuming margin is in `offer` object
-    console.log(`Current margin for offer ${offer_hash}: ${currentMargin}`);
-    return currentMargin;
-};
 
-// Function to update prices for all offers of all accounts
 exports.updatePricesForAllAccounts = async (req, res) => {
-    const { margin } = req.body; // Now, only margin is required
+    const { margin } = req.body; // New margin to be applied
     const updateResults = [];
 
     try {
@@ -119,18 +102,18 @@ exports.updatePricesForAllAccounts = async (req, res) => {
 
             for (const offer of offers) {
                 const offer_hash = offer.offer_hash; // Extract offer_hash from each offer
+                const currentMargin = offer.margin;  // Extract the current margin from the offer
+                
                 console.log(`Processing offer: ${offer_hash} for account: ${username}`);
+                console.log(`Current margin: ${currentMargin}% for offer: ${offer_hash}`);
 
                 // Get the token again before updating the price for each account
                 const token = await getPaxfulToken(clientId, clientSecret);
 
-                // Step 3: Fetch the current margin
-                const currentMargin = await getOfferDetails(offer_hash, token);
-
                 // Log the current and new margins
-                console.log(`Current margin: ${currentMargin}%, New margin: ${margin}% for offer: ${offer_hash}`);
+                console.log(`Updating margin from ${currentMargin}% to ${margin}% for offer: ${offer_hash}`);
 
-                // Step 4: Update the price for each offer
+                // Step 3: Update the price for each offer
                 const response = await axios.post(
                     'https://api.paxful.com/paxful/v1/offer/update-price',
                     querystring.stringify({ offer_hash, margin }),
@@ -165,7 +148,6 @@ exports.updatePricesForAllAccounts = async (req, res) => {
         res.status(500).json({ error: error.response ? error.response.data : error.message });
     }
 };
-
 
 
 
