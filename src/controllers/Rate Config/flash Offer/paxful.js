@@ -22,7 +22,10 @@ const accounts = [
     // Add more accounts as needed
 ];
 
+
 // Function to get Paxful access token
+
+
 const getPaxfulToken = async (clientId, clientSecret) => {
     const tokenEndpoint = 'https://accounts.paxful.com/oauth2/token';
 
@@ -37,9 +40,47 @@ const getPaxfulToken = async (clientId, clientSecret) => {
     return response.data.access_token;
 };
 
+
+const getOffersForAllAccounts = async () => {
+    const allOffers = [];
+
+    for (const account of accounts) {
+        const { clientId, clientSecret, username } = account;
+
+        // Get the token for the current account
+        const token = await getPaxfulToken(clientId, clientSecret);
+
+        // Fetch the offers for this account
+        const response = await axios.post(
+            'https://api.paxful.com/paxful/v1/offer/list',
+            querystring.stringify({
+                active: true,
+                offer_type: "buy"
+            }),
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+        );
+
+        // Store the offers with the account's username for reference
+        allOffers.push({
+            username,
+            offers: response.data.data.offers // Assuming `offers` is under `data.offers` in response
+        });
+    }
+
+    return allOffers;
+};
+
+
 // Function to fetch offers for all accounts
 
+
 exports.getMultiplePaxfulOffers = async (req, res) => {
+
     const allOffers = [];
 
     try {
@@ -78,3 +119,55 @@ exports.getMultiplePaxfulOffers = async (req, res) => {
         res.status(500).json({ error: error.response ? error.response.data : error.message });
     }
 };
+
+
+
+
+
+exports.updatePricesForAllAccounts = async (req, res) => {
+    const { margin } = req.body; // Now, only margin is required
+    const updateResults = [];
+
+    try {
+        // Step 1: Fetch all offers
+        const allOffers = await getOffersForAllAccounts();
+
+        // Step 2: Loop through the offers and update the price for each offer
+        for (const accountOffers of allOffers) {
+            const { username, offers } = accountOffers;
+            
+            for (const offer of offers) {
+                const offer_hash = offer.offer_hash; // Extract offer_hash from each offer
+
+                const token = await getPaxfulToken(accountOffers.clientId, accountOffers.clientSecret);
+
+                // Step 3: Update the price for each offer
+                const response = await axios.post(
+                    'https://api.paxful.com/paxful/v1/offer/update-price',
+                    querystring.stringify({ offer_hash, margin }),
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    }
+                );
+
+                // Store the result of the update
+                updateResults.push({
+                    username,
+                    offer_hash,
+                    result: response.data
+                });
+            }
+        }
+
+        // Send all results back to the client
+        res.status(200).json({ updateResults });
+
+    } catch (error) {
+        console.error('Error updating prices for all accounts:', error);
+        res.status(500).json({ error: error.response ? error.response.data : error.message });
+    }
+};
+

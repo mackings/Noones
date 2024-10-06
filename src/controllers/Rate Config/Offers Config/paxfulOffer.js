@@ -48,7 +48,7 @@ exports.getPaxfulOffers = async (req, res) => {
 
 
 exports.UpdateSingleMargin = async (req, res) => {
-
+    
     const { offer_hash, margin } = req.body;
     try {
         const token = await getPaxfulToken();

@@ -1,7 +1,7 @@
 const express = require('express');
 const { updatePaxfulPrice, getPaxfulUserInfo, getMultiplePaxfulUserInfo } = require('../controllers/Rate Config/paxful');
 const { getPaxfulOffers, UpdateSingleMargin } = require('../controllers/Rate Config/Offers Config/paxfulOffer');
-const { getMultiplePaxfulOffers } = require('../controllers/Rate Config/flash Offer/paxful');
+const { getMultiplePaxfulOffers, updatePricesForAllAccounts } = require('../controllers/Rate Config/flash Offer/paxful');
 const router = express.Router();
 
 
@@ -15,8 +15,9 @@ router.get("/multipleaccount-info/paxful", getMultiplePaxfulUserInfo);
 router.get("/offers/paxful/get-single", getPaxfulOffers);
 router.get("/offers/paxful/get-multiple", getMultiplePaxfulOffers);
 
-//Update Margin
+//Update Margins
 
 router.post("/offers/paxful/margin/update-single", UpdateSingleMargin);
+router.post("/offers/paxful/margin/update-multiple", updatePricesForAllAccounts);
 
 module.exports = router;
