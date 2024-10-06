@@ -2,8 +2,8 @@ const axios = require('axios');
 const querystring = require('querystring');
 
 // Define clientId and clientSecret as constants
-const clientId = "2HATIKk9764Vw2u2OQOOe1Q8vh6vEUom3piooipCQQKOsiP5";
-const clientSecret = "v5gaTp66t8HgEfgNYlUTnzgu1To3f6nEwGqpSvRTfsuWewp6";
+const clientId = "vO6rxHCcGSpvy8EfcbyoDLjnC24HHpKQwkEj0PmWhMKl0zoP";
+const clientSecret = "og1wEN1ffZZ33K3D6XMenjSM7B6pIDJn2ahB2aPojXRsGf1B";
 
 
 const getPaxfulToken = async () => {
@@ -24,7 +24,7 @@ const getPaxfulToken = async () => {
 
 
 exports.getPaxfulOffers = async (req, res) => {
-    
+
     try {
         const token = await getPaxfulToken();
         const response = await axios.post(
