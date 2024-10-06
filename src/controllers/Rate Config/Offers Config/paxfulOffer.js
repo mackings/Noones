@@ -5,7 +5,6 @@ const clientId = "vO6rxHCcGSpvy8EfcbyoDLjnC24HHpKQwkEj0PmWhMKl0zoP";
 const clientSecret = "og1wEN1ffZZ33K3D6XMenjSM7B6pIDJn2ahB2aPojXRsGf1B";
 
 
-
 const getPaxfulToken = async () => {
 
     const tokenEndpoint = 'https://accounts.paxful.com/oauth2/token';
