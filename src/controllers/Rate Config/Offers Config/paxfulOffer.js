@@ -47,13 +47,14 @@ exports.getPaxfulOffers = async (req, res) => {
 };
 
 
+
 exports.UpdateSingleMargin = async (req, res) => {
 
     const { offer_hash, margin } = req.body;
     try {
         const token = await getPaxfulToken();
         const response = await axios.post(
-            'https://api.paxful.com/paxful/offer/update-price',
+            'https://api.paxful.com/paxful/v1/offer/update-price',
             querystring.stringify({ offer_hash, margin }),
             {
                 headers: {
