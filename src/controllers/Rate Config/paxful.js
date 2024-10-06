@@ -28,8 +28,7 @@ const accounts = [
     // Add more accounts as needed
 ];
 
-const id = 'vO6rxHCcGSpvy8EfcbyoDLjnC24HHpKQwkEj0PmWhMKl0zoP';
-const secret= 'og1wEN1ffZZ33K3D6XMenjSM7B6pIDJn2ahB2aPojXRsGf1B';
+0
 
 
 const getPaxfulTokens = async (clientId, clientSecret) => {

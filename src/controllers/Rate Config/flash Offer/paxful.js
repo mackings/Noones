@@ -86,6 +86,8 @@ const getOffersForAllAccounts = async () => {
 
 
 
+// Function to update prices for all offers across all accounts
+// Function to update prices for all offers across all accounts
 exports.updatePricesForAllAccounts = async (req, res) => {
     const { margin } = req.body; // New margin to be applied
     const updateResults = [];
@@ -108,34 +110,50 @@ exports.updatePricesForAllAccounts = async (req, res) => {
                 console.log(`Current margin: ${currentMargin}% for offer: ${offer_hash}`);
 
                 // Get the token again before updating the price for each account
-                const token = await getPaxfulToken(clientId, clientSecret);
+                try {
+                    const token = await getPaxfulToken(clientId, clientSecret);
 
-                // Log the current and new margins
-                console.log(`Updating margin from ${currentMargin}% to ${margin}% for offer: ${offer_hash}`);
+                    // Log the current and new margins
+                    console.log(`Updating margin from ${currentMargin}% to ${margin}% for offer: ${offer_hash}`);
 
-                // Step 3: Update the price for each offer
-                const response = await axios.post(
-                    'https://api.paxful.com/paxful/v1/offer/update-price',
-                    querystring.stringify({ offer_hash, margin }),
-                    {
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/x-www-form-urlencoded'
+                    // Step 3: Update the price for each offer
+                    const response = await axios.post(
+                        'https://api.paxful.com/paxful/v1/offer/update-price',
+                        querystring.stringify({ offer_hash, margin }),
+                        {
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            }
                         }
-                    }
-                );
+                    );
 
-                // Log the update response for each offer
-                console.log(`Price updated for offer: ${offer_hash} (account: ${username}). Response:`, response.data);
+                    // After successful update, log the details
+                    const updatedMargin = response.data.data.updated_margin; // Adjust this based on the actual API response structure
+                    console.log(`Price updated for offer: ${offer_hash} (account: ${username}). Response:`, response.data);
+                    console.log(`Updated Margin: ${updatedMargin}% | Previous Margin: ${currentMargin}% | Margin Sent for Update: ${margin}%`);
 
-                // Store the result of the update
-                updateResults.push({
-                    username,
-                    offer_hash,
-                    currentMargin,
-                    newMargin: margin,
-                    result: response.data
-                });
+                    // Store the result of the update
+                    updateResults.push({
+                        username,
+                        offer_hash,
+                        currentMargin,
+                        newMargin: updatedMargin, // Store updated margin
+                        sentMargin: margin, // Store sent margin
+                        result: response.data
+                    });
+                } catch (updateError) {
+                    console.error(`Error updating price for offer: ${offer_hash} (account: ${username}). Error:`, updateError.message);
+                    // Log failure for individual offer update
+                    updateResults.push({
+                        username,
+                        offer_hash,
+                        currentMargin,
+                        newMargin: null,
+                        sentMargin: margin,
+                        error: updateError.message
+                    });
+                }
             }
         }
 
