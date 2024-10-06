@@ -28,6 +28,23 @@ const accounts = [
     // Add more accounts as needed
 ];
 
+const id = 'vO6rxHCcGSpvy8EfcbyoDLjnC24HHpKQwkEj0PmWhMKl0zoP';
+const secret= 'og1wEN1ffZZ33K3D6XMenjSM7B6pIDJn2ahB2aPojXRsGf1B';
+
+
+const getPaxfulTokens = async (clientId, clientSecret) => {
+    const tokenEndpoint = 'https://accounts.paxful.com/oauth2/token';
+
+    const response = await axios.post(tokenEndpoint, querystring.stringify({
+        grant_type: 'client_credentials',
+        client_id: id,
+        client_secret: secret,
+    }), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+
+    return response.data.access_token;
+};
 
 
 const getPaxfulToken = async (clientId, clientSecret) => {
@@ -114,7 +131,7 @@ exports.updatePaxfulPrice = async (req, res) => {
 
     const { offer_hash, margin } = req.body;
     try {
-        const token = await getPaxfulToken();
+        const token = await getPaxfulTokens();
         const response = await axios.post(
             'https://api.paxful.com/paxful/v1/offer/update-price',
             querystring.stringify({ offer_hash, margin }),
