@@ -12,6 +12,7 @@ const accounts = [
         username: 'MeekWhistler588'
     },
 
+
     {
         clientId: 'vO6rxHCcGSpvy8EfcbyoDLjnC24HHpKQwkEj0PmWhMKl0zoP',
         clientSecret: 'og1wEN1ffZZ33K3D6XMenjSM7B6pIDJn2ahB2aPojXRsGf1B',
@@ -23,6 +24,7 @@ const accounts = [
         clientSecret: '9wSG2iMUEwTrpExTtoq5N4TZ6ElQVvmukKSgSRJ57twGvMZd',
         username: 'Turbopay'
     },
+
     // Add more accounts as needed
 ];
 
@@ -42,32 +44,11 @@ const getPaxfulToken = async (clientId, clientSecret) => {
     return response.data.access_token;
 };
 
-// Function to update Paxful price
 
-exports.updatePaxfulPrice = async (req, res) => {
-
-    const { offer_hash, margin } = req.body;
-    try {
-        const token = await getPaxfulToken();
-        const response = await axios.post(
-            'https://api.paxful.com/paxful/v1/offer/update-price',
-            querystring.stringify({ offer_hash, margin }),
-            {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            }
-        );
-        res.json(response.data);
-    } catch (error) {
-        console.error('Error updating Paxful price:', error);
-        res.status(500).json({ error: error.response ? error.response.data : error.message });
-    }
-};
 
 
 exports.getMultiplePaxfulUserInfo = async (req, res) => {
+
     const accountDetails = [];
 
     try {
@@ -89,7 +70,6 @@ exports.getMultiplePaxfulUserInfo = async (req, res) => {
                 }
             );
 
-            // Push the user info to the results array
             accountDetails.push({
                 username,
                 data: response.data
@@ -124,6 +104,30 @@ exports.getPaxfulUserInfo = async (req, res) => {
         res.json(response.data);
     } catch (error) {
         console.error('Error fetching Paxful user info:', error);
+        res.status(500).json({ error: error.response ? error.response.data : error.message });
+    }
+};
+
+
+
+exports.updatePaxfulPrice = async (req, res) => {
+
+    const { offer_hash, margin } = req.body;
+    try {
+        const token = await getPaxfulToken();
+        const response = await axios.post(
+            'https://api.paxful.com/paxful/v1/offer/update-price',
+            querystring.stringify({ offer_hash, margin }),
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+        );
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error updating Paxful price:', error);
         res.status(500).json({ error: error.response ? error.response.data : error.message });
     }
 };
