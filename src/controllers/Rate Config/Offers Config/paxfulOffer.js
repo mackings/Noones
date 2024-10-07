@@ -1,8 +1,14 @@
 const axios = require('axios');
 const querystring = require('querystring');
 
-const clientId = "vO6rxHCcGSpvy8EfcbyoDLjnC24HHpKQwkEj0PmWhMKl0zoP";
-const clientSecret = "og1wEN1ffZZ33K3D6XMenjSM7B6pIDJn2ahB2aPojXRsGf1B";
+//Don
+// const clientId = "vO6rxHCcGSpvy8EfcbyoDLjnC24HHpKQwkEj0PmWhMKl0zoP";
+// const clientSecret = "og1wEN1ffZZ33K3D6XMenjSM7B6pIDJn2ahB2aPojXRsGf1B";
+
+
+//2FASt
+const clientId = "Uf4lf48TlgAxN5bYuNU2iQd3MsWBuMiKJ2GFIyqkN1RNKRpd";
+const clientSecret = "8Bkc9hqlQBoeNrtXEIFmxyu2WZQXpWgoEOvQcOtbtJUuFA6u";
 
 
 const getPaxfulToken = async () => {
@@ -48,7 +54,7 @@ exports.getPaxfulOffers = async (req, res) => {
 
 
 exports.UpdateSingleMargin = async (req, res) => {
-    
+
     const { offer_hash, margin } = req.body;
     try {
         const token = await getPaxfulToken();

@@ -88,6 +88,7 @@ const getOffersForAllAccounts = async () => {
 
 // Function to update prices for all offers across all accounts
 // Function to update prices for all offers across all accounts
+
 exports.updatePricesForAllAccounts = async (req, res) => {
     const { margin } = req.body; // New margin to be applied
     const updateResults = [];
