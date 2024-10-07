@@ -10,6 +10,7 @@ const responseController = require("../Utils/responses");
 const admin = require("firebase-admin");
 const db = admin.firestore();
 const serviceAccount = require("../Utils/firebaseservice");
+const Allstaff = require("../Model/staffmodel");
 
 
 const addNewStaff = async (staffId, staffDetails) => {
@@ -142,7 +143,6 @@ exports.loginStaff = async (req, res) => {
 };
 
 
-
 // Clock in
 exports.clockIn = async (req, res) => {
     try {
@@ -212,3 +212,21 @@ exports.clockOut = async (req, res) => {
     }
 };
 
+exports.getstaffs = async (req, res) => {
+    try {
+        const staffMembers = await Allstaff.find({}, '-password');
+
+        // Return the staff members
+        return res.status(200).json({
+            success: true,
+            data: staffMembers,
+        });
+    } catch (error) {
+        console.error('Error fetching staff:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching staff',
+            error: error.message,
+        });
+    }
+};
