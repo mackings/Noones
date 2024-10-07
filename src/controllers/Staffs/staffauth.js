@@ -125,11 +125,22 @@ exports.loginStaff = async (req, res) => {
             expiresIn: '1h',
         });
 
-        return responseController.successResponse(res, 'Login successful', { token });
+        // Remove password and other sensitive fields before returning the user object
+        const user = {
+            _id: staff._id,
+            username: staff.username,
+            email: staff.email,
+            role: staff.role,
+            // Add other fields you'd like to return
+        };
+
+        // Return the user object along with the token
+        return responseController.successResponse(res, 'Login successful', { token, user });
     } catch (error) {
         return responseController.errorResponse(res, 'Error logging in', error);
     }
 };
+
 
 
 // Clock in

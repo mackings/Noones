@@ -73,6 +73,8 @@ const messageSchema = new mongoose.Schema({
 
 const staffSchema = new mongoose.Schema({
   username: { type: String, unique: true },
+  name: { type: String, unique: true },
+  email: { type: String, unique: true },
   password: { type: String },
 
   // Track daily clock in/out times
