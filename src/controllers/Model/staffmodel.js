@@ -17,13 +17,13 @@ const tradeDetailsSchema = new mongoose.Schema({
 // Payroll Schema to track payment details and salary
 
 const payrollSchema = new mongoose.Schema({
-  
   date: { type: Date },
   amount: { type: Number },
   month: { type: String },
   year: { type: Number },
   level: { type: String },
   basicSalary: { type: Number },
+  daysOfWork: { type: Number, default: 0 }, // Added daysOfWork field
   pay: { type: Number, default: 0 },
   incentives: { type: Number, default: 0 },
   debt: { type: Number, default: 0 },
@@ -32,8 +32,8 @@ const payrollSchema = new mongoose.Schema({
   savings: { type: Number, default: 0 },
   deductions: { type: Number, default: 0 },
   netSalary: { type: Number, default: 0 }
-
 });
+
 
 
 // Reply Schema for queries
