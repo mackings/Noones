@@ -141,3 +141,30 @@ exports.hrRespondToQuery = async (req, res) => {
     }
 };
 
+
+// Get Replies for Specific Query API
+exports.getQueryReplies = async (req, res) => {
+
+    try {
+        const { name, queryId } = req.body;
+
+        // Check if the staff exists
+        const staff = await Allstaff.findOne({ name });
+        if (!staff) {
+            return responseController.errorResponse(res, 'Staff not found', null, 404);
+        }
+
+        // Find the specific query by ID
+        const query = staff.queries.id(queryId);
+        if (!query) {
+            return responseController.errorResponse(res, 'Query not found', null, 404);
+        }
+
+        // Return the replies for this specific query
+        return responseController.successResponse(res, 'Replies retrieved successfully', query.replies);
+    } catch (error) {
+        return responseController.errorResponse(res, 'Error retrieving replies', error);
+    }
+};
+
+
