@@ -1,6 +1,6 @@
 const express = require('express');
 const { createPayroll, getAllStaffPayrolls } = require('../controllers/Hr/payroll');
-const { sendQueryToStaff, getStaffQueries, respondToQuery, hrRespondToQuery, getQueryReplies } = require('../controllers/Hr/query');
+const { sendQueryToStaff, getStaffQueries, respondToQuery, hrRespondToQuery, getQueryReplies, removeQueryFromStaff } = require('../controllers/Hr/query');
 const router = express.Router();
 
 
@@ -10,6 +10,7 @@ router.get('/payroll/all', getAllStaffPayrolls);
 
 //Queries
 router.post('/createquery',sendQueryToStaff);
+router.delete('/removequery',removeQueryFromStaff);
 router.get('/getquery/single', getStaffQueries);
 router.post('/query/staffreply', respondToQuery);
 router.post('/query/hrreply', hrRespondToQuery);

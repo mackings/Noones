@@ -41,6 +41,36 @@ exports.sendQueryToStaff = async (req, res) => {
 };
 
 
+exports.removeQueryFromStaff = async (req, res) => {
+    try {
+        const { name, queryId } = req.body;
+
+        // Check if the staff exists
+        const staff = await Allstaff.findOne({ name });
+        if (!staff) {
+            return responseController.errorResponse(res, 'Staff not found', null, 404);
+        }
+
+        // Find the index of the query to be removed
+        const queryIndex = staff.queries.findIndex(query => query._id.toString() === queryId);
+        if (queryIndex === -1) {
+            return responseController.errorResponse(res, 'Query not found', null, 404);
+        }
+
+        // Remove the query from the staff's queries array
+        staff.queries.splice(queryIndex, 1);
+
+        // Save the updated staff document
+        await staff.save();
+
+        return responseController.successResponse(res, 'Query removed successfully', staff.queries);
+    } catch (error) {
+        return responseController.errorResponse(res, 'Error removing query', error);
+    }
+};
+
+
+
 // Get Staff Queries API
 
 exports.getStaffQueries = async (req, res) => {
