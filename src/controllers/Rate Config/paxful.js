@@ -103,7 +103,7 @@ exports.getMultiplePaxfulUserInfo = async (req, res) => {
 
 // Function to get Paxful user info
 
-exports.getPaxfulUserInfo = async (req, res) => {
+exports.getPaxfulUserInfo = async (req, res) => { 
 
     try {
         const token = await getPaxfulToken();

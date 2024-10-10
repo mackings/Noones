@@ -5,10 +5,10 @@ const responseController = require("../Utils/responses");
 exports.sendQueryToStaff = async (req, res) => {
 
     try {
-        const { username, queryText, notes } = req.body;
+        const { name, queryText, notes } = req.body;
 
         // Check if the staff exists
-        const staff = await Allstaff.findOne({ username });
+        const staff = await Allstaff.findOne({ name });
         if (!staff) {
             return responseController.errorResponse(res, 'Staff not found', null, 404);
         }
@@ -39,10 +39,10 @@ exports.sendQueryToStaff = async (req, res) => {
 exports.getStaffQueries = async (req, res) => {
 
     try {
-        const { username } = req.params;
+        const { name } = req.params;
 
         // Check if the staff exists
-        const staff = await Allstaff.findOne({ username });
+        const staff = await Allstaff.findOne({ name });
         if (!staff) {
             return responseController.errorResponse(res, 'Staff not found', null, 404);
         }
@@ -58,10 +58,10 @@ exports.getStaffQueries = async (req, res) => {
 exports.respondToQuery = async (req, res) => {
 
     try {
-        const { username, queryId, message } = req.body;
+        const { name, queryId, message } = req.body;
 
         // Check if the staff exists
-        const staff = await Allstaff.findOne({ username });
+        const staff = await Allstaff.findOne({ name });
         if (!staff) {
             return responseController.errorResponse(res, 'Staff not found', null, 404);
         }
@@ -74,7 +74,7 @@ exports.respondToQuery = async (req, res) => {
 
                 // Create a reply object
                 const reply = {
-                    sender: username,  // Assuming 'HR' as sender
+                    sender: name,  // Assuming 'HR' as sender
                     message,
                     senderRole: 'staff',
                     timestamp: new Date()
@@ -101,10 +101,10 @@ exports.respondToQuery = async (req, res) => {
 
 exports.hrRespondToQuery = async (req, res) => {
     try {
-        const { username, queryId, message } = req.body;
+        const { name, queryId, message } = req.body;
 
         // Check if the staff exists
-        const staff = await Allstaff.findOne({ username });
+        const staff = await Allstaff.findOne({ name });
         if (!staff) {
             return responseController.errorResponse(res, 'Staff not found', null, 404);
         }

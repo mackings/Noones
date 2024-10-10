@@ -3,6 +3,8 @@ const responseController = require("../Utils/responses");
 const Allstaff = require("../Model/staffmodel");
 
 
+
+
 exports.createPayroll = async (req, res) => {
 
     try {
@@ -53,6 +55,7 @@ exports.createPayroll = async (req, res) => {
 
 
 exports.getAllStaffPayrolls = async (req, res) => {
+
     try {
         const staffPayrolls = await Allstaff.find({}, 'name payroll');
 
@@ -77,9 +80,11 @@ exports.getAllStaffPayrolls = async (req, res) => {
             totalDebts,
             staffPayrolls  // This will now include the daysOfWork and other fields.
         });
+
     } catch (error) {
         return responseController.errorResponse(res, 'Error retrieving staff payrolls', error);
     }
+
 };
 
 
