@@ -13,7 +13,7 @@ router.post('/createquery',sendQueryToStaff);
 router.get('/getquery/single', getStaffQueries);
 router.post('/query/staffreply', respondToQuery);
 router.post('/query/hrreply', hrRespondToQuery);
-router.get('/getquery/messages', getQueryReplies);
+router.post('/getquery/messages', getQueryReplies);
 
 
 module.exports = router;
