@@ -2,8 +2,8 @@ const Allstaff = require('../Model/staffmodel');
 const responseController = require("../Utils/responses");
 
 // Send Query API
-exports.sendQueryToStaff = async (req, res) => {
 
+exports.sendQueryToStaff = async (req, res) => {
     try {
         const { name, queryText, notes } = req.body;
 
@@ -19,7 +19,13 @@ exports.sendQueryToStaff = async (req, res) => {
             createdAt: new Date(),
             notes: notes || null,
             status: 'unresolved',
-            replies: []  // Start with an empty replies array
+            replies: [
+                {
+                    message: `HR created a query: ${queryText}`, // Adding the HR reply
+                    senderRole: 'hr', // Indicate the sender as HR
+                    createdAt: new Date() // Timestamp for the reply
+                }
+            ] // Start with a reply from HR
         };
 
         // Add the query to the staff's queries array
@@ -33,6 +39,7 @@ exports.sendQueryToStaff = async (req, res) => {
         return responseController.errorResponse(res, 'Error sending query', error);
     }
 };
+
 
 // Get Staff Queries API
 
