@@ -21,7 +21,6 @@ const accounts = [
     // Add more accounts as needed
 ];
 
-
 // Function to get Paxful access token
 
 const getPaxfulToken = async (clientId, clientSecret) => {
@@ -86,7 +85,6 @@ const getOffersForAllAccounts = async () => {
 
 
 
-// Function to update prices for all offers across all accounts
 // Function to update prices for all offers across all accounts
 
 exports.updatePricesForAllAccounts = async (req, res) => {

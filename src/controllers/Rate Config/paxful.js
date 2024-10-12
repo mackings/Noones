@@ -28,7 +28,6 @@ const accounts = [
     // Add more accounts as needed
 ];
 
-0
 
 
 const getPaxfulTokens = async (clientId, clientSecret) => {
