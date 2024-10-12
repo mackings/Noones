@@ -1,5 +1,6 @@
 const axios = require('axios');
 const qs = require('qs');
+const querystring = require('querystring');
 
 
 const getPaxfulRatesToken = async (clientId, clientSecret) => {
