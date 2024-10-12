@@ -40,8 +40,6 @@ const getNoonesRatesToken = async () => {
 
 
 
-
-
 exports.getAllDollarRates = async (req, res) => {
   try {
     // Fetch Noones rates
@@ -49,7 +47,7 @@ exports.getAllDollarRates = async (req, res) => {
       const token = await getNoonesRatesToken();
       const response = await axios.post(
         'https://api.noones.com/noones/v1/currency/btc?response=text',
-        qs.stringify({ username: req.body.username }),
+        qs.stringify({ username: req.body.nusername }),
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -57,7 +55,7 @@ exports.getAllDollarRates = async (req, res) => {
           }
         }
       );
-      return response.data;
+      return { platform: 'Noones', data: response.data };
     })();
 
     // Fetch Paxful rates
@@ -65,7 +63,7 @@ exports.getAllDollarRates = async (req, res) => {
       const token = await getPaxfulRatesToken();
       const response = await axios.post(
         'https://api.paxful.com/paxful/v1/currency/btc?response=text',
-        qs.stringify({ username: req.body.username }),
+        qs.stringify({ username: req.body.pusername }),
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -73,14 +71,14 @@ exports.getAllDollarRates = async (req, res) => {
           }
         }
       );
-      return response.data;
+      return { platform: 'Paxful', data: response.data };
     })();
 
     // Fetch Binance rates
     const binancePromise = (async () => {
       const response = await axios.get('https://www.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
       const price = Math.round(parseFloat(response.data.price));
-      return { price };
+      return { platform: 'Binance', price };
     })();
 
     // Execute all promises concurrently
@@ -94,7 +92,11 @@ exports.getAllDollarRates = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching rates:', error);
+    if (error.response) {
+      console.error('API Error:', error.response.data);
+    } else {
+      console.error('Error:', error.message);
+    }
     res.status(500).json({ error: 'Failed to fetch rates from all sources' });
   }
 };

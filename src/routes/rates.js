@@ -22,6 +22,6 @@ router.post("/offers/paxful/margin/update-single", UpdateSingleMargin);
 router.post("/offers/paxful/margin/update-multiple", updatePricesForAllAccounts);
 
 //Market Rates
-router.get("/market/rates", getAllDollarRates);
+router.post("/market/rates", getAllDollarRates);
 
 module.exports = router;
