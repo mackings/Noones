@@ -4,11 +4,6 @@ const querystring = require('querystring');
 // List of accounts with clientId, clientSecret, and username
 const accounts = [
     {
-        clientId: '2HATIKk9764Vw2u2OQOOe1Q8vh6vEUom3piooipCQQKOsiP5',
-        clientSecret: 'v5gaTp66t8HgEfgNYlUTnzgu1To3f6nEwGqpSvRTfsuWewp6',
-        username: 'MeekWhistler588'
-    },
-    {
         clientId: 'vO6rxHCcGSpvy8EfcbyoDLjnC24HHpKQwkEj0PmWhMKl0zoP',
         clientSecret: 'og1wEN1ffZZ33K3D6XMenjSM7B6pIDJn2ahB2aPojXRsGf1B',
         username: 'donviky19'
