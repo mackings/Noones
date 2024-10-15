@@ -18,6 +18,24 @@ const accounts = [
         clientSecret: '9wSG2iMUEwTrpExTtoq5N4TZ6ElQVvmukKSgSRJ57twGvMZd',
         username: 'Turbopay'
     },
+
+    {
+        clientId: 'Uf4lf48TlgAxN5bYuNU2iQd3MsWBuMiKJ2GFIyqkN1RNKRpd',
+        clientSecret: '8Bkc9hqlQBoeNrtXEIFmxyu2WZQXpWgoEOvQcOtbtJUuFA6u',
+        username: '2fastpay'
+    },
+
+    {
+        clientId: '9Q0ICEOoQpYOnmiTcCfCXGH4yGfDahek9Uhs8wrqcsvbsac7',
+        clientSecret: 'jTkrp79rpOG5AHxyLfCimO4bMtx43yXrLuAHLBgkwuF9vIZE',
+        username: '2minutepay'
+    },
+
+    {
+        clientId: 'AbgnZQxyIM259CZ7RLxibzFyeUvNsaBs26UffEP4IcNSpHD9',
+        clientSecret: 'wmM4TrNmi125zGwuAb4i7jXmS7qIG9DLKaQRPOTU604v5aBF',
+        username: '2minmax_pro'
+    },
     // Add more accounts as needed
 ];
 

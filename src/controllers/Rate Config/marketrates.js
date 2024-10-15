@@ -21,6 +21,7 @@ const getPaxfulRatesToken = async (clientId, clientSecret) => {
 }
 
 
+
 const getNoonesRatesToken = async () => {
 
   const tokenEndpoint = 'https://auth.noones.com/oauth2/token';
