@@ -71,6 +71,7 @@ exports.UpdateSingleMargin = async (req, res) => {
         res.json(response.data);
     } catch (error) {
         console.error('Error updating price:', error);
+        console.log('Error updating price:', error);
         res.status(500).json({ error: error.response ? error.response.data : error.message });
     }
 };
