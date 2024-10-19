@@ -129,7 +129,7 @@ exports.loginStaff = async (req, res) => {
         // Remove password and other sensitive fields before returning the user object
         const user = {
             _id: staff._id,
-            username: staff.username,
+            username: staff.name,
             email: staff.email,
             role: staff.role,
             // Add other fields you'd like to return
