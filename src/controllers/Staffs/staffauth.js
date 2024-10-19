@@ -230,3 +230,41 @@ exports.getstaffs = async (req, res) => {
         });
     }
 };
+
+
+exports.getStaffByName = async (req, res) => {
+
+    try {
+        const { name } = req.params;
+
+        // Find the staff member by name
+        const staff = await Staff.findOne({ name });
+
+        if (!staff) {
+            return responseController.errorResponse(res, 'Staff member not found', null, 404);
+        }
+
+        // Remove sensitive fields like password before returning the data
+        const staffData = {
+            _id: staff._id,
+            username: staff.username,
+            name: staff.name,
+            email: staff.email,
+            role: staff.role,
+            clockedIn: staff.clockedIn,
+            dailyClockTimes: staff.dailyClockTimes,
+            assignedTrades: staff.assignedTrades,
+            paidTrades: staff.paidTrades,
+            payroll: staff.payroll,
+            queries: staff.queries,
+            messages: staff.messages,
+            clockInTime: staff.clockInTime,
+            clockOutTime: staff.clockOutTime,
+        };
+
+        // Return the staff data
+        return responseController.successResponse(res, 'Staff member data retrieved successfully', staffData);
+    } catch (error) {
+        return responseController.errorResponse(res, 'Error fetching staff data', error);
+    }
+};
