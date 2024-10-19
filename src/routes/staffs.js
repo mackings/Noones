@@ -8,7 +8,7 @@ const { registerStaff, loginStaff, clockIn, clockOut, getstaffs, getStaffByName 
 router.post("/register", registerStaff);
 router.post("/login", loginStaff);
 router.get("/staffs", getstaffs);
-router.get("/single-staff:name", getStaffByName);
+router.get("/staff/single/:name", getStaffByName);
 
 //Clockins 
 router.post("/clockin",clockIn);
