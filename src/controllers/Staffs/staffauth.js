@@ -335,7 +335,7 @@ exports.resolveTradeComplaint = async (req, res) => {
         });
 
         // Return success response after all updates
-        console.log(`Trade ${trade_hash} successfully resolved for staff ID: ${assignedStaffId}.`);
+        console.log(`Trade ${trade_hash} successfully resolved for staff`);
         return responseController.successResponse(res, 'Trade complaint resolved successfully', { trade_hash, assignedStaffId }, 200);
     } catch (error) {
         console.error('Error resolving trade complaint:', error);
