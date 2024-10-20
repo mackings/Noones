@@ -11,7 +11,7 @@ router.get('/payroll/all', getAllStaffPayrolls);
 //Queries
 router.post('/createquery',sendQueryToStaff);
 router.delete('/removequery',removeQueryFromStaff);
-router.get('/getquery/single', getStaffQueries);
+router.get('/getquery/single/:name', getStaffQueries);
 router.post('/query/staffreply', respondToQuery);
 router.post('/query/hrreply', hrRespondToQuery);
 router.post('/getquery/messages', getQueryReplies);

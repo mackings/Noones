@@ -51,19 +51,25 @@ exports.removeQueryFromStaff = async (req, res) => {
             return responseController.errorResponse(res, 'Staff not found', null, 404);
         }
 
-        // Find the index of the query to be removed
-        const queryIndex = staff.queries.findIndex(query => query._id.toString() === queryId);
-        if (queryIndex === -1) {
+        // Find the query to be removed
+        const query = staff.queries.id(queryId);
+        if (!query) {
             return responseController.errorResponse(res, 'Query not found', null, 404);
         }
 
+        // Mark the query as resolved
+        if (query.status !== 'resolved') {
+            query.status = 'resolved';
+            query.resolvedAt = new Date();
+        }
+
         // Remove the query from the staff's queries array
-        staff.queries.splice(queryIndex, 1);
+        staff.queries.pull(queryId);  // This removes the query by its ID
 
         // Save the updated staff document
         await staff.save();
 
-        return responseController.successResponse(res, 'Query removed successfully', staff.queries);
+        return responseController.successResponse(res, 'Query marked as resolved and removed successfully', staff.queries);
     } catch (error) {
         return responseController.errorResponse(res, 'Error removing query', error);
     }
@@ -121,10 +127,10 @@ exports.respondToQuery = async (req, res) => {
                 query.replies.push(reply);
 
         // If this is the first reply, change the query status to "resolved"
-        if (query.status === 'unresolved') {
-            query.status = 'resolved';
-            query.resolvedAt = new Date();
-        }
+        // if (query.status === 'unresolved') {
+        //     query.status = 'resolved';
+        //     query.resolvedAt = new Date();
+        // }
 
         // Save the updated staff document
         await staff.save();
@@ -164,10 +170,10 @@ exports.hrRespondToQuery = async (req, res) => {
         query.replies.push(reply);
 
         // If the query was unresolved, mark it resolved
-        if (query.status === 'unresolved') {
-            query.status = 'resolved';
-            query.resolvedAt = new Date();
-        }
+        // if (query.status === 'unresolved') {
+        //     query.status = 'resolved';
+        //     query.resolvedAt = new Date();
+        // }
 
         // Save the updated staff document
         await staff.save();
