@@ -303,11 +303,6 @@ exports.resolveTradeComplaint = async (req, res) => {
             return responseController.errorResponse(res, 'No staff found with the given trade hash', null, 404);
         }
 
-        // Validate the ObjectId
-        if (!mongoose.Types.ObjectId.isValid(assignedStaffId)) {
-            return responseController.errorResponse(res, 'Invalid staff ID', null, 400);
-        }
-
         const assignedAt = new Date();
 
         // Step 3: Update the assigned trade in MongoDB using Mongoose
