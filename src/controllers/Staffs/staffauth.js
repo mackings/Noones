@@ -271,6 +271,7 @@ exports.getStaffByName = async (req, res) => {
 };
 
 
+
 exports.resolveTradeComplaint = async (req, res) => {
     const { tradeId } = req.body; // Assuming tradeId is sent in the request body
 
@@ -303,6 +304,12 @@ exports.resolveTradeComplaint = async (req, res) => {
         }
 
         const assignedStaffId = staffWithTrade.id;
+
+        // Validate the ObjectId
+        if (!mongoose.Types.ObjectId.isValid(assignedStaffId)) {
+            return responseController.errorResponse(res, 'Invalid staff ID', null, 400);
+        }
+
         const assignedAt = new Date();
 
         // Step 3: Update the assigned trade in MongoDB using Mongoose
@@ -334,7 +341,7 @@ exports.resolveTradeComplaint = async (req, res) => {
         return responseController.successResponse(res, 'Trade complaint resolved successfully', { trade_hash, assignedStaffId }, 200);
     } catch (error) {
         console.error('Error resolving trade complaint:', error);
-        return responseController.errorResponse(res, 'Error resolving trade complaint', error, 500);
+        return responseController.errorResponse(res, 'Error resolving trade complaint', error.message, 500);
     }
 };
 
