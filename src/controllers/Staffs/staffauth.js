@@ -303,8 +303,6 @@ exports.resolveTradeComplaint = async (req, res) => {
             return responseController.errorResponse(res, 'No staff found with the given trade hash', null, 404);
         }
 
-        const assignedStaffId = staffWithTrade.id;
-
         // Validate the ObjectId
         if (!mongoose.Types.ObjectId.isValid(assignedStaffId)) {
             return responseController.errorResponse(res, 'Invalid staff ID', null, 400);
@@ -314,7 +312,7 @@ exports.resolveTradeComplaint = async (req, res) => {
 
         // Step 3: Update the assigned trade in MongoDB using Mongoose
         const updatedStaff = await Allstaff.findOneAndUpdate(
-            { _id: assignedStaffId, 'assignedTrades.trade_hash': trade_hash },
+            {'assignedTrades.trade_hash': trade_hash },
             {
                 $set: {
                     'assignedTrades.$.isPaid': false, // Set isPaid to false
