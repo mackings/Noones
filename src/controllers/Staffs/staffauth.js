@@ -272,89 +272,70 @@ exports.getStaffByName = async (req, res) => {
 
 
 exports.resolveTradeComplaint = async (req, res) => {
-  const { tradeId } = req.body; // Assuming tradeId is sent in the request body
+    const { tradeId } = req.body; // Assuming tradeId is sent in the request body
 
-  try {
-    // Step 1: Fetch the trade from the complaints collection
-    const complaintSnapshot = await db.collection('complaints').doc(tradeId).get();
+    try {
+        // Step 1: Fetch the trade from the complaints collection
+        const complaintSnapshot = await db.collection('complaints').doc(tradeId).get();
 
-    if (!complaintSnapshot.exists) {
-      return responseController.errorResponse(res, 'Trade complaint not found', null, 404);
+        if (!complaintSnapshot.exists) {
+            return responseController.errorResponse(res, 'Trade complaint not found', null, 404);
+        }
+
+        const complaintData = complaintSnapshot.data();
+        const { trade_hash, fiat_amount_requested, buyer_name } = complaintData;
+
+        // Step 2: Find the staff who had this trade
+        const staffSnapshot = await db.collection('Allstaff').get();
+        let staffWithTrade;
+
+        staffSnapshot.docs.forEach(doc => {
+            const staffData = doc.data();
+            const hasTrade = staffData.assignedTrades.some(trade => trade.trade_hash === trade_hash);
+
+            if (hasTrade) {
+                staffWithTrade = doc;
+            }
+        });
+
+        if (!staffWithTrade) {
+            return responseController.errorResponse(res, 'No staff found with the given trade hash', null, 404);
+        }
+
+        const assignedStaffId = staffWithTrade.id;
+        const assignedAt = new Date();
+
+        // Step 3: Update the assigned trade in MongoDB using Mongoose
+        const updatedStaff = await Allstaff.findOneAndUpdate(
+            { _id: assignedStaffId, 'assignedTrades.trade_hash': trade_hash },
+            {
+                $set: {
+                    'assignedTrades.$.isPaid': false, // Set isPaid to false
+                    'assignedTrades.$.markedAt': null, // Remove markedAt field if exists
+                    'assignedTrades.$.assignedAt': assignedAt, // Update assignedAt timestamp
+                    'assignedTrades.$.handle': buyer_name // Update handle if necessary
+                }
+            },
+            { new: true } // Return the updated document
+        );
+
+        if (!updatedStaff) {
+            return responseController.errorResponse(res, 'Trade not found in assignedTrades in MongoDB', null, 404);
+        }
+
+        // Step 4: Update the trade in the complaints collection
+        await db.collection('complaints').doc(tradeId).update({
+            markedAt: admin.firestore.FieldValue.delete(), // Remove the markedAt field
+            isPaid: false, // Set isPaid to false
+        });
+
+        // Return success response after all updates
+        console.log(`Trade ${trade_hash} successfully resolved for staff ID: ${assignedStaffId}.`);
+        return responseController.successResponse(res, 'Trade complaint resolved successfully', { trade_hash, assignedStaffId }, 200);
+    } catch (error) {
+        console.error('Error resolving trade complaint:', error);
+        return responseController.errorResponse(res, 'Error resolving trade complaint', error, 500);
     }
-
-    const complaintData = complaintSnapshot.data();
-    const { trade_hash, fiat_amount_requested, buyer_name } = complaintData;
-
-    // Step 2: Find the staff who had this trade
-    const staffSnapshot = await db.collection('Allstaff').get();
-    let staffWithTrade;
-
-    staffSnapshot.docs.forEach(doc => {
-      const staffData = doc.data();
-      const hasTrade = staffData.assignedTrades.some(trade => trade.trade_hash === trade_hash);
-
-      if (hasTrade) {
-        staffWithTrade = doc;
-      }
-    });
-
-    if (!staffWithTrade) {
-      return responseController.errorResponse(res, 'No staff found with the given trade hash', null, 404);
-    }
-
-    const assignedStaffId = staffWithTrade.id;
-    const staffRef = db.collection('Allstaff').doc(assignedStaffId);
-    const assignedAt = new Date();
-
-    // Step 3: Retrieve current assignedTrades
-    const staffData = await staffRef.get();
-    const assignedTrades = staffData.data().assignedTrades;
-
-    // Find the specific trade to update
-    const tradeToUpdate = assignedTrades.find(trade => trade.trade_hash === trade_hash);
-    
-    if (!tradeToUpdate) {
-      return responseController.errorResponse(res, 'Trade not found in assignedTrades', null, 404);
-    }
-
-    // Step 4: Update the trade in Firestore
-    await staffRef.update({
-      assignedTrades: assignedTrades.map(trade => 
-        trade.trade_hash === trade_hash ? {
-          ...trade,
-          isPaid: false, // Set isPaid to false
-          markedAt: null, // Remove markedAt field if exists
-          assignedAt: assignedAt, // Update assignedAt timestamp
-          handle: buyer_name // Update handle if necessary
-        } : trade
-      )
-    });
-
-    // Step 5: Update the trade in the complaints collection
-    await db.collection('complaints').doc(tradeId).update({
-      markedAt: admin.firestore.FieldValue.delete(), // Remove the markedAt field
-      isPaid: false, // Set isPaid to false
-    });
-
-    // Step 6: Update the trade in MongoDB
-    const updatedTrade = await Trade.findOneAndUpdate(
-      { trade_hash: trade_hash }, // Ensure you're finding by trade_hash
-      { markedAt: null, isPaid: false }, // Set markedAt to null and isPaid to false
-      { new: true } // Return the updated document
-    );
-
-    if (!updatedTrade) {
-      return responseController.errorResponse(res, 'Trade not found in MongoDB', null, 404);
-    }
-
-    console.log(`Trade ${trade_hash} successfully reassigned to ${assignedStaffId}.`);
-
-    // Return success response after all updates
-    return responseController.successResponse(res, 'Trade complaint resolved successfully', { trade_hash, assignedStaffId }, 200);
-  } catch (error) {
-    console.error('Error resolving trade complaint:', error);
-    return responseController.errorResponse(res, 'Error resolving trade complaint', error.message || error, 500);
-  }
 };
 
   
