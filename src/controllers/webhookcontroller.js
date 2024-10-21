@@ -31,8 +31,6 @@ const serviceAccount = {
   const db = admin.firestore();
 
 
-
-
   const assignTradeToStaff = async (tradePayload) => {
     try {
       const staffSnapshot = await db.collection('Allstaff').get();

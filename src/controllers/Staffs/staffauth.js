@@ -14,6 +14,7 @@ const Allstaff = require("../Model/staffmodel");
 const Trade = require("../Model/staffmodel");
 
 
+
 const addNewStaff = async (staffId, staffDetails) => {
     try {
         const staffRef = db.collection('Allstaff').doc(staffId);
@@ -31,6 +32,9 @@ const addNewStaff = async (staffId, staffDetails) => {
     }
 };
 
+
+
+
 // Firestore function to update staff clockedIn status
 const updateClockedInStatus = async (staffId, status) => {
     try {
@@ -46,10 +50,6 @@ const updateClockedInStatus = async (staffId, status) => {
         throw new Error('FirestoreUpdateError'); // Throw an error if Firestore update fails
     }
 };
-
-
-
-
 
 
 // Register staff
@@ -273,8 +273,9 @@ exports.getStaffByName = async (req, res) => {
 
 
 exports.resolveTradeComplaint = async (req, res) => {
-    const { tradeId } = req.body; // Assuming tradeId is sent in the request body
 
+    const { tradeId } = req.body;
+    
     try {
         // Step 1: Fetch the trade from the complaints collection
         const complaintSnapshot = await db.collection('complaints').doc(tradeId).get();
@@ -304,14 +305,34 @@ exports.resolveTradeComplaint = async (req, res) => {
         }
 
         const assignedAt = new Date();
+        const staffRef = db.collection('Allstaff').doc(staffWithTrade.id);
+        
+        // Step 3: Update the assigned trade in Firestore
+        const staffData = staffWithTrade.data();
+        const existingTrade = staffData.assignedTrades.find(trade => trade.trade_hash === trade_hash);
 
-        // Step 3: Update the assigned trade in MongoDB using Mongoose
+        // Only update the trade if it already exists, no need to add it again
+        if (existingTrade) {
+            await staffRef.update({
+                assignedTrades: admin.firestore.FieldValue.arrayRemove(existingTrade),
+            });
+            
+            existingTrade.isPaid = false;
+            existingTrade.assignedAt = assignedAt;
+            existingTrade.markedAt = null; // Remove markedAt
+
+            await staffRef.update({
+                assignedTrades: admin.firestore.FieldValue.arrayUnion(existingTrade),
+            });
+        }
+
+        // Step 4: Update the assigned trade in MongoDB using Mongoose
         const updatedStaff = await Allstaff.findOneAndUpdate(
-            {'assignedTrades.trade_hash': trade_hash },
+            { 'assignedTrades.trade_hash': trade_hash },
             {
                 $set: {
                     'assignedTrades.$.isPaid': false, // Set isPaid to false
-                    'assignedTrades.$.markedAt': null, // Remove markedAt field if exists
+                    'assignedTrades.$.markedAt': null, // Remove markedAt field
                     'assignedTrades.$.assignedAt': assignedAt, // Update assignedAt timestamp
                     'assignedTrades.$.handle': buyer_name // Update handle if necessary
                 }
@@ -323,20 +344,22 @@ exports.resolveTradeComplaint = async (req, res) => {
             return responseController.errorResponse(res, 'Trade not found in assignedTrades in MongoDB', null, 404);
         }
 
-        // Step 4: Update the trade in the complaints collection
+        // Step 5: Update the trade in the complaints collection
         await db.collection('complaints').doc(tradeId).update({
             markedAt: admin.firestore.FieldValue.delete(), // Remove the markedAt field
             isPaid: false, // Set isPaid to false
         });
 
         // Return success response after all updates
-        console.log(`Trade ${trade_hash} successfully resolved for staff`);
-        return responseController.successResponse(res, 'Trade complaint resolved successfully', { trade_hash}, 200);
+        console.log(`Trade ${trade_hash} successfully resolved and reassigned to the original staff.`);
+        return responseController.successResponse(res, 'Trade complaint resolved and reassigned successfully', { trade_hash }, 200);
     } catch (error) {
         console.error('Error resolving trade complaint:', error);
         return responseController.errorResponse(res, 'Error resolving trade complaint', error.message, 500);
     }
 };
+
+
 
   
   
