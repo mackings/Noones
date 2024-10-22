@@ -229,6 +229,7 @@ exports.getMultiplePaxfulOffers = async (req, res) => {
 
 
 // Endpoint to update offers for a specific account
+// Function to update offers for a specific account
 exports.updateOffersForSpecificAccount = async (req, res) => {
     const { username, margin } = req.body; // username and new margin to be applied
 
@@ -289,7 +290,8 @@ exports.updateOffersForSpecificAccount = async (req, res) => {
                     }
                 );
 
-                const updatedMargin = updateResponse.data.data.updated_margin;
+                // Check if 'updated_margin' exists in the response data
+                const updatedMargin = updateResponse.data.data?.updated_margin || null; // Use null if undefined
                 console.log(`Price updated for offer: ${offer_hash} (account: ${username}). Response:`, updateResponse.data);
 
                 // Store the result of the update
@@ -297,7 +299,7 @@ exports.updateOffersForSpecificAccount = async (req, res) => {
                     username,
                     offer_hash,
                     currentMargin,
-                    newMargin: updatedMargin,
+                    newMargin: updatedMargin, // Use updatedMargin which may be null if not present
                     sentMargin: margin,
                     result: updateResponse.data
                 });
@@ -323,6 +325,7 @@ exports.updateOffersForSpecificAccount = async (req, res) => {
         res.status(500).json({ error: error.response ? error.response.data : error.message });
     }
 };
+
 
 
 
