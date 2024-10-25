@@ -6,7 +6,6 @@ const Allstaff = require("../Model/staffmodel");
 
 
 exports.createPayroll = async (req, res) => {
-
     try {
         const { name, level, basicSalary, daysOfWork, pay, incentives, debt, penalties, payables, savings, deductions, netSalary } = req.body;
 
@@ -16,20 +15,19 @@ exports.createPayroll = async (req, res) => {
         }
 
         const currentDate = new Date();
-        const date = currentDate;
         const month = currentDate.toLocaleString('default', { month: 'long' });
         const year = currentDate.getFullYear();
 
-        // Calculate amount based on days of work and other parameters
+        // Calculate payroll amount based on days of work and other parameters
         const payrollEntry = {
-            date,
+            date: currentDate,
             amount: basicSalary + pay + incentives - (debt + penalties + deductions), // Adjust this formula based on your logic
             month,
             year,
             level,
             name,
             basicSalary,
-            daysOfWork, // Include daysOfWork here
+            daysOfWork,
             pay,
             incentives,
             debt,
@@ -40,6 +38,16 @@ exports.createPayroll = async (req, res) => {
             netSalary
         };
 
+        // Check for existing payroll in the same month and year and remove if found
+        const existingPayrollIndex = staff.payroll.findIndex(
+            (entry) => entry.month === month && entry.year === year
+        );
+
+        if (existingPayrollIndex !== -1) {
+            staff.payroll.splice(existingPayrollIndex, 1); // Remove the previous payroll for the current month
+        }
+
+        // Add the new payroll entry
         staff.payroll.push(payrollEntry);
 
         await staff.save();
@@ -49,6 +57,7 @@ exports.createPayroll = async (req, res) => {
         return responseController.errorResponse(res, 'Error creating payroll', error);
     }
 };
+
 
 
 
