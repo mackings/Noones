@@ -1,45 +1,22 @@
 const axios = require('axios');
 const querystring = require('querystring');
 
-// List of accounts with clientId, clientSecret, and username
+
 
 const accounts = [
-    {
-        clientId: 'vO6rxHCcGSpvy8EfcbyoDLjnC24HHpKQwkEj0PmWhMKl0zoP',
-        clientSecret: 'og1wEN1ffZZ33K3D6XMenjSM7B6pIDJn2ahB2aPojXRsGf1B',
-        username: 'donviky19'
-    },
-    {
-        clientId: 'AEbsdy63Z21LwWQaB00rmY2hE4sHX792zekkfH6SnjnF1SsT',
-        clientSecret: '9wSG2iMUEwTrpExTtoq5N4TZ6ElQVvmukKSgSRJ57twGvMZd',
-        username: 'Turbopay'
-    },
 
     {
-        clientId: 'Uf4lf48TlgAxN5bYuNU2iQd3MsWBuMiKJ2GFIyqkN1RNKRpd',
-        clientSecret: '8Bkc9hqlQBoeNrtXEIFmxyu2WZQXpWgoEOvQcOtbtJUuFA6u',
-        username: '2fastpay'
+        clientId: 'xQpyqheZ9o0hmPlGmUbazV5VWY1Cv63qXVhZy450IN11bgvR',
+        clientSecret: '9R77pmoW58eJ2ZoVpWndDfdmLjDqQbfQ1UNa4DjGbqtpL0vp',
+        username: 'Eden_Ageh'
     },
 
-    {
-        clientId: '9Q0ICEOoQpYOnmiTcCfCXGH4yGfDahek9Uhs8wrqcsvbsac7',
-        clientSecret: 'jTkrp79rpOG5AHxyLfCimO4bMtx43yXrLuAHLBgkwuF9vIZE',
-        username: '2minutepay'
-    },
-
-    {
-        clientId: 'AbgnZQxyIM259CZ7RLxibzFyeUvNsaBs26UffEP4IcNSpHD9',
-        clientSecret: 'wmM4TrNmi125zGwuAb4i7jXmS7qIG9DLKaQRPOTU604v5aBF',
-        username: '2minmax_pro'
-    },
-
-    // Add more accounts as needed
 ];
 
-// Function to get Paxful access token
 
-const getPaxfulToken = async (clientId, clientSecret) => {
-    const tokenEndpoint = 'https://accounts.paxful.com/oauth2/token';
+
+const getnoonesToken = async (clientId, clientSecret) => {
+    const tokenEndpoint = 'https://auth.noones.com/oauth2/token';
     console.log(`Requesting token for client: ${clientId}`);
 
     const response = await axios.post(tokenEndpoint, querystring.stringify({
@@ -55,8 +32,7 @@ const getPaxfulToken = async (clientId, clientSecret) => {
 };
 
 
-// Function to get offers for all accounts
-const getOffersForAllAccounts = async () => {
+const getnoonesOffersForAllAccounts = async () => {
     const allOffers = [];
 
     for (const account of accounts) {
@@ -64,12 +40,12 @@ const getOffersForAllAccounts = async () => {
 
         // Get the token for the current account
         console.log(`Fetching token for account: ${username}`);
-        const token = await getPaxfulToken(clientId, clientSecret);
+        const token = await getnoonesToken(clientId, clientSecret);
 
         // Fetch the offers for this account
         console.log(`Fetching offers for account: ${username}`);
         const response = await axios.post(
-            'https://api.paxful.com/paxful/v1/offer/list',
+            'https://api.noones.com/noones/v1/offer/list',
             querystring.stringify({
                 active: true,
                 offer_type: "buy"
@@ -100,39 +76,32 @@ const getOffersForAllAccounts = async () => {
 
 
 
-// Function to update prices for all offers across all accounts
-
-exports.updatePricesForAllAccounts = async (req, res) => {
-    const { margin } = req.body; // New margin to be applied
+exports.updatenoonesPricesForAllAccounts = async (req, res) => {
+    const { margin } = req.body; 
     const updateResults = [];
 
     try {
-        // Step 1: Fetch all offers
+
         console.log('Fetching offers for all accounts...');
-        const allOffers = await getOffersForAllAccounts();
+        const allOffers = await getnoonesOffersForAllAccounts();
         console.log('Offers fetched successfully.');
 
-        // Step 2: Loop through the offers and update the price for each offer
         for (const accountOffers of allOffers) {
             const { username, clientId, clientSecret, offers } = accountOffers;
 
             for (const offer of offers) {
-                const offer_hash = offer.offer_hash; // Extract offer_hash from each offer
-                const currentMargin = offer.margin;  // Extract the current margin from the offer
+                const offer_hash = offer.offer_hash; 
+                const currentMargin = offer.margin;  
                 
                 console.log(`Processing offer: ${offer_hash} for account: ${username}`);
                 console.log(`Current margin: ${currentMargin}% for offer: ${offer_hash}`);
 
-                // Get the token again before updating the price for each account
                 try {
-                    const token = await getPaxfulToken(clientId, clientSecret);
-
-                    // Log the current and new margins
+                    const token = await getnoonesToken(clientId, clientSecret);
                     console.log(`Updating margin from ${currentMargin}% to ${margin}% for offer: ${offer_hash}`);
 
-                    // Step 3: Update the price for each offer
                     const response = await axios.post(
-                        'https://api.paxful.com/paxful/v1/offer/update-price',
+                        'https://api.noones.com/noones/v1/offer/update-price',
                         querystring.stringify({ offer_hash, margin }),
                         {
                             headers: {
@@ -142,7 +111,6 @@ exports.updatePricesForAllAccounts = async (req, res) => {
                         }
                     );
 
-                    // After successful update, log the details
                     const updatedMargin = response.data.data.updated_margin; // Adjust this based on the actual API response structure
                     console.log(`Price updated for offer: ${offer_hash} (account: ${username}). Response:`, response.data);
                     console.log(`Updated Margin: ${updatedMargin}% | Previous Margin: ${currentMargin}% | Margin Sent for Update: ${margin}%`);
@@ -158,7 +126,6 @@ exports.updatePricesForAllAccounts = async (req, res) => {
                     });
                 } catch (updateError) {
                     console.error(`Error updating price for offer: ${offer_hash} (account: ${username}). Error:`, updateError.message);
-                    // Log failure for individual offer update
                     updateResults.push({
                         username,
                         offer_hash,
@@ -182,10 +149,9 @@ exports.updatePricesForAllAccounts = async (req, res) => {
 };
 
 
-// Function to fetch offers for all accounts
 
 
-exports.getMultiplePaxfulOffers = async (req, res) => {
+exports.getMultiplenoonesOffers = async (req, res) => {
 
     const allOffers = [];
 
@@ -194,10 +160,10 @@ exports.getMultiplePaxfulOffers = async (req, res) => {
         for (const account of accounts) {
             const { clientId, clientSecret, username } = account;
 
-            const token = await getPaxfulToken(clientId, clientSecret);
+            const token = await getnoonesToken(clientId, clientSecret);
 
             const response = await axios.post(
-                'https://api.paxful.com/paxful/v1/offer/list',
+                'https://api.noones.com/noones/v1/offer/list',
                 querystring.stringify({
                     active: true,
                     offer_type: "buy"
@@ -228,16 +194,12 @@ exports.getMultiplePaxfulOffers = async (req, res) => {
 
 
 
-// Endpoint to update offers for a specific account
-// Function to update offers for a specific account
+exports.updatenoonesOffersForSpecificAccount = async (req, res) => {
 
-exports.updateOffersForSpecificAccount = async (req, res) => {
-    const { username, margin } = req.body; // username and new margin to be applied
-
+    const { username, margin } = req.body;
     const updateResults = [];
 
     try {
-        // Step 1: Find the account by username
         const account = accounts.find(acc => acc.username === username);
         if (!account) {
             return res.status(404).json({ error: `Account with username "${username}" not found.` });
@@ -247,11 +209,11 @@ exports.updateOffersForSpecificAccount = async (req, res) => {
 
         // Step 2: Fetch offers for this specific account
         console.log(`Fetching token for account: ${username}`);
-        const token = await getPaxfulToken(clientId, clientSecret);
+        const token = await getnoonesToken(clientId, clientSecret);
 
         console.log(`Fetching offers for account: ${username}`);
         const response = await axios.post(
-            'https://api.paxful.com/paxful/v1/offer/list',
+            'https://api.noones.com/noones/v1/offer/list',
             querystring.stringify({
                 active: true,
                 offer_type: "buy"
@@ -276,12 +238,12 @@ exports.updateOffersForSpecificAccount = async (req, res) => {
             console.log(`Current margin: ${currentMargin}% for offer: ${offer_hash}`);
 
             try {
-                const token = await getPaxfulToken(clientId, clientSecret);
+                const token = await getnoonesToken(clientId, clientSecret);
 
                 console.log(`Updating margin from ${currentMargin}% to ${margin}% for offer: ${offer_hash}`);
                 
                 const updateResponse = await axios.post(
-                    'https://api.paxful.com/paxful/v1/offer/update-price',
+                    'https://api.noones.com/noones/v1/offer/update-price',
                     querystring.stringify({ offer_hash, margin }),
                     {
                         headers: {
@@ -295,12 +257,11 @@ exports.updateOffersForSpecificAccount = async (req, res) => {
                 const updatedMargin = updateResponse.data.data?.updated_margin || null; // Use null if undefined
                 console.log(`Price updated for offer: ${offer_hash} (account: ${username}). Response:`, updateResponse.data);
 
-                // Store the result of the update
                 updateResults.push({
                     username,
                     offer_hash,
                     currentMargin,
-                    newMargin: updatedMargin, // Use updatedMargin which may be null if not present
+                    newMargin: updatedMargin, 
                     sentMargin: margin,
                     result: updateResponse.data
                 });
@@ -326,6 +287,7 @@ exports.updateOffersForSpecificAccount = async (req, res) => {
         res.status(500).json({ error: error.response ? error.response.data : error.message });
     }
 };
+
 
 
 
