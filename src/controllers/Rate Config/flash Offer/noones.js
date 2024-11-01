@@ -1,14 +1,37 @@
 const axios = require('axios');
 const querystring = require('querystring');
 
-
+// {
+//     clientId: 'xQpyqheZ9o0hmPlGmUbazV5VWY1Cv63qXVhZy450IN11bgvR',
+//     clientSecret: '9R77pmoW58eJ2ZoVpWndDfdmLjDqQbfQ1UNa4DjGbqtpL0vp',
+//     username: 'Eden_Ageh'
+// },
 
 const accounts = [
 
+
     {
-        clientId: 'xQpyqheZ9o0hmPlGmUbazV5VWY1Cv63qXVhZy450IN11bgvR',
-        clientSecret: '9R77pmoW58eJ2ZoVpWndDfdmLjDqQbfQ1UNa4DjGbqtpL0vp',
-        username: 'Eden_Ageh'
+        clientId: 'PU6fKlhQgBZXudAT2zAMpWRkd8ntAAPQ3pW6P4ixY7l9lfsH',
+        clientSecret: 'I5GWUA6IBBwSl334bI1IvvPJ3FTWuQwwzICitC19X4cDn158',
+        username: '2minmax_pro'
+    },
+
+    {
+        clientId: 'V113ijGnugBUJ9dkUQoXCKDde8LabWpSlWdEboIauM5q2HKr',
+        clientSecret: 'ZwmMrn1bGT0Gi6bVzgZyZsLaRwpdMbr4eBFuUb7JLTAGg8O3',
+        username: '2minutepay'
+    },
+
+    {
+        clientId: '98kD06ZuQteA708v8yNppjcBFhqiRYrvbsc7gRc2h8ll4fzZ',
+        clientSecret: 'FkV3V72y7e7jwrvSH7BE8OUiTAkY5gVfPXxYlULPuKDwALJX',
+        username: 'Turbopay'
+    },
+
+    {
+        clientId: 'T7SlJXd6JEMYXvsx4JK9ofXzGQp3VQIFsnCK0z2qd04jEBZg',
+        clientSecret: 'EacevKvHlWSGotRFf6I1Nl5KqJYkCtSLiji5PVuVONrjLbW8',
+        username: '2fastpay'
     },
 
 ];
@@ -185,12 +208,14 @@ exports.getMultiplenoonesOffers = async (req, res) => {
 
         // Return all the offers for all accounts
         res.status(200).json(allOffers);
+        console.log("Returning offers for Noones");
         console.log(allOffers);
     } catch (error) {
         console.error('Error fetching Paxful offers for multiple accounts:', error);
         res.status(500).json({ error: error.response ? error.response.data : error.message });
     }
 };
+
 
 
 
