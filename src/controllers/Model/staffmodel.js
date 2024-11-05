@@ -71,6 +71,7 @@ const messageSchema = new mongoose.Schema({
 
 const bankSchema = new mongoose.Schema({
   bankName: { type: String, required: true, trim: true },
+  bankAccountName: { type: String, required: true, trim: true },
   bankAccountNumber: { type: String, required: true, unique: true, trim: true },
   amount: { type: Number, required: true, min: 0 },
   availability: { type: Boolean, default: true },

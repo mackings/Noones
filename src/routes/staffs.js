@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { handleRequest, retrieveTransactionLogs} = require("../controllers/openbanking"); // Fix this import
-const { registerStaff, loginStaff, clockIn, clockOut, getstaffs, getStaffByName, resolveTradeComplaint, createBank, chooseBank, recordInflow, getAllBanks, getInflowsForStaff } = require('../controllers/Staffs/staffauth');
+const { registerStaff, loginStaff, clockIn, clockOut, getstaffs, getStaffByName, resolveTradeComplaint, createBank, chooseBank, recordInflow, getAllBanks, getInflowsForStaff, addMoneyToBank } = require('../controllers/Staffs/staffauth');
 
 
 //Staffs 
@@ -23,6 +23,7 @@ router.post("/Transactions", retrieveTransactionLogs);
 //Inflows
 
 router.post("/banks/add-bank", createBank);
+router.post("/banks/add-money", addMoneyToBank);
 router.post("/banks/choose-bank", chooseBank);
 router.post("/banks/debit-bank", recordInflow);
 router.get("/banks/all-bank", getAllBanks);

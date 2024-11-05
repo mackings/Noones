@@ -277,18 +277,19 @@ exports.getStaffByName = async (req, res) => {
 
 // Create a new bank
 exports.createBank = async (req, res) => {
-    const { bankName, bankAccountNumber, amount } = req.body;
+    const { bankName, bankAccountNumber, bankAccountName, amount } = req.body;
 
-    if (!bankName || !bankAccountNumber || amount === undefined) {
+    if (!bankName || !bankAccountNumber || !bankAccountName || amount === undefined) {
         return res.status(400).json({
             success: false,
-            message: 'Please provide bankName, bankAccountNumber, and amount'
+            message: 'Please provide bankName, bankAccountNumber, bankAccountName, and amount'
         });
     }
 
     try {
         const newBank = new Bank({
             bankName,
+            bankAccountName,
             bankAccountNumber,
             amount,
             availability: amount > 0,
@@ -296,6 +297,7 @@ exports.createBank = async (req, res) => {
             createdAt: Date.now(),
             updatedAt: Date.now()
         });
+        console.log(newBank);
 
         await newBank.save();
 
@@ -314,7 +316,54 @@ exports.createBank = async (req, res) => {
     }
 };
 
-// Choose a bank for staff to use
+
+exports.addMoneyToBank = async (req, res) => {
+    const { bankId, amountToAdd } = req.body;
+
+    if (!bankId || amountToAdd === undefined) {
+        return res.status(400).json({
+            success: false,
+            message: 'Please provide bankId and amountToAdd',
+        });
+    }
+
+    try {
+        // Find the bank by its ID
+        const bank = await Bank.findById(bankId);
+        if (!bank) {
+            return res.status(404).json({
+                success: false,
+                message: 'Bank not found',
+            });
+        }
+
+        // Add the money to the existing amount
+        bank.amount += amountToAdd;
+
+        // Update the bank's availability and status based on the new amount
+        bank.availability = bank.amount > 0;
+        bank.status = bank.amount > 0 ? 'available' : 'unavailable';
+        bank.updatedAt = Date.now();
+
+        // Save the updated bank document
+        await bank.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Money added to bank successfully',
+            data: bank,
+        });
+    } catch (error) {
+        console.log('Error adding money to bank:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error adding money to bank',
+            error: error.message,
+        });
+    }
+};
+
+
 exports.chooseBank = async (req, res) => {
     const { staffId, bankId } = req.body;
 
