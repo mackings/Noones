@@ -1,6 +1,6 @@
 const admin = require('firebase-admin');
 const express = require('express');
-const Allstaff = require("../Model/staffmodel");
+const { Allstaff, Bank, Inflow } = require("../Model/staffmodel");
 
 
 
