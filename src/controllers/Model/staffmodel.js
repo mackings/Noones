@@ -35,16 +35,13 @@ const payrollSchema = new mongoose.Schema({
 });
 
 
-
 // Reply Schema for queries
-
 const replySchema = new mongoose.Schema({
   sender: { type: String },       // Username or HR identifier
   message: { type: String },
   senderRole: { type: String, enum: ['hr', 'staff'], required: true }, // Added to track role (HR or Staff)
   timestamp: { type: Date, default: Date.now }
 });
-
 
 
 // Query Schema to track queries raised by HR
@@ -70,6 +67,30 @@ const messageSchema = new mongoose.Schema({
   sentAt: { type: Date, default: Date.now },
   replies: [replySchema]
 });
+
+
+const bankSchema = new mongoose.Schema({
+  bankName: { type: String, required: true, trim: true },
+  bankAccountNumber: { type: String, required: true, unique: true, trim: true },
+  amount: { type: Number, required: true, min: 0 },
+  availability: { type: Boolean, default: true },
+  status: { 
+    type: String, 
+    enum: ['available', 'in use','unavailable'], 
+    default: 'available' 
+  },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+
+const inflowSchema = new mongoose.Schema({
+  staff: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff', required: true },
+  bank: { type: mongoose.Schema.Types.ObjectId, ref: 'Bank', required: true },
+  amount: { type: Number, required: true },
+  inflowDate: { type: Date, default: Date.now }
+});
+
 
 const staffSchema = new mongoose.Schema({
   username: { type: String, unique: true },
@@ -105,11 +126,13 @@ const staffSchema = new mongoose.Schema({
   queries: [querySchema],
 
   // Messages between HR and staff
-  messages: [messageSchema]
+  messages: [messageSchema],
+  banks: [bankSchema]
 });
 
+
 const Allstaff = mongoose.model('Staff', staffSchema);
+const Bank = mongoose.model("Bank", bankSchema);
+const Inflow = mongoose.model('Inflow', inflowSchema);
 
-
-
-module.exports = Allstaff;
+module.exports = { Allstaff, Bank, Inflow };

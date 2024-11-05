@@ -10,8 +10,12 @@ const responseController = require("../Utils/responses");
 const admin = require("firebase-admin");
 const db = admin.firestore();
 const serviceAccount = require("../Utils/firebaseservice");
-const Allstaff = require("../Model/staffmodel");
-const Trade = require("../Model/staffmodel");
+
+const { Allstaff, Bank, Inflow } = require("../Model/staffmodel");
+//const Allstaff = require("../Model/staffmodel");
+
+
+
 
 
 
@@ -31,7 +35,6 @@ const addNewStaff = async (staffId, staffDetails) => {
         throw new Error('FirestoreError'); // Throw an error if Firestore addition fails
     }
 };
-
 
 
 
@@ -58,22 +61,22 @@ exports.registerStaff = async (req, res) => {
         const { username, password, name, email, role } = req.body;
 
         // Check if the staff already exists in MongoDB
-        const existingStaff = await Staff.findOne({ username });
+        const existingStaff = await Allstaff.findOne({ username });
         if (existingStaff) {
             return responseController.errorResponse(res, 'Staff already exists', null, 400);
         }
 
         // Hash the password and create the staff member in MongoDB
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newStaff = new Staff({
+        const newStaff = new Allstaff({
             username,
             password: hashedPassword,
             name,
             email,
-            role, // Use the role from request body
-            assignedTrades: [], // Initialize assignedTrades
-            paidTrades: [], // Initialize paidTrades if applicable
-            clockedIn: false, // Initialize clockedIn status
+            role, 
+            assignedTrades: [], 
+            paidTrades: [],
+            clockedIn: false,
         });
         await newStaff.save(); // Save to MongoDB
 
@@ -111,7 +114,7 @@ exports.loginStaff = async (req, res) => {
         const { username, password } = req.body;
 
         // Check if the staff exists
-        const staff = await Staff.findOne({ username });
+        const staff = await Allstaff.findOne({ username });
         if (!staff) {
             return responseController.errorResponse(res, 'Invalid username or password', null, 400);
         }
@@ -151,7 +154,7 @@ exports.clockIn = async (req, res) => {
 
         // Verify the token
         const decoded = jwt.verify(token, JWT_SECRET);
-        const staff = await Staff.findById(decoded.id);
+        const staff = await Allstaff.findById(decoded.id);
 
         if (!staff) {
             return responseController.notFoundResponse(res, 'Staff not found');
@@ -183,7 +186,7 @@ exports.clockOut = async (req, res) => {
     try {
         const { token } = req.body;
         const decoded = jwt.verify(token, JWT_SECRET);
-        const staff = await Staff.findById(decoded.id);
+        const staff = await Allstaff.findById(decoded.id);
 
         if (!staff) {
             return responseController.notFoundResponse(res, 'Staff not found');
@@ -239,7 +242,7 @@ exports.getStaffByName = async (req, res) => {
         const { name } = req.params;
 
         // Find the staff member by name
-        const staff = await Staff.findOne({ name });
+        const staff = await Allstaff.findOne({ name });
 
         if (!staff) {
             return responseController.errorResponse(res, 'Staff member not found', null, 404);
@@ -269,6 +272,178 @@ exports.getStaffByName = async (req, res) => {
         return responseController.errorResponse(res, 'Error fetching staff data', error);
     }
 };
+
+
+
+// Create a new bank
+exports.createBank = async (req, res) => {
+    const { bankName, bankAccountNumber, amount } = req.body;
+
+    if (!bankName || !bankAccountNumber || amount === undefined) {
+        return res.status(400).json({
+            success: false,
+            message: 'Please provide bankName, bankAccountNumber, and amount'
+        });
+    }
+
+    try {
+        const newBank = new Bank({
+            bankName,
+            bankAccountNumber,
+            amount,
+            availability: amount > 0,
+            status: 'available',
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        });
+
+        await newBank.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Bank created successfully',
+            data: newBank
+        });
+    } catch (error) {
+        console.log('Error creating bank:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error creating bank',
+            error: error.message
+        });
+    }
+};
+
+// Choose a bank for staff to use
+exports.chooseBank = async (req, res) => {
+    const { staffId, bankId } = req.body;
+
+    try {
+        const bank = await Bank.findById(bankId);
+        if (!bank || !bank.availability) {
+            return res.status(400).json({
+                success: false,
+                message: 'Bank is unavailable'
+            });
+        }
+
+        // Mark bank as "in use"
+        bank.status = 'in use';
+        await bank.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Bank chosen successfully for staff use',
+            data: { bankId, staffId }
+        });
+    } catch (error) {
+        console.log('Error choosing bank:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error processing request',
+            error: error.message
+        });
+    }
+};
+
+// Record a debit as an inflow for the staff
+exports.recordInflow = async (req, res) => {
+    const { staffId, bankId, amount } = req.body;
+
+    try {
+        // Find the bank and ensure it has sufficient funds
+        const bank = await Bank.findById(bankId);
+        if (!bank || bank.amount < amount) {
+            return res.status(400).json({
+                success: false,
+                message: 'Bank does not have sufficient funds'
+            });
+        }
+
+        // Deduct amount from the bank
+        bank.amount -= amount;
+        if (bank.amount === 0) bank.availability = false;
+        await bank.save();
+
+        // Record inflow for staff
+        const inflow = new Inflow({
+            staff: staffId,
+            bank: bankId,
+            amount
+        });
+        await inflow.save();
+
+        // Populate the inflow with staff and bank details
+        const populatedInflow = await Inflow.findById(inflow._id)
+            .populate('staff', 'name')  
+            .populate('bank', 'bankName'); 
+
+        return res.status(200).json({
+            success: true,
+            message: 'Inflow recorded successfully for staff',
+            data: populatedInflow
+        });
+    } catch (error) {
+        console.log('Error recording inflow:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error processing inflow',
+            error: error.message
+        });
+    }
+};
+
+// Get all banks
+exports.getAllBanks = async (req, res) => {
+    try {
+        const banks = await Bank.find();
+        return res.status(200).json({
+            success: true,
+            message: 'Banks retrieved successfully',
+            data: banks
+        });
+    } catch (error) {
+        console.log('Error fetching banks:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching banks',
+            error: error.message
+        });
+    }
+};
+
+// Get inflows for a particular staff
+exports.getInflowsForStaff = async (req, res) => {
+    const { staffId } = req.params;
+
+    try {
+        const inflows = await Inflow.find({ staff: staffId })
+            .populate('bank', 'bankName')  // Populate bank name
+            .populate('staff', 'name');    // Populate staff name
+
+        if (inflows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No inflows found for this staff member'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Inflows retrieved successfully for staff',
+            data: inflows
+        });
+    } catch (error) {
+        console.log('Error fetching inflows:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching inflows for staff',
+            error: error.message
+        });
+    }
+};
+
+
 
 
 
