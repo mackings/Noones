@@ -365,6 +365,53 @@ exports.addMoneyToBank = async (req, res) => {
 };
 
 
+// Fetch the bank details for a specific staff member
+
+exports.getStaffBankInfo = async (req, res) => {
+    const { username } = req.params; // Get the username from the URL parameter
+
+    try {
+        // Find the staff member by username
+        const staff = await Allstaff.findOne({ username });
+        if (!staff) {
+            return res.status(400).json({
+                success: false,
+                message: 'Staff not found'
+            });
+        }
+
+        // Check if staff has any banks
+        if (staff.banks.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No banks found for the selected staff'
+            });
+        }
+
+        // Assuming you want to return the first bank from the `banks` array
+        const bank = staff.banks[0]; // You can customize this to find a specific bank
+
+        // Return the bank details
+        return res.status(200).json({
+            success: true,
+            message: 'Staff bank details retrieved successfully',
+            data: {
+                bankName: bank.bankName,
+                bankAccountNumber: bank.bankAccountNumber,
+                balance: bank.amount // This is the bank balance
+            }
+        });
+    } catch (error) {
+        console.log('Error fetching staff bank info:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching staff bank info',
+            error: error.message
+        });
+    }
+};
+
+
 exports.chooseBank = async (req, res) => {
     const { username, bankId } = req.body;  // Use username instead of staffId
 
