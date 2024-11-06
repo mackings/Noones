@@ -349,15 +349,15 @@ exports.addMoneyToBank = async (req, res) => {
         // Save the updated bank document
         await bank.save();
 
-        // Update the bank balance in the `banks` array of each staff who has this bank
+        // Update all staff members with this bank in their `banks` array
         await Allstaff.updateMany(
-            { 'banks.bankId': bankId },
+            { 'banks._id': bankId },
             { $set: { 'banks.$.amount': bank.amount } }
         );
 
         return res.status(200).json({
             success: true,
-            message: 'Money added to bank successfully and synced with staff banks',
+            message: 'Money added to bank successfully',
             data: bank,
         });
     } catch (error) {
@@ -369,6 +369,7 @@ exports.addMoneyToBank = async (req, res) => {
         });
     }
 };
+
 
 
 
