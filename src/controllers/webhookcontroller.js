@@ -7,7 +7,7 @@ const admin = require("firebase-admin");
 const axios = require("axios");
 const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
 const mongoose = require('mongoose');
-const Allstaff = require("./Model/staffmodel");
+const { Allstaff, Bank, Inflow } = require("./Model/staffmodel");
 const ObjectId = mongoose.Types.ObjectId; 
 
 
