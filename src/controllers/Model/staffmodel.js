@@ -129,7 +129,8 @@ const staffSchema = new mongoose.Schema({
   // Messages between HR and staff
   messages: [messageSchema],
   banks: [bankSchema],
-  lastBankChoice: { type: Date, default: null }
+  lastBankChoice: { type: Date, default: null },
+  currentBankId: { type: mongoose.Schema.Types.ObjectId, ref: 'Bank', default: null },
 });
 
 

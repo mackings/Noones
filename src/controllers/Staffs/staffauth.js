@@ -480,22 +480,9 @@ exports.chooseBank = async (req, res) => {
 
 // Record a debit as an inflow for the staff
 exports.recordInflow = async (req, res) => {
-    const { username, bankId, amount } = req.body; 
+    const { username, amount } = req.body;
+
     try {
-        // Find the bank and ensure it has sufficient funds
-        const bank = await Bank.findById(bankId);
-        if (!bank || bank.amount < amount) {
-            return res.status(400).json({
-                success: false,
-                message: 'Bank does not have sufficient funds'
-            });
-        }
-
-        // Deduct amount from the bank
-        bank.amount -= amount;
-        if (bank.amount === 0) bank.availability = false;
-        await bank.save();
-
         // Find the staff by username
         const staff = await Allstaff.findOne({ username });
         if (!staff) {
@@ -505,18 +492,41 @@ exports.recordInflow = async (req, res) => {
             });
         }
 
+        // Check for an available bank with sufficient funds in the staff's banks array
+        const availableBank = staff.banks.find(bank => bank.availability && bank.amount >= amount);
+
+        if (!availableBank) {
+            return res.status(400).json({
+                success: false,
+                message: 'No available bank with sufficient funds'
+            });
+        }
+
+        // Deduct amount from the selected bank in the embedded banks array
+        availableBank.amount -= amount;
+        if (availableBank.amount === 0) availableBank.availability = false;
+
+        // Update the standalone Bank collection with the deduction
+        await Bank.findByIdAndUpdate(availableBank._id, {
+            amount: availableBank.amount,
+            availability: availableBank.availability
+        });
+
+        // Save the updated staff document
+        await staff.save();
+
         // Record inflow for staff
         const inflow = new Inflow({
-            staff: staff._id,  // Use staff ID here after finding it by username
-            bank: bankId,
+            staff: staff._id,  // Reference the staff ID
+            bank: availableBank._id,    // Reference the current bank ID
             amount
         });
         await inflow.save();
 
         // Populate the inflow with staff and bank details
         const populatedInflow = await Inflow.findById(inflow._id)
-            .populate('staff', 'name')  
-            .populate('bank', 'bankName'); 
+            .populate('staff', 'name')
+            .populate('bank', 'bankName');
 
         return res.status(200).json({
             success: true,
@@ -532,6 +542,8 @@ exports.recordInflow = async (req, res) => {
         });
     }
 };
+
+
 
 
 // Get all banks
