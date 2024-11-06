@@ -365,9 +365,10 @@ exports.addMoneyToBank = async (req, res) => {
 
 
 exports.chooseBank = async (req, res) => {
-    const { staffId, bankId } = req.body;
+    const { username, bankId } = req.body;  // Use username instead of staffId
 
     try {
+        // Find the bank by ID and check its availability
         const bank = await Bank.findById(bankId);
         if (!bank || !bank.availability) {
             return res.status(400).json({
@@ -376,14 +377,45 @@ exports.chooseBank = async (req, res) => {
             });
         }
 
-        // Mark bank as "in use"
+        // Find the staff by username
+        const staff = await Allstaff.findOne({ username });
+        if (!staff) {
+            return res.status(400).json({
+                success: false,
+                message: 'Staff not found'
+            });
+        }
+
+        // Check if 24 hours have passed since the last bank choice
+        if (staff.lastBankChoice) {
+            const lastChoiceTime = new Date(staff.lastBankChoice);
+            const currentTime = new Date();
+            const timeDiff = currentTime - lastChoiceTime;  // Difference in milliseconds
+
+            if (timeDiff < 24 * 60 * 60 * 1000) {  // 24 hours in milliseconds
+                return res.status(400).json({
+                    success: false,
+                    message: 'You can only choose a bank once every 24 hours.'
+                });
+            }
+        }
+
+        // Add the bank to the staff's banks array
+        staff.banks.push(bank);  // Add the bank object to the banks array
+
+        // Update the last bank choice timestamp
+        staff.lastBankChoice = new Date();  // Set the current time as the last bank choice time
+
+        await staff.save();  // Save the staff document with the updated banks array and lastBankChoice
+
+        // Mark the bank as "in use"
         bank.status = 'in use';
-        await bank.save();
+        await bank.save();  // Save the updated bank
 
         return res.status(200).json({
             success: true,
             message: 'Bank chosen successfully for staff use',
-            data: { bankId, staffId }
+            data: { bankId, username }
         });
     } catch (error) {
         console.log('Error choosing bank:', error);
@@ -395,10 +427,11 @@ exports.chooseBank = async (req, res) => {
     }
 };
 
+
+
 // Record a debit as an inflow for the staff
 exports.recordInflow = async (req, res) => {
-    const { staffId, bankId, amount } = req.body;
-
+    const { username, bankId, amount } = req.body; 
     try {
         // Find the bank and ensure it has sufficient funds
         const bank = await Bank.findById(bankId);
@@ -414,9 +447,18 @@ exports.recordInflow = async (req, res) => {
         if (bank.amount === 0) bank.availability = false;
         await bank.save();
 
+        // Find the staff by username
+        const staff = await Allstaff.findOne({ username });
+        if (!staff) {
+            return res.status(400).json({
+                success: false,
+                message: 'Staff not found'
+            });
+        }
+
         // Record inflow for staff
         const inflow = new Inflow({
-            staff: staffId,
+            staff: staff._id,  // Use staff ID here after finding it by username
             bank: bankId,
             amount
         });
@@ -442,6 +484,7 @@ exports.recordInflow = async (req, res) => {
     }
 };
 
+
 // Get all banks
 exports.getAllBanks = async (req, res) => {
     try {
@@ -462,13 +505,23 @@ exports.getAllBanks = async (req, res) => {
 };
 
 // Get inflows for a particular staff
+
 exports.getInflowsForStaff = async (req, res) => {
-    const { staffId } = req.params;
+    const { username } = req.params;  // Use username directly
 
     try {
-        const inflows = await Inflow.find({ staff: staffId })
-            .populate('bank', 'bankName')  // Populate bank name
-            .populate('staff', 'name');    // Populate staff name
+        // Find the staff by username
+        const staff = await Allstaff.findOne({ username });
+        if (!staff) {
+            return res.status(404).json({
+                success: false,
+                message: 'Staff not found'
+            });
+        }
+
+        const inflows = await Inflow.find({ 'staff.username': username })
+            .populate('bank', 'bankName') 
+            .populate('staff', 'username');    
 
         if (inflows.length === 0) {
             return res.status(404).json({

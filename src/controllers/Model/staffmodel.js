@@ -128,7 +128,8 @@ const staffSchema = new mongoose.Schema({
 
   // Messages between HR and staff
   messages: [messageSchema],
-  banks: [bankSchema]
+  banks: [bankSchema],
+  lastBankChoice: { type: Date, default: null }
 });
 
 
