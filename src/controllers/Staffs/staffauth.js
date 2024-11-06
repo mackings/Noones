@@ -398,7 +398,8 @@ exports.getStaffBankInfo = async (req, res) => {
             data: {
                 bankName: bank.bankName,
                 bankAccountNumber: bank.bankAccountNumber,
-                balance: bank.amount // This is the bank balance
+                bankAccountName:bank.bankAccountName,
+                balance: bank.amount 
             }
         });
     } catch (error) {
