@@ -1,4 +1,4 @@
-const Allstaff = require('../Model/staffmodel'); 
+const { Allstaff, Bank, Inflow } = require("../Model/staffmodel");
 const responseController = require("../Utils/responses");
 
 // Send Query API

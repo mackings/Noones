@@ -12,7 +12,7 @@ const db = admin.firestore();
 const serviceAccount = require("../Utils/firebaseservice");
 
 const { Allstaff, Bank, Inflow } = require("../Model/staffmodel");
-//const Allstaff = require("../Model/staffmodel");
+
 
 
 
@@ -525,8 +525,8 @@ exports.recordInflow = async (req, res) => {
 
         // Record inflow for staff
         const inflow = new Inflow({
-            staff: staff._id,  // Reference the staff ID
-            bank: availableBank._id,    // Reference the current bank ID
+            staff: staff._id,  
+            bank: availableBank._id,   
             amount
         });
         await inflow.save();
