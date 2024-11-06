@@ -136,6 +136,7 @@ exports.loginStaff = async (req, res) => {
             username: staff.name,
             email: staff.email,
             role: staff.role,
+            bank:staff.banks
             // Add other fields you'd like to return
         };
 
