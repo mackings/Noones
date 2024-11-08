@@ -8,6 +8,7 @@ const Staff = require("../Model/staffmodel");
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
 const responseController = require("../Utils/responses");
 const admin = require("firebase-admin");
+const cron = require("node-cron");
 const db = admin.firestore();
 const serviceAccount = require("../Utils/firebaseservice");
 
@@ -277,13 +278,14 @@ exports.getStaffByName = async (req, res) => {
 
 
 // Create a new bank
-exports.createBank = async (req, res) => {
-    const { bankName, bankAccountNumber, bankAccountName, amount } = req.body;
 
-    if (!bankName || !bankAccountNumber || !bankAccountName || amount === undefined) {
+exports.createBank = async (req, res) => {
+    const { bankName, bankAccountNumber, bankAccountName } = req.body;
+
+    if (!bankName || !bankAccountNumber || !bankAccountName) {
         return res.status(400).json({
             success: false,
-            message: 'Please provide bankName, bankAccountNumber, bankAccountName, and amount'
+            message: 'Please provide bankName, bankAccountNumber, and bankAccountName'
         });
     }
 
@@ -292,13 +294,12 @@ exports.createBank = async (req, res) => {
             bankName,
             bankAccountName,
             bankAccountNumber,
-            amount,
-            availability: amount > 0,
-            status: 'available',
+            amount: 0,  // Default amount is 0
+            availability: false,  // Default availability is false
+            status: 'unavailable',  // Default status is 'unavailable'
             createdAt: Date.now(),
             updatedAt: Date.now()
         });
-        console.log(newBank);
 
         await newBank.save();
 
@@ -316,6 +317,7 @@ exports.createBank = async (req, res) => {
         });
     }
 };
+
 
 
 exports.addMoneyToBank = async (req, res) => {
@@ -338,12 +340,26 @@ exports.addMoneyToBank = async (req, res) => {
             });
         }
 
-        // Add the money to the existing amount
-        bank.amount += amountToAdd;
+        // Calculate the new amount, handling any negative balance
+        if (bank.amount < 0) {
+            const deficit = Math.abs(bank.amount); // Amount needed to clear the negative balance
+            if (amountToAdd > deficit) {
+                bank.amount = amountToAdd - deficit; // Set balance after clearing negative
+            } else {
+                bank.amount += amountToAdd; // Not enough to clear negative, add to the current balance
+            }
+        } else {
+            bank.amount += amountToAdd; // Regular addition if balance is non-negative
+        }
 
-        // Update the bank's availability and status based on the new amount
-        bank.availability = bank.amount > 0;
-        bank.status = bank.amount > 0 ? 'available' : 'unavailable';
+        // Only update availability and status if the bank is not in use
+        // We don't change status if the bank is in use
+        if (bank.status !== 'in use') {
+            bank.availability = bank.amount > 0;
+            bank.status = bank.amount > 0 ? 'available' : 'unavailable';
+        }
+
+        // Update the `updatedAt` timestamp
         bank.updatedAt = Date.now();
 
         // Save the updated bank document
@@ -373,7 +389,77 @@ exports.addMoneyToBank = async (req, res) => {
 
 
 
-// Fetch the bank details for a specific staff member
+// Fetch the bank details for a specific staff membe
+
+
+exports.chooseBank = async (req, res) => {
+
+    const { username, bankId } = req.body; 
+
+    try {
+        // Find the bank by ID and check its availability
+        const bank = await Bank.findById(bankId);
+        if (!bank || !bank.availability) {
+            return res.status(400).json({
+                success: false,
+                message: 'Bank is unavailable'
+            });
+        }
+
+        // Find the staff by username
+        const staff = await Allstaff.findOne({ username });
+        if (!staff) {
+            return res.status(400).json({
+                success: false,
+                message: 'Staff not found'
+            });
+        }
+
+        // Check if 24 hours have passed since the last bank choice
+
+        if (staff.lastBankChoice) {
+            const lastChoiceTime = new Date(staff.lastBankChoice);
+            const currentTime = new Date();
+            const timeDiff = currentTime - lastChoiceTime;  // Difference in milliseconds
+
+            if (timeDiff < 24 * 60 * 60 * 1000) {  // 24 hours in milliseconds
+                return res.status(400).json({
+                    success: false,
+                    message: 'You can only choose a bank once every 24 hours.'
+                });
+            }
+        }
+
+
+        // Add the bank to the staff's banks array
+        staff.banks.push(bank);  // Add the bank object to the banks array
+
+        // Update the last bank choice timestamp
+        staff.lastBankChoice = new Date();  // Set the current time as the last bank choice time
+
+        await staff.save();  // Save the staff document with the updated banks array and lastBankChoice
+
+        // Mark the bank as "in use"
+        bank.status = 'in use';
+        await bank.save();  // Save the updated bank
+
+        return res.status(200).json({
+            success: true,
+            message: 'Bank chosen successfully for staff use',
+            data: { bankId, username }
+        });
+    } catch (error) {
+        console.log('Error choosing bank:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error processing request',
+            error: error.message
+        });
+    }
+};
+
+
+
 
 exports.getStaffBankInfo = async (req, res) => {
     const { username } = req.params; // Get the username from the URL parameter
@@ -421,70 +507,6 @@ exports.getStaffBankInfo = async (req, res) => {
 };
 
 
-exports.chooseBank = async (req, res) => {
-    const { username, bankId } = req.body;  // Use username instead of staffId
-
-    try {
-        // Find the bank by ID and check its availability
-        const bank = await Bank.findById(bankId);
-        if (!bank || !bank.availability) {
-            return res.status(400).json({
-                success: false,
-                message: 'Bank is unavailable'
-            });
-        }
-
-        // Find the staff by username
-        const staff = await Allstaff.findOne({ username });
-        if (!staff) {
-            return res.status(400).json({
-                success: false,
-                message: 'Staff not found'
-            });
-        }
-
-        // Check if 24 hours have passed since the last bank choice
-        if (staff.lastBankChoice) {
-            const lastChoiceTime = new Date(staff.lastBankChoice);
-            const currentTime = new Date();
-            const timeDiff = currentTime - lastChoiceTime;  // Difference in milliseconds
-
-            if (timeDiff < 24 * 60 * 60 * 1000) {  // 24 hours in milliseconds
-                return res.status(400).json({
-                    success: false,
-                    message: 'You can only choose a bank once every 24 hours.'
-                });
-            }
-        }
-
-        // Add the bank to the staff's banks array
-        staff.banks.push(bank);  // Add the bank object to the banks array
-
-        // Update the last bank choice timestamp
-        staff.lastBankChoice = new Date();  // Set the current time as the last bank choice time
-
-        await staff.save();  // Save the staff document with the updated banks array and lastBankChoice
-
-        // Mark the bank as "in use"
-        bank.status = 'in use';
-        await bank.save();  // Save the updated bank
-
-        return res.status(200).json({
-            success: true,
-            message: 'Bank chosen successfully for staff use',
-            data: { bankId, username }
-        });
-    } catch (error) {
-        console.log('Error choosing bank:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Error processing request',
-            error: error.message
-        });
-    }
-};
-
-
 
 // Record a debit as an inflow for the staff
 exports.recordInflow = async (req, res) => {
@@ -500,19 +522,29 @@ exports.recordInflow = async (req, res) => {
             });
         }
 
-        // Check for an available bank with sufficient funds in the staff's banks array
-        const availableBank = staff.banks.find(bank => bank.availability && bank.amount >= amount);
+        // Find an available bank that is "in use", ignoring balance
+        const availableBank = staff.banks.find(bank => bank.status === 'in use');
 
         if (!availableBank) {
             return res.status(400).json({
                 success: false,
-                message: 'No available bank with sufficient funds'
+                message: 'No available bank in use'
             });
         }
 
-        // Deduct amount from the selected bank in the embedded banks array
+        // Deduct amount from the selected bank
         availableBank.amount -= amount;
-        if (availableBank.amount === 0) availableBank.availability = false;
+
+        // Ensure the bank's amount does not drop below -10,000 if in use
+        if (availableBank.amount < -10000) {
+            availableBank.amount = -10000;
+        }
+
+        // If balance is zero or negative, check if it should be marked as unavailable
+        // If the bank is still in use, don't mark it unavailable
+        if (availableBank.amount <= 0 && availableBank.status !== 'in use') {
+            availableBank.availability = false;
+        }
 
         // Update the standalone Bank collection with the deduction
         await Bank.findByIdAndUpdate(availableBank._id, {
@@ -525,8 +557,8 @@ exports.recordInflow = async (req, res) => {
 
         // Record inflow for staff
         const inflow = new Inflow({
-            staff: staff._id,  
-            bank: availableBank._id,   
+            staff: staff._id,
+            bank: availableBank._id,
             amount
         });
         await inflow.save();
@@ -550,6 +582,7 @@ exports.recordInflow = async (req, res) => {
         });
     }
 };
+
 
 
 
@@ -613,9 +646,6 @@ exports.getInflowsForStaff = async (req, res) => {
         });
     }
 };
-
-
-
 
 
 exports.resolveTradeComplaint = async (req, res) => {
@@ -704,6 +734,42 @@ exports.resolveTradeComplaint = async (req, res) => {
         return responseController.errorResponse(res, 'Error resolving trade complaint', error.message, 500);
     }
 };
+
+
+
+cron.schedule('0 18 * * *', async () => {
+    try {
+        // Update all banks: set amount to 0 and status to 'unavailable'
+        await Bank.updateMany(
+            {},
+            {
+                $set: {
+                    amount: 0,
+                    status: 'unavailable',
+                    availability: false, // Ensure availability is false when status is unavailable
+                    updatedAt: Date.now()
+                }
+            }
+        );
+
+        // Update all staff members' `banks` array to reflect the reset status and amount
+        await Allstaff.updateMany(
+            { 'banks.status': { $exists: true } }, // Only update if a staff member has banks
+            { 
+                $set: { 
+                    'banks.$[bank].amount': 0, 
+                    'banks.$[bank].status': 'unavailable', 
+                    'banks.$[bank].availability': false 
+                } 
+            },
+            { arrayFilters: [{ 'bank.status': { $exists: true } }] } // Apply to all banks in the array
+        );
+
+        console.log('Bank amounts and status have been reset for all banks and all staff members at 4:20 PM');
+    } catch (error) {
+        console.log('Error resetting bank amounts and status for banks and staff:', error);
+    }
+});
 
 
 

@@ -4,8 +4,6 @@ const { Allstaff, Bank, Inflow } = require("../Model/staffmodel");
 
 
 
-
-
 exports.createPayroll = async (req, res) => {
     try {
         const { name, level, basicSalary, daysOfWork, pay, incentives, debt, penalties, payables, savings, deductions, netSalary } = req.body;
@@ -18,8 +16,9 @@ exports.createPayroll = async (req, res) => {
         const currentDate = new Date();
         const month = currentDate.toLocaleString('default', { month: 'long' });
         const year = currentDate.getFullYear();
-
+      
         // Calculate payroll amount based on days of work and other parameters
+
         const payrollEntry = {
             date: currentDate,
             amount: basicSalary + pay + incentives - (debt + penalties + deductions), // Adjust this formula based on your logic
