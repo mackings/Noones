@@ -73,16 +73,18 @@ const bankSchema = new mongoose.Schema({
   bankName: { type: String, required: true, trim: true },
   bankAccountName: { type: String, required: true, trim: true },
   bankAccountNumber: { type: String, required: true, unique: true, trim: true },
-  amount: { type: Number, required: true, min: 0 },
+  amount: { type: Number, required: true }, // Removed min: 0 to allow negative balances
   availability: { type: Boolean, default: true },
   status: { 
     type: String, 
-    enum: ['available', 'in use','unavailable'], 
+    enum: ['available', 'in use', 'unavailable'], 
     default: 'available' 
   },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
+
+
 
 
 const inflowSchema = new mongoose.Schema({

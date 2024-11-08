@@ -537,15 +537,8 @@ exports.recordInflow = async (req, res) => {
             });
         }
 
-        // Log the staff object to check the structure of the banks array
-        console.log('Staff:', staff);
-
-        // Find an available bank that is "in use", ignoring balance
+        // Find an available bank that is "in use"
         const availableBank = staff.banks.find(bank => bank.status === 'in use');
-
-        // Log to see if the bank is found correctly
-        console.log('Available Bank:', availableBank);
-
         if (!availableBank) {
             return res.status(400).json({
                 success: false,
@@ -556,25 +549,34 @@ exports.recordInflow = async (req, res) => {
         // Deduct amount from the selected bank
         availableBank.amount -= amount;
 
-        // Ensure the bank's amount does not drop below -10,000 if in use
+        // Ensure the bank's amount does not drop below -10,000
         if (availableBank.amount < -10000) {
             availableBank.amount = -10000;
         }
 
-        // If balance is zero or negative, check if it should be marked as unavailable
-        // If the bank is still in use, don't mark it unavailable
+        // Update bank availability in the user's bank if the amount is <= 0, but keep it 'in use' if necessary
         if (availableBank.amount <= 0 && availableBank.status !== 'in use') {
             availableBank.availability = false;
         }
 
-        // Update the standalone Bank collection with the deduction
+        // Update the standalone Bank collection with the new amount and availability
         await Bank.findByIdAndUpdate(availableBank._id, {
             amount: availableBank.amount,
-            availability: availableBank.availability
+            availability: availableBank.availability,
+            status: availableBank.status
         });
 
-        // Save the updated staff document
-        await staff.save();
+        // Update the staff's bank object with the latest values (including the negative balance if any)
+        await Allstaff.updateOne(
+            { _id: staff._id, 'banks._id': availableBank._id },
+            { 
+                $set: { 
+                    'banks.$.amount': availableBank.amount, 
+                    'banks.$.availability': availableBank.availability,
+                    'banks.$.status': availableBank.status
+                }
+            }
+        );
 
         // Record inflow for staff
         const inflow = new Inflow({
