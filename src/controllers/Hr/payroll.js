@@ -1,6 +1,7 @@
 const express = require("express");
 const responseController = require("../Utils/responses");
-const Allstaff = require("../Model/staffmodel");
+const { Allstaff, Bank, Inflow } = require("../Model/staffmodel");
+
 
 
 
