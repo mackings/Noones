@@ -391,10 +391,9 @@ exports.addMoneyToBank = async (req, res) => {
 
 // Fetch the bank details for a specific staff membe
 
-
 exports.chooseBank = async (req, res) => {
 
-    const { username, bankId } = req.body; 
+    const { username, bankId } = req.body;
 
     try {
         // Find the bank by ID and check its availability
@@ -416,7 +415,6 @@ exports.chooseBank = async (req, res) => {
         }
 
         // Check if 24 hours have passed since the last bank choice
-
         if (staff.lastBankChoice) {
             const lastChoiceTime = new Date(staff.lastBankChoice);
             const currentTime = new Date();
@@ -430,16 +428,33 @@ exports.chooseBank = async (req, res) => {
             }
         }
 
-
         // Add the bank to the staff's banks array
-        staff.banks.push(bank);  // Add the bank object to the banks array
+        // Find the bank in the staff's current banks array and update its status to 'in use'
+        const bankIndex = staff.banks.findIndex(b => b._id.toString() === bankId);
+
+        if (bankIndex === -1) {
+            // If the bank is not already in the array, add it
+            staff.banks.push({
+                _id: bank._id,
+                bankName: bank.bankName,
+                bankAccountName: bank.bankAccountName,
+                bankAccountNumber: bank.bankAccountNumber,
+                availability: bank.availability,
+                status: 'in use',
+                amount: bank.amount,
+            });
+        } else {
+            // If the bank already exists in the staff's array, update its status to 'in use'
+            staff.banks[bankIndex].status = 'in use';
+        }
 
         // Update the last bank choice timestamp
         staff.lastBankChoice = new Date();  // Set the current time as the last bank choice time
 
-        await staff.save();  // Save the staff document with the updated banks array and lastBankChoice
+        // Save the updated staff document
+        await staff.save();
 
-        // Mark the bank as "in use"
+        // Mark the bank as "in use" in the Bank collection
         bank.status = 'in use';
         await bank.save();  // Save the updated bank
 
@@ -522,8 +537,14 @@ exports.recordInflow = async (req, res) => {
             });
         }
 
+        // Log the staff object to check the structure of the banks array
+        console.log('Staff:', staff);
+
         // Find an available bank that is "in use", ignoring balance
         const availableBank = staff.banks.find(bank => bank.status === 'in use');
+
+        // Log to see if the bank is found correctly
+        console.log('Available Bank:', availableBank);
 
         if (!availableBank) {
             return res.status(400).json({
@@ -582,7 +603,6 @@ exports.recordInflow = async (req, res) => {
         });
     }
 };
-
 
 
 
