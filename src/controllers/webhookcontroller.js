@@ -79,7 +79,8 @@ const serviceAccount = {
           assignedAt: assignedAt,
           handle: tradePayload.buyer_name,
           account: "Noones",
-          isPaid: false
+          isPaid: false,
+          seller_name:tradePayload.seller_name
         }),
       });
   
