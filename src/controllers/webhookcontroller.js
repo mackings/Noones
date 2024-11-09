@@ -183,13 +183,13 @@ const webhookHandler = async (req, res) => {
 
     const challenge = req.headers['x-noones-request-challenge'];
 
-    // if (challenge) {
-    //     res.set('x-noones-request-challenge', challenge);
-    //     res.status(200).end();
-    //     return;
-    // }
+    if (challenge) {
+        res.set('x-noones-request-challenge', challenge);
+        res.status(200).end();
+        return;
+    }
 
-    const signature = req.get('x-noones-signature');
+    const signature = req.get('xx-noones-signature');
     if (!signature || !req.rawBody || req.rawBody.trim() === '') {
         res.status(400).json({ status: 'error', message: 'Invalid request' });
         return;
