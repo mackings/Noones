@@ -182,11 +182,12 @@ const webhookHandler = async (req, res) => {
     const publicKey = 'fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=';
 
     const challenge = req.headers['x-noones-request-challenge'];
-    if (challenge) {
-        res.set('x-noones-request-challenge', challenge);
-        res.status(200).end();
-        return;
-    }
+
+    // if (challenge) {
+    //     res.set('x-noones-request-challenge', challenge);
+    //     res.status(200).end();
+    //     return;
+    // }
 
     const signature = req.get('x-noones-signature');
     if (!signature || !req.rawBody || req.rawBody.trim() === '') {
