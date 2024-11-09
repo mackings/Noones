@@ -67,7 +67,7 @@ exports.updateNoonesWebhooksForAllAccounts = async (req, res) => {
 
     try {
 
-        for (const account of allAccounts) {
+        for (const account of accounts) {
             const { username, clientId, clientSecret } = account;
 
             // Get access token for the account
