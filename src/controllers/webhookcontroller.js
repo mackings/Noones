@@ -189,7 +189,7 @@ const webhookHandler = async (req, res) => {
         return;
     }
 
-    const signature = req.get('y-noones-signature');
+    const signature = req.get('x-noones-signature');
     if (!signature || !req.rawBody || req.rawBody.trim() === '') {
         res.status(400).json({ status: 'error', message: 'Invalid request' });
         return;

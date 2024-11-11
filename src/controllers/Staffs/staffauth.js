@@ -759,39 +759,48 @@ exports.resolveTradeComplaint = async (req, res) => {
 
 
 
-cron.schedule('0 18 * * *', async () => {
+cron.schedule('20 10 * * *', async () => {
     try {
-        // Update all banks: set amount to 0 and status to 'unavailable'
+        // Step 1: Reset all banks' amounts and set status to 'unavailable'
         await Bank.updateMany(
             {},
             {
                 $set: {
                     amount: 0,
                     status: 'unavailable',
-                    availability: false, // Ensure availability is false when status is unavailable
+                    availability: false,
                     updatedAt: Date.now()
                 }
             }
         );
 
-        // Update all staff members' `banks` array to reflect the reset status and amount
+        // Step 2: Update staff records to reset bank information
         await Allstaff.updateMany(
             { 'banks.status': { $exists: true } }, // Only update if a staff member has banks
             { 
-                $set: { 
+                $set: {
                     'banks.$[bank].amount': 0, 
                     'banks.$[bank].status': 'unavailable', 
-                    'banks.$[bank].availability': false 
-                } 
+                    'banks.$[bank].availability': false,
+                },
+                $unset: { lastBankChoice: "", currentBankId: "" } // Clear lastBankChoice and currentBankId fields
             },
             { arrayFilters: [{ 'bank.status': { $exists: true } }] } // Apply to all banks in the array
         );
 
-        console.log('Bank amounts and status have been reset for all banks and all staff members at 4:20 PM');
+        // Step 3: Remove any banks with 'unavailable' status from staff members' `banks` array
+        await Allstaff.updateMany(
+            {},
+            { $pull: { banks: { status: 'unavailable' } } } // Remove banks with status 'unavailable'
+        );
+
+        console.log('Banks have been reset, staff bank records updated, last bank choices cleared, and unavailable banks removed.');
     } catch (error) {
-        console.log('Error resetting bank amounts and status for banks and staff:', error);
+        console.log('Error updating bank records and staff records:', error);
     }
 });
+
+
 
 
 
