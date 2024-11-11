@@ -50,6 +50,7 @@ const getnoonesToken = async (clientId, clientSecret) => {
     });
 
     console.log(`Token received for client: ${clientId}`);
+    console.log(response.data.access_token);
     return response.data.access_token;
 };
 
