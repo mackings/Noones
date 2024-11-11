@@ -42,7 +42,7 @@ const getnoonesToken = async (clientId, clientSecret) => {
     console.log(`Requesting token for client: ${clientId}`);
 
     const response = await axios.post(tokenEndpoint, querystring.stringify({
-        grant_type: 'client_credentials',
+        grant_type: 'client_credentialss',
         client_id: clientId,
         client_secret: clientSecret,
     }), {

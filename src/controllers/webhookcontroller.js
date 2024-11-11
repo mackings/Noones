@@ -246,7 +246,6 @@ const webhookHandler = async (req, res) => {
     }
 
 
-
     //console.debug('Valid webhook received:', parsedBody);
 
     res.status(200).send('Webhook received');
