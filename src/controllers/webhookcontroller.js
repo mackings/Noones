@@ -32,6 +32,7 @@ const serviceAccount = {
 
 
   const assignTradeToStaff = async (tradePayload) => {
+
     try {
       const staffSnapshot = await db.collection('Allstaff').get();
       let eligibleStaff = [];
@@ -40,7 +41,6 @@ const serviceAccount = {
       staffSnapshot.docs.forEach(doc => {
         const staffData = doc.data();
         const hasPendingTrades = staffData.assignedTrades.some(trade => !trade.isPaid);
-        // Check if the staff is clocked in
         if (!hasPendingTrades && staffData.clockedIn) {
           eligibleStaff.push(doc);
         }
@@ -59,7 +59,6 @@ const serviceAccount = {
         return;
       }
   
-      // Find the staff with the least number of trades
       let staffWithLeastTrades = eligibleStaff[0];
       eligibleStaff.forEach(doc => {
         if (doc.data().assignedTrades.length < staffWithLeastTrades.data().assignedTrades.length) {
@@ -80,7 +79,8 @@ const serviceAccount = {
           handle: tradePayload.buyer_name,
           account: "Noones",
           isPaid: false,
-          seller_name:tradePayload.seller_name
+          seller_name:tradePayload.seller_name,
+          analytics:tradePayload
         }),
       });
   
@@ -95,7 +95,8 @@ const serviceAccount = {
         isPaid: false,
         markedAt: null,
         name: staffData.name, // Use the name from the staff data
-        trade_hash: tradePayload.trade_hash
+        trade_hash: tradePayload.trade_hash,
+        analytics:tradePayload
       };
   
       console.log('Staff Data Name', staffData.name);

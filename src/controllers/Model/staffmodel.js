@@ -109,14 +109,10 @@ const staffSchema = new mongoose.Schema({
     }
   ],
 
-  // Track trades assigned and paid
   assignedTrades: [tradeDetailsSchema],
   paidTrades: [tradeDetailsSchema],
 
-  // Staff role
   role: { type: String },
-
-  // Track clock-in status
 
   clockedIn: { type: Boolean, default: false },
   clockInTime: { type: Date, default: null },
