@@ -38,7 +38,6 @@ const addNewStaff = async (staffId, staffDetails) => {
 };
 
 
-
 // Firestore function to update staff clockedIn status
 const updateClockedInStatus = async (staffId, status) => {
     try {
@@ -244,7 +243,7 @@ exports.getStaffByName = async (req, res) => {
         const { name } = req.params;
 
         // Find the staff member by name
-        const staff = await Allstaff.findOne({ name });
+        const staff = await Allstaff.findOne({ name }).populate('banks'); // Populating bank details
 
         if (!staff) {
             return responseController.errorResponse(res, 'Staff member not found', null, 404);
@@ -266,14 +265,15 @@ exports.getStaffByName = async (req, res) => {
             messages: staff.messages,
             clockInTime: staff.clockInTime,
             clockOutTime: staff.clockOutTime,
+            banks: staff.banks, 
         };
 
-        // Return the staff data
         return responseController.successResponse(res, 'Staff member data retrieved successfully', staffData);
     } catch (error) {
         return responseController.errorResponse(res, 'Error fetching staff data', error);
     }
 };
+
 
 
 
@@ -428,8 +428,7 @@ exports.chooseBank = async (req, res) => {
             }
         }
 
-        // Add the bank to the staff's banks array
-        // Find the bank in the staff's current banks array and update its status to 'in use'
+        // Add the bank to the staff's banks array with the opening balance
         const bankIndex = staff.banks.findIndex(b => b._id.toString() === bankId);
 
         if (bankIndex === -1) {
@@ -442,10 +441,12 @@ exports.chooseBank = async (req, res) => {
                 availability: bank.availability,
                 status: 'in use',
                 amount: bank.amount,
+                openingBalance: bank.amount,  // Store the opening balance
             });
         } else {
-            // If the bank already exists in the staff's array, update its status to 'in use'
+            // If the bank already exists in the staff's array, update its status and opening balance
             staff.banks[bankIndex].status = 'in use';
+            staff.banks[bankIndex].openingBalance = bank.amount; // Update opening balance
         }
 
         // Update the last bank choice timestamp
@@ -461,7 +462,7 @@ exports.chooseBank = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: 'Bank chosen successfully for staff use',
-            data: { bankId, username }
+            data: { bankId, username, openingBalance: bank.amount }
         });
     } catch (error) {
         console.log('Error choosing bank:', error);
@@ -472,6 +473,7 @@ exports.chooseBank = async (req, res) => {
         });
     }
 };
+
 
 
 

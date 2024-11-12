@@ -126,7 +126,18 @@ const staffSchema = new mongoose.Schema({
 
   // Messages between HR and staff
   messages: [messageSchema],
-  banks: [bankSchema],
+  banks: [
+    {
+      bankName: { type: String, required: true },
+      bankAccountName: { type: String, required: true },
+      bankAccountNumber: { type: String, required: true },
+      amount: { type: Number, required: true },
+      availability: { type: Boolean, default: true },
+      status: { type: String, enum: ['available', 'in use', 'unavailable'], default: 'available' },
+      openingBalance: { type: Number, required: true },  // Added openingBalance field
+      createdAt: { type: Date, default: Date.now },
+    }
+  ],
   lastBankChoice: { type: Date, default: null },
   currentBankId: { type: mongoose.Schema.Types.ObjectId, ref: 'Bank', default: null },
 });
