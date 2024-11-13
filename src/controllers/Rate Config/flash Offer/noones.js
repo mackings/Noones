@@ -119,14 +119,7 @@ exports.updateNoonesWebhooksForAllAccounts = async (req, res) => {
     const webhookUrl = 'https://api.noones.com/webhook/v1/user/webhooks';
     const updateResults = [];
 
-    // Webhook events to update
-    const eventsToUpdate = [
-        "trade.started",
-        "trade.chat_message_received"
-    ];
-
     try {
-
         for (const account of accounts) {
             const { username, clientId, clientSecret } = account;
 
@@ -134,42 +127,50 @@ exports.updateNoonesWebhooksForAllAccounts = async (req, res) => {
             try {
                 const token = await getnoonesToken(clientId, clientSecret);
 
-                for (const event_type of eventsToUpdate) {
-                    console.log(`Updating webhook for event: ${event_type} for account: ${username}`);
+                console.log(`Updating webhooks for account: ${username}`);
 
-                    // Send request to update webhook
-                    try {
-                        const response = await axios.post(webhookUrl, {
-                            endpoints: [
-                                {
-                                    url: "https://b-backend-xe8q.onrender.com/webhook",
-                                    enabled: true,
-                                    event_type: event_type
-                                }
-                            ]
-                        }, {
-                            headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                            }
-                        });
+                // Prepare the request payload with both events in a single array
+                const requestBody = {
+                    user_id: "0eef14db-92bb-4c1a-9073-eeb6fd9e6a5b", // Use the correct user ID
+                    webhook_id: "219b7fa3-2af4-4508-8b93-809b3fc6f77b", // Use the correct webhook ID
+                    endpoints: [
+                        {
+                            event_type: "trade.started",
+                            url: "https://b-backend-xe8q.onrender.com/webhook/v1",
+                            enabled: true,
+                            id: 376143
+                        },
+                        {
+                            event_type: "trade.chat_message_received",
+                            url: "https://b-backend-xe8q.onrender.com/webhook/v1",
+                            enabled: true,
+                            id: 376144
+                        }
+                    ]
+                };
 
-                        console.log(`Webhook updated for event: ${event_type} (account: ${username}). Response:`, response.data);
+                // Send a single request to update both webhooks at once
+                try {
+                    const response = await axios.post(webhookUrl, requestBody, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
 
-                        // Store the result of the update
-                        updateResults.push({
-                            username,
-                            event_type,
-                            result: response.data
-                        });
-                    } catch (updateError) {
-                        console.error(`Error updating webhook for event: ${event_type} (account: ${username}). Error:`, updateError.message);
-                        updateResults.push({
-                            username,
-                            event_type,
-                            error: updateError.message
-                        });
-                    }
+                    console.log(`Webhooks updated for account: ${username}. Response:`, response.data);
+
+                    // Store the result of the update
+                    updateResults.push({
+                        username,
+                        result: response.data
+                    });
+                } catch (updateError) {
+                    console.error(`Error updating webhooks for account: ${username}. Error:`, updateError.message);
+                    updateResults.push({
+                        username,
+                        error: updateError.message
+                    });
                 }
 
             } catch (tokenError) {
@@ -189,6 +190,7 @@ exports.updateNoonesWebhooksForAllAccounts = async (req, res) => {
         res.status(500).json({ error: error.response ? error.response.data : error.message });
     }
 };
+
 
 
 
