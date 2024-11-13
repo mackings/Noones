@@ -82,13 +82,6 @@ exports.GetNoonesWebhooksForAllAccounts = async (req, res) => {
                     // Send request to update webhook
                     try {
                         const response = await axios.get(webhookUrl, {
-                            endpoints: [
-                                {
-                                    url: "https://b-backend-xe8q.onrender.com/webhook",
-                                    enabled: true,
-                                    event_type: event_type
-                                }
-                            ]
                         }, {
                             headers: {
                                 'Authorization': `Bearer ${token}`,
@@ -96,7 +89,7 @@ exports.GetNoonesWebhooksForAllAccounts = async (req, res) => {
                             }
                         });
 
-                        console.log(`Webhook updated for event: ${event_type} (account: ${username}). Response:`, response.data);
+                        console.log(response);
 
                         // Store the result of the update
                         updateResults.push({
