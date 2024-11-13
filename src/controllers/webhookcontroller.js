@@ -150,8 +150,8 @@ const saveTradeToFirestore = async (payload) => {
           const existingTimestamp = docSnapshot.data().timestamp.toMillis();
           const currentTimestamp = Date.now();
 
-          // Skip if the document was recently saved (within 1 second)
-          if (currentTimestamp - existingTimestamp < 1000) {
+          // Increase the time window to 5 seconds to handle rapid retries
+          if (currentTimestamp - existingTimestamp < 5000) {
               console.log(`Trade ${payload.trade_hash} was saved recently. Skipping duplicate.`);
               return;
           }
@@ -168,6 +168,7 @@ const saveTradeToFirestore = async (payload) => {
       console.error('Error saving the trade to Firestore:', error);
   }
 };
+
 
 
 
