@@ -135,12 +135,12 @@ exports.updateNoonesWebhooksForAllAccounts = async (req, res) => {
                     endpoints: [
                         {
                             event_type: "trade.started",
-                            url: "https://b-backend-xe8q.onrender.com/webhook/v1",
+                            url: "https://b-backend-xe8q.onrender.com/webhook",
                             enabled: true
                         },
                         {
                             event_type: "trade.chat_message_received",
-                            url: "https://b-backend-xe8q.onrender.com/webhook/v1",
+                            url: "https://b-backend-xe8q.onrender.com/webhook",
                             enabled: true
                         }
                     ]
