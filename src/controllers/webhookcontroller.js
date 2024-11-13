@@ -234,8 +234,7 @@ const webhookHandler = async (req, res) => {
         await saveChatMessageToFirestore(payload, messages); 
     };
 
-
-    // Check the webhook type and call the respective handler function
+    
     const webhookType = parsedBody?.type;
 
     if (webhookType === 'trade.started') {

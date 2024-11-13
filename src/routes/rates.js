@@ -3,7 +3,7 @@ const { updatePaxfulPrice, getPaxfulUserInfo, getMultiplePaxfulUserInfo } = requ
 const { getPaxfulOffers, UpdateSingleMargin } = require('../controllers/Rate Config/Offers Config/paxfulOffer');
 const { getMultiplePaxfulOffers, updatePricesForAllAccounts, updateOffersForSpecificAccount } = require('../controllers/Rate Config/flash Offer/paxful');
 const { getBinanceRate, getAllDollarRates } = require('../controllers/Rate Config/marketrates');
-const { getMultiplenoonesOffers, updatenoonesPricesForAllAccounts, updatenoonesOffersForSpecificAccount, updateNoonesWebhooksForAllAccounts } = require('../controllers/Rate Config/flash Offer/noones');
+const { getMultiplenoonesOffers, updatenoonesPricesForAllAccounts, updatenoonesOffersForSpecificAccount, updateNoonesWebhooksForAllAccounts, GetNoonesWebhooksForAllAccounts } = require('../controllers/Rate Config/flash Offer/noones');
 const router = express.Router();
 
 
@@ -16,6 +16,7 @@ const router = express.Router();
 //Webhook Update
 
 router.post("/webhook/noones/update-multiple",updateNoonesWebhooksForAllAccounts);
+router.get("/webhook/noones/get-multiple", GetNoonesWebhooksForAllAccounts);
 
 // Offers
 router.get("/offers/noones/get-multiple", getMultiplenoonesOffers);
