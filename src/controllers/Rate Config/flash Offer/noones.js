@@ -129,22 +129,19 @@ exports.updateNoonesWebhooksForAllAccounts = async (req, res) => {
 
                 console.log(`Updating webhooks for account: ${username}`);
 
-                // Prepare the request payload with both events in a single array
+                // Prepare the request payload according to the original structure
                 const requestBody = {
-                    user_id: "0eef14db-92bb-4c1a-9073-eeb6fd9e6a5b", // Use the correct user ID
-                    webhook_id: "219b7fa3-2af4-4508-8b93-809b3fc6f77b", // Use the correct webhook ID
+                    tag: "string", // Set an appropriate tag value if needed
                     endpoints: [
                         {
                             event_type: "trade.started",
                             url: "https://b-backend-xe8q.onrender.com/webhook/v1",
-                            enabled: true,
-                            id: 376143
+                            enabled: true
                         },
                         {
                             event_type: "trade.chat_message_received",
                             url: "https://b-backend-xe8q.onrender.com/webhook/v1",
-                            enabled: true,
-                            id: 376144
+                            enabled: true
                         }
                     ]
                 };
@@ -190,6 +187,7 @@ exports.updateNoonesWebhooksForAllAccounts = async (req, res) => {
         res.status(500).json({ error: error.response ? error.response.data : error.message });
     }
 };
+
 
 
 
