@@ -149,24 +149,41 @@ const saveTradeToFirestore = async (payload) => {
 
     if (docSnapshot.exists) {
       const existingTimestamp = docSnapshot.data().timestamp.toMillis();
+      const assignedTimestamp = docSnapshot.data().assigned_at
+        ? docSnapshot.data().assigned_at.toMillis()
+        : null;
+
+      // Check if the document was saved or assigned recently
       if (currentTimestamp - existingTimestamp < 5000) {
         console.log(`Trade ${payload.trade_hash} was saved recently. Skipping duplicate.`);
         return;
       }
+
+      // Check if the trade was assigned to staff recently
+      if (assignedTimestamp && currentTimestamp - assignedTimestamp < 5000) {
+        console.log(`Trade ${payload.trade_hash} was assigned recently. Skipping duplicate assignment.`);
+        return;
+      }
     }
 
-    // Attempt to set the document with a precondition to prevent overwrites.
+    // Save document and update timestamp
     await docRef.set({
       ...payload,
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
 
+    // Assign trade and set assignment timestamp
     await assignTradeToStaff(payload);
-    console.log(`Noones Trade ${payload.trade_hash} saved to Firestore DB >>>>>>>>>>>>>`);
+    await docRef.update({
+      assigned_at: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    console.log(`Noones Trade ${payload.trade_hash} saved to Firestore DB and assigned >>>>>>>>>>>>>`);
   } catch (error) {
     console.error('Error saving the trade to Firestore:', error);
   }
 };
+
 
 
 
