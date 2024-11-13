@@ -143,31 +143,31 @@ const serviceAccount = {
 
 const saveTradeToFirestore = async (payload) => {
   try {
-      const docRef = db.collection('manualsystem').doc(payload.trade_hash);
-      const docSnapshot = await docRef.get();
+    const docRef = db.collection('manualsystem').doc(payload.trade_hash);
+    const docSnapshot = await docRef.get();
+    const currentTimestamp = Date.now();
 
-      if (docSnapshot.exists) {
-          const existingTimestamp = docSnapshot.data().timestamp.toMillis();
-          const currentTimestamp = Date.now();
-
-          // Increase the time window to 5 seconds to handle rapid retries
-          if (currentTimestamp - existingTimestamp < 5000) {
-              console.log(`Trade ${payload.trade_hash} was saved recently. Skipping duplicate.`);
-              return;
-          }
+    if (docSnapshot.exists) {
+      const existingTimestamp = docSnapshot.data().timestamp.toMillis();
+      if (currentTimestamp - existingTimestamp < 5000) {
+        console.log(`Trade ${payload.trade_hash} was saved recently. Skipping duplicate.`);
+        return;
       }
+    }
 
-      // Save if it's a new document or if sufficient time has passed since the last save
-      await docRef.set({
-          ...payload,
-          timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      });
-      await assignTradeToStaff(payload);
-      console.log(`Noones Trade ${payload.trade_hash} saved to Firestore DB >>>>>>>>>>>>>`);
+    // Attempt to set the document with a precondition to prevent overwrites.
+    await docRef.set({
+      ...payload,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    await assignTradeToStaff(payload);
+    console.log(`Noones Trade ${payload.trade_hash} saved to Firestore DB >>>>>>>>>>>>>`);
   } catch (error) {
-      console.error('Error saving the trade to Firestore:', error);
+    console.error('Error saving the trade to Firestore:', error);
   }
 };
+
 
 
 
