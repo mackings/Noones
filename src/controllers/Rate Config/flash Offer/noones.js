@@ -57,18 +57,11 @@ const getnoonesToken = async (clientId, clientSecret) => {
 
 
 
-exports.GetNoonesWebhooksForAllAccounts = async (req, res) => {
+exports.getNoonesWebhooksForAllAccounts = async (req, res) => {
     const webhookUrl = 'https://api.noones.com/webhook/v1/user/webhooks';
-    const updateResults = [];
-
-    // Webhook events to update
-    const eventsToUpdate = [
-        "trade.started",
-        "trade.chat_message_received"
-    ];
+    const getResults = [];
 
     try {
-
         for (const account of accounts) {
             const { username, clientId, clientSecret } = account;
 
@@ -76,54 +69,50 @@ exports.GetNoonesWebhooksForAllAccounts = async (req, res) => {
             try {
                 const token = await getnoonesToken(clientId, clientSecret);
 
-                for (const event_type of eventsToUpdate) {
-                    console.log(`Getting webhook for event: ${event_type} for account: ${username}`);
+                console.log(`Fetching webhooks for account: ${username}`);
 
-                    // Send request to update webhook
-                    try {
-                        const response = await axios.get(webhookUrl, {
-                        }, {
-                            headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                            }
-                        });
+                // Send GET request to retrieve webhooks
+                try {
+                    const response = await axios.get(webhookUrl, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
 
-                        console.log(response);
+                    console.log(`Fetched webhooks for account: ${username}. Response:`, response.data);
 
-                        // Store the result of the update
-                        updateResults.push({
-                            username,
-                            event_type,
-                            result: response.data
-                        });
-                    } catch (updateError) {
-                        console.error(`Error updating webhook for event: ${event_type} (account: ${username}). Error:`, updateError.message);
-                        updateResults.push({
-                            username,
-                            event_type,
-                            error: updateError.message
-                        });
-                    }
+                    // Store the result of the retrieval
+                    getResults.push({
+                        username,
+                        webhooks: response.data
+                    });
+                } catch (getError) {
+                    console.error(`Error fetching webhooks for account: ${username}. Error:`, getError.message);
+                    getResults.push({
+                        username,
+                        error: getError.message
+                    });
                 }
 
             } catch (tokenError) {
                 console.error(`Error fetching token for account: ${username}. Error:`, tokenError.message);
-                updateResults.push({
+                getResults.push({
                     username,
                     error: tokenError.message
                 });
             }
         }
 
-        console.log('Webhook updates completed for all accounts.');
-        res.status(200).json({ updateResults });
+        console.log('Webhook retrieval completed for all accounts.');
+        res.status(200).json({ getResults });
 
     } catch (error) {
-        console.error('Error updating webhooks for all accounts:', error);
+        console.error('Error retrieving webhooks for all accounts:', error);
         res.status(500).json({ error: error.response ? error.response.data : error.message });
     }
 };
+
 
 
 exports.updateNoonesWebhooksForAllAccounts = async (req, res) => {
@@ -200,6 +189,89 @@ exports.updateNoonesWebhooksForAllAccounts = async (req, res) => {
         res.status(500).json({ error: error.response ? error.response.data : error.message });
     }
 };
+
+
+
+exports.updatesNoonesWebhooksForAllAccounts = async (req, res) => {
+    const webhookUrl = 'https://api.noones.com/webhook/v1/user/webhooks';
+    const updateResults = [];
+
+    // Webhook events to update
+    const eventsToUpdate = [
+        "trade.started",
+        "trade.chat_message_received"
+    ];
+
+    try {
+        for (const account of accounts) {
+            const { username, clientId, clientSecret } = account;
+
+            // Get access token for the account
+            try {
+                const token = await getnoonesToken(clientId, clientSecret);
+
+                for (const event_type of eventsToUpdate) {
+                    console.log(`Updating webhook for event: ${event_type} for account: ${username}`);
+
+                    // Prepare the request payload based on the new structure
+                    const requestBody = {
+                        user_id: "0eef14db-92bb-4c1a-9073-eeb6fd9e6a5b", // Use the correct user ID
+                        webhook_id: "219b7fa3-2af4-4508-8b93-809b3fc6f77b", // Use the correct webhook ID
+                        endpoints: [
+                            {
+                                event_type: event_type,
+                                url: "https://b-backend-xe8q.onrender.com/webhook",
+                                enabled: true,
+                                id: event_type === "trade.started" ? 376143 : 376144 // Set the correct ID based on the event
+                            }
+                        ]
+                    };
+
+                    // Send request to update webhook
+                    try {
+                        const response = await axios.post(webhookUrl, requestBody, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        console.log(`Webhook updated for event: ${event_type} (account: ${username}). Response:`, response.data);
+
+                        // Store the result of the update
+                        updateResults.push({
+                            username,
+                            event_type,
+                            result: response.data
+                        });
+                    } catch (updateError) {
+                        console.error(`Error updating webhook for event: ${event_type} (account: ${username}). Error:`, updateError.message);
+                        updateResults.push({
+                            username,
+                            event_type,
+                            error: updateError.message
+                        });
+                    }
+                }
+
+            } catch (tokenError) {
+                console.error(`Error fetching token for account: ${username}. Error:`, tokenError.message);
+                updateResults.push({
+                    username,
+                    error: tokenError.message
+                });
+            }
+        }
+
+        console.log('Webhook updates completed for all accounts.');
+        res.status(200).json({ updateResults });
+
+    } catch (error) {
+        console.error('Error updating webhooks for all accounts:', error);
+        res.status(500).json({ error: error.response ? error.response.data : error.message });
+    }
+};
+
 
 
 const getnoonesOffersForAllAccounts = async () => {
