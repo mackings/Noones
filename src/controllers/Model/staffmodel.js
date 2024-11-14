@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 // Trade Details Schema
 
 const tradeDetailsSchema = new mongoose.Schema({
+  
   account: { type: String },
   amountPaid: { type: String, default: null },
   assignedAt: { type: Date },
@@ -11,7 +12,9 @@ const tradeDetailsSchema = new mongoose.Schema({
   isPaid: { type: Boolean, default: false },
   markedAt: { type: String, default: null },
   name: { type: String },
-  trade_hash: { type: String }
+  trade_hash: { type: String },
+  analytics:{type:[]}
+
 });
 
 // Payroll Schema to track payment details and salary
