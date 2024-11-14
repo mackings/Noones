@@ -328,9 +328,9 @@ const webhookHandler = async (req, res) => {
     const webhookType = parsedBody?.type;
 
     if (webhookType === 'trade.started') {
-       // await handleTradeStarted(parsedBody.payload);
+        await handleTradeStarted(parsedBody.payload);
     } else if (webhookType === 'trade.chat_message_received') {
-       //await handleTradeMessage(parsedBody.payload);
+       await handleTradeMessage(parsedBody.payload);
     } else {
 
     }
