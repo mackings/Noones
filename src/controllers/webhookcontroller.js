@@ -127,133 +127,47 @@ const serviceAccount = {
 
 
 
-// const saveTradeToFirestore = async (payload) => {
-//     try {
-//         const docRef = db.collection('manualsystem').doc(payload.trade_hash);
-//         await docRef.set({
-//             ...payload,
-//             timestamp: admin.firestore.FieldValue.serverTimestamp(),
-//         });
-//         await assignTradeToStaff(payload);
-//         console.log(`Noones Trade ${payload.trade_hash} saved to Firestore DB >>>>>>>>>>>>>`);
-//     } catch (error) {
-//         console.error('Error saving the trade to Firestore:', error);
-//     }
-// };
-
 const saveTradeToFirestore = async (payload) => {
-  try {
-    const docRef = db.collection('manualsystem').doc(payload.trade_hash);
-    const docSnapshot = await docRef.get();
-    const currentTimestamp = Date.now();
-
-    if (docSnapshot.exists) {
-      const existingTimestamp = docSnapshot.data().timestamp.toMillis();
-      const assignedTimestamp = docSnapshot.data().assigned_at
-        ? docSnapshot.data().assigned_at.toMillis()
-        : null;
-
-      // Check if the document was saved or assigned recently
-      if (currentTimestamp - existingTimestamp < 5000) {
-        console.log(`Trade ${payload.trade_hash} was saved recently. Skipping duplicate.`);
-        return;
-      }
-
-      // Check if the trade was assigned to staff recently
-      if (assignedTimestamp && currentTimestamp - assignedTimestamp < 5000) {
-        console.log(`Trade ${payload.trade_hash} was assigned recently. Skipping duplicate assignment.`);
-        return;
-      }
+    try {
+        const docRef = db.collection('manualsystem').doc(payload.trade_hash);
+        await docRef.set({
+            ...payload,
+            timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        await assignTradeToStaff(payload);
+        console.log(`Noones Trade ${payload.trade_hash} saved to Firestore DB >>>>>>>>>>>>>`);
+    } catch (error) {
+        console.error('Error saving the trade to Firestore:', error);
     }
-
-    // Save document and update timestamp
-    await docRef.set({
-      ...payload,
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
-
-    // Assign trade and set assignment timestamp
-    await assignTradeToStaff(payload);
-    await docRef.update({
-      assigned_at: admin.firestore.FieldValue.serverTimestamp()
-    });
-
-    console.log(`Noones Trade ${payload.trade_hash} saved to Firestore DB and assigned >>>>>>>>>>>>>`);
-  } catch (error) {
-   // console.error('Error saving the trade to Firestore:', error);
-  }
 };
 
 
 
 
-
-
-
-// const saveChatMessageToFirestore = async (payload, messages) => {
-//     try {
-//         const docRef = db.collection('manualmessages').doc(payload.trade_hash);
-//         await db.runTransaction(async (transaction) => {
-//             const doc = await transaction.get(docRef);
-//             if (!doc.exists) {
-//                 console.log(`Noones Chats for trade ${payload.trade_hash} does not exist. Opening New Chat`);
-//                 transaction.set(docRef, {
-//                     trade_hash: payload.trade_hash,
-//                     messages: messages,
-//                     timestamp: admin.firestore.FieldValue.serverTimestamp(),
-//                 });
-//             } else {
-//                 console.log(`Noones Chat for trade ${payload.trade_hash} exists. Adding to thread`);
-//                 transaction.update(docRef, {
-//                     messages: admin.firestore.FieldValue.arrayUnion(...messages),
-//                     timestamp: admin.firestore.FieldValue.serverTimestamp(),
-//                 });
-//             }
-//         });
-//         console.log(`Noones Chat messages for trade ${payload.trade_hash} saved to Firestore.`);
-//     } catch (error) {
-//         console.error('Error saving chat messages to Firestore:', error);
-//     }
-// };
-
 const saveChatMessageToFirestore = async (payload, messages) => {
-  try {
-      const docRef = db.collection('manualmessages').doc(payload.trade_hash);
-      await db.runTransaction(async (transaction) => {
-          const doc = await transaction.get(docRef);
-          const currentTimestamp = Date.now();
-
-          if (!doc.exists) {
-              console.log(`Noones Chats for trade ${payload.trade_hash} does not exist. Opening New Chat`);
-              transaction.set(docRef, {
-                  trade_hash: payload.trade_hash,
-                  messages: messages,
-                  timestamp: admin.firestore.FieldValue.serverTimestamp(),
-              });
-          } else {
-              const existingMessages = doc.data().messages || [];
-              
-              // Filter out messages that already exist based on their unique ID
-              const newMessages = messages.filter(newMsg =>
-                  !existingMessages.some(existingMsg => existingMsg.id === newMsg.id)
-              );
-
-              if (newMessages.length === 0) {
-                  console.log(`All messages for trade ${payload.trade_hash} are duplicates. Skipping save.`);
-                  return;
-              }
-
-              console.log(`Noones Chat for trade ${payload.trade_hash} exists. Adding new messages to thread`);
-              transaction.update(docRef, {
-                  messages: admin.firestore.FieldValue.arrayUnion(...newMessages),
-                  timestamp: admin.firestore.FieldValue.serverTimestamp(),
-              });
-          }
-      });
-      console.log(`Noones Chat messages for trade ${payload.trade_hash} saved to Firestore.`);
-  } catch (error) {
-      console.error('Error saving chat messages to Firestore:', error);
-  }
+    try {
+        const docRef = db.collection('manualmessages').doc(payload.trade_hash);
+        await db.runTransaction(async (transaction) => {
+            const doc = await transaction.get(docRef);
+            if (!doc.exists) {
+                console.log(`Noones Chats for trade ${payload.trade_hash} does not exist. Opening New Chat`);
+                transaction.set(docRef, {
+                    trade_hash: payload.trade_hash,
+                    messages: messages,
+                    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                });
+            } else {
+                console.log(`Noones Chat for trade ${payload.trade_hash} exists. Adding to thread`);
+                transaction.update(docRef, {
+                    messages: admin.firestore.FieldValue.arrayUnion(...messages),
+                    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                });
+            }
+        });
+        console.log(`Noones Chat messages for trade ${payload.trade_hash} saved to Firestore.`);
+    } catch (error) {
+        console.error('Error saving chat messages to Firestore:', error);
+    }
 };
 
 
@@ -328,9 +242,9 @@ const webhookHandler = async (req, res) => {
     const webhookType = parsedBody?.type;
 
     if (webhookType === 'trade.started') {
-       // await handleTradeStarted(parsedBody.payload);
+       await handleTradeStarted(parsedBody.payload);
     } else if (webhookType === 'trade.chat_message_received') {
-      // await handleTradeMessage(parsedBody.payload);
+     await handleTradeMessage(parsedBody.payload);
     } else {
 
     }
