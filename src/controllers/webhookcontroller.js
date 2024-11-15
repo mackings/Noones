@@ -123,19 +123,36 @@ const assignTradeToStaff = async (tradePayload) => {
 
 
 
+// In-memory tracking of trade hashes
+const processedTradeHashes = new Set();
+
 const saveTradeToFirestore = async (payload) => {
-    try {
-        const docRef = db.collection('manualsystem').doc(payload.trade_hash);
-        await docRef.set({
-            ...payload,
-            timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        });
-        await assignTradeToStaff(payload);
-        console.log(`Noones Trade ${payload.trade_hash} saved to Firestore DB >>>>>>>>>>>>>`);
-    } catch (error) {
-        console.error('Error saving the trade to Firestore:', error);
+  try {
+    // Check if the trade has already been processed
+    if (processedTradeHashes.has(payload.trade_hash)) {
+      console.log(`Trade ${payload.trade_hash} is already processed. Skipping Firestore save.`);
+      return; // Exit if already processed
     }
+
+    // Save the trade to Firestore
+    const docRef = db.collection('manualsystem').doc(payload.trade_hash);
+    await docRef.set({
+      ...payload,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    // Add trade_hash to in-memory cache after saving
+    processedTradeHashes.add(payload.trade_hash);
+
+    console.log(`Noones Trade ${payload.trade_hash} saved to Firestore DB >>>>>>>>>>>>>`);
+
+    // Assign the trade to a staff member
+    await assignTradeToStaff(payload);
+  } catch (error) {
+    console.error('Error saving the trade to Firestore:', error);
+  }
 };
+
 
 
 
