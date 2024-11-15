@@ -15,7 +15,7 @@ const router = express.Router();
 
 //Webhook Update
 
-router.post("/webhook/noones/update-multiple",updateNoonesWebhooksForAllAccounts);
+//router.post("/webhook/noones/update-multiple",updateNoonesWebhooksForAllAccounts);
 router.get("/webhook/noones/get-multiple", getNoonesWebhooksForAllAccounts);
 
 // Offers
