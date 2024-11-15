@@ -5,6 +5,7 @@ const { Allstaff, Bank, Inflow } = require("../Model/staffmodel");
 
 
 exports.markTradeAsPaid = async (req, res) => {
+  
   const { markedAt, trade_hash, name, amountPaid } = req.body;
 
   try {
