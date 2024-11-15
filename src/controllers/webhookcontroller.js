@@ -33,96 +33,108 @@ const serviceAccount = {
 
 
 
-  const assignTradeToStaff = async (tradePayload) => {
+// In-memory tracking of trade hashes
+const assignedTradeHashes = new Set();
 
-    try {
-      const staffSnapshot = await db.collection('Allstaff').get();
-      let eligibleStaff = [];
-  
-      // Filter out staff with pending unpaid trades and those not clocked in
-      staffSnapshot.docs.forEach(doc => {
-        const staffData = doc.data();
-        const hasPendingTrades = staffData.assignedTrades.some(trade => !trade.isPaid);
-        if (!hasPendingTrades && staffData.clockedIn) {
-          eligibleStaff.push(doc);
-        }
-      });
-  
-      if (eligibleStaff.length === 0) {
-        console.log('Noones Dropping Trades for the Best >>>>>>>>>>>>>>>>');
-    
-        // Save the trade in the unassignedTrades collection
-        await db.collection('manualunassigned').add({
-          trade_hash: tradePayload.trade_hash,
-          fiat_amount_requested: tradePayload.fiat_amount_requested,
-          timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        });
-    
-        return;
-      }
-  
-      let staffWithLeastTrades = eligibleStaff[0];
-      eligibleStaff.forEach(doc => {
-        if (doc.data().assignedTrades.length < staffWithLeastTrades.data().assignedTrades.length) {
-          staffWithLeastTrades = doc;
-        }
-      });
-  
-      const assignedStaffId = staffWithLeastTrades.id; // This is a Firestore string ID
-      const staffRef = db.collection('Allstaff').doc(assignedStaffId);
-      const assignedAt = new Date();
-  
-      // Now update the assignedTrades array in Firestore
-      await staffRef.update({
-        assignedTrades: admin.firestore.FieldValue.arrayUnion({
-          trade_hash: tradePayload.trade_hash,
-          fiat_amount_requested: tradePayload.fiat_amount_requested,
-          assignedAt: assignedAt,
-          handle: tradePayload.buyer_name,
-          account: "Noones",
-          isPaid: false,
-          seller_name:tradePayload.seller_name,
-          analytics:tradePayload
-        }),
-      });
-  
-      // Retrieve the name from the staff document
-      const staffData = staffWithLeastTrades.data();
-      const tradeData = {
-        account: "Noones",
-        amountPaid: null, // Not available at assignment
-        assignedAt: assignedAt,
-        fiat_amount_requested: tradePayload.fiat_amount_requested,
-        handle: tradePayload.buyer_name,
-        isPaid: false,
-        markedAt: null,
-        name: staffData.name, // Use the name from the staff data
-        trade_hash: tradePayload.trade_hash,
-        analytics:tradePayload
-      };
-  
-      console.log('Staff Data Name', staffData.name);
-      
-      // Log the username before querying MongoDB
-      console.log('Attempting to find staff in MongoDB with username:', staffData.username);
-  
-      
-      const updatedStaff = await Allstaff.findOneAndUpdate(
-        { username: staffData.username }, // Use the username from the staff data
-        { $push: { assignedTrades: tradeData } }, // Push the trade data to the assignedTrades array
-        { new: true } // Return the updated document
-      );
-  
-      if (!updatedStaff) {
-        console.error('Trade assignment failed in MongoDB. Staff not found with username:', staffData.username);
-      } else {
-        console.log(`Noones Trade ${tradePayload.trade_hash} assigned to ${assignedStaffId}.`);
-      }
-  
-    } catch (error) {
-      console.error('Error assigning trade to staff:', error);
+const assignTradeToStaff = async (tradePayload) => {
+  try {
+    // Check if trade_hash is already assigned
+    if (assignedTradeHashes.has(tradePayload.trade_hash)) {
+      console.log(`Trade ${tradePayload.trade_hash} is already assigned.`);
+      return; // Exit if already assigned
     }
-  };
+
+    const staffSnapshot = await db.collection('Allstaff').get();
+    let eligibleStaff = [];
+
+    // Filter out staff with pending unpaid trades and those not clocked in
+    staffSnapshot.docs.forEach((doc) => {
+      const staffData = doc.data();
+      const hasPendingTrades = staffData.assignedTrades.some((trade) => !trade.isPaid);
+      if (!hasPendingTrades && staffData.clockedIn) {
+        eligibleStaff.push(doc);
+      }
+    });
+
+    if (eligibleStaff.length === 0) {
+      console.log('No eligible staff found. Saving trade to manual unassigned collection.');
+
+      // Save the trade in the unassignedTrades collection
+      await db.collection('manualunassigned').add({
+        trade_hash: tradePayload.trade_hash,
+        fiat_amount_requested: tradePayload.fiat_amount_requested,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      return;
+    }
+
+    // Find staff with the least number of trades
+    let staffWithLeastTrades = eligibleStaff[0];
+    eligibleStaff.forEach((doc) => {
+      if (doc.data().assignedTrades.length < staffWithLeastTrades.data().assignedTrades.length) {
+        staffWithLeastTrades = doc;
+      }
+    });
+
+    const assignedStaffId = staffWithLeastTrades.id; // Firestore document ID
+    const staffRef = db.collection('Allstaff').doc(assignedStaffId);
+    const assignedAt = new Date();
+
+    // Update the assignedTrades array in Firestore
+    await staffRef.update({
+      assignedTrades: admin.firestore.FieldValue.arrayUnion({
+        trade_hash: tradePayload.trade_hash,
+        fiat_amount_requested: tradePayload.fiat_amount_requested,
+        assignedAt: assignedAt,
+        handle: tradePayload.buyer_name,
+        account: "Noones",
+        isPaid: false,
+        seller_name: tradePayload.seller_name,
+        analytics: tradePayload,
+      }),
+    });
+
+    // Retrieve the staff data
+    const staffData = staffWithLeastTrades.data();
+    const tradeData = {
+      account: "Noones",
+      amountPaid: null, // Not available at assignment
+      assignedAt: assignedAt,
+      fiat_amount_requested: tradePayload.fiat_amount_requested,
+      handle: tradePayload.buyer_name,
+      isPaid: false,
+      markedAt: null,
+      name: staffData.name,
+      trade_hash: tradePayload.trade_hash,
+      analytics: tradePayload,
+    };
+
+    console.log('Staff Data Name', staffData.name);
+
+    // Log the username before querying MongoDB
+    console.log('Attempting to find staff in MongoDB with username:', staffData.username);
+
+    // Update in MongoDB
+    const updatedStaff = await Allstaff.findOneAndUpdate(
+      { username: staffData.username }, // Use the username from the staff data
+      { $push: { assignedTrades: tradeData } }, // Push the trade data to the assignedTrades array
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedStaff) {
+      console.error('Trade assignment failed in MongoDB. Staff not found with username:', staffData.username);
+    } else {
+      console.log(`Trade ${tradePayload.trade_hash} assigned to ${assignedStaffId}.`);
+      
+      // Add to in-memory tracking
+      assignedTradeHashes.add(tradePayload.trade_hash);
+    }
+  } catch (error) {
+    console.error('Error assigning trade to staff:', error);
+  }
+};
+
 
 
 
