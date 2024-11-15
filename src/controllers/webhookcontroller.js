@@ -134,6 +134,10 @@ const saveTradeToFirestore = async (payload) => {
       return; // Exit if already processed
     }
 
+    // Wait for 3 seconds to ensure no duplicate
+    console.log(`Waiting for 3 seconds before saving trade ${payload.trade_hash}...`);
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
     // Save the trade to Firestore
     const docRef = db.collection('manualsystem').doc(payload.trade_hash);
     await docRef.set({
@@ -153,6 +157,11 @@ const saveTradeToFirestore = async (payload) => {
   }
 };
 
+// Periodically clear the processedTradeHashes every 2 minutes
+setInterval(() => {
+  console.log('Clearing processedTradeHashes set to reduce memory load...');
+  processedTradeHashes.clear();
+}, 120000); // 120000 ms = 2 minutes
 
 
 
