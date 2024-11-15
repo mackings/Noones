@@ -388,7 +388,6 @@ exports.addMoneyToBank = async (req, res) => {
 
 
 
-
 // Fetch the bank details for a specific staff membe
 
 exports.chooseBank = async (req, res) => {

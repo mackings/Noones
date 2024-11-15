@@ -123,53 +123,107 @@ exports.updateNoonesWebhooksForAllAccounts = async (req, res) => {
         for (const account of accounts) {
             const { username, clientId, clientSecret } = account;
 
-            // Get access token for the account
             try {
+                // Get access token for the account
                 const token = await getnoonesToken(clientId, clientSecret);
+                console.log(`Checking webhooks for account: ${username}`);
 
-                console.log(`Updating webhooks for account: ${username}`);
+                // Fetch existing webhooks
+                const response = await axios.get(webhookUrl, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
 
-                // Prepare the request payload according to the original structure
-                const requestBody = {
-                    tag: "string", // Set an appropriate tag value if needed
-                    endpoints: [
-                        {
-                            event_type: "trade.started",
-                            url: "https://noones-v1.onrender.com/webhook",
-                            enabled: true
-                        },
-                        {
-                            event_type: "trade.chat_message_received",
-                            url: "https://noones-v1.onrender.com/webhook",
-                            enabled: true
+                const webhooks = response.data;
+                let requiresUpdate = false;
+
+                // Check for issues: disabled or empty webhooks
+                if (!webhooks.length) {
+                    console.log(`Account ${username} has no webhooks.`);
+                    requiresUpdate = true;
+                } else {
+                    for (const webhook of webhooks) {
+                        for (const endpoint of webhook.endpoints) {
+                            if (!endpoint.enabled) {
+                                console.log(`Account ${username} has disabled endpoint:`, endpoint);
+                                requiresUpdate = true;
+                                break;
+                            }
                         }
-                    ]
-                };
-
-                // Send a single request to update both webhooks at once
-                try {
-                    const response = await axios.post(webhookUrl, requestBody, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        }
-                    });
-
-                    console.log(`Webhooks updated for account: ${username}. Response:`, response.data);
-
-                    // Store the result of the update
-                    updateResults.push({
-                        username,
-                        result: response.data
-                    });
-                } catch (updateError) {
-                    console.error(`Error updating webhooks for account: ${username}. Error:`, updateError.message);
-                    updateResults.push({
-                        username,
-                        error: updateError.message
-                    });
+                        if (requiresUpdate) break;
+                    }
                 }
 
+                if (requiresUpdate) {
+                    console.log(`Deleting all webhooks for account: ${username}`);
+
+                    // Delete all webhooks for this account
+                    try {
+                        await axios.delete(webhookUrl, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        console.log(`All webhooks deleted for account: ${username}`);
+                    } catch (deleteError) {
+                        console.error(`Error deleting webhooks for account: ${username}. Error:`, deleteError.message);
+                        updateResults.push({
+                            username,
+                            error: deleteError.message
+                        });
+                        continue; // Skip to the next account if delete fails
+                    }
+
+                    console.log(`Re-creating webhooks for account: ${username}`);
+
+                    // Prepare the request payload to update webhooks
+                    const requestBody = {
+                        tag: "string", // Use a suitable tag if required
+                        endpoints: [
+                            {
+                                event_type: "trade.started",
+                                url: "https://noones-v1.onrender.com/webhook",
+                                enabled: true
+                            },
+                            {
+                                event_type: "trade.chat_message_received",
+                                url: "https://noones-v1.onrender.com/webhook",
+                                enabled: true
+                            }
+                        ]
+                    };
+
+                    // Send request to create webhooks
+                    try {
+                        const createResponse = await axios.post(webhookUrl, requestBody, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        console.log(`Webhooks created for account: ${username}. Response:`, createResponse.data);
+
+                        updateResults.push({
+                            username,
+                            result: createResponse.data
+                        });
+                    } catch (createError) {
+                        console.error(`Error creating webhooks for account: ${username}. Error:`, createError.message);
+                        updateResults.push({
+                            username,
+                            error: createError.message
+                        });
+                    }
+                } else {
+                    console.log(`No updates required for account: ${username}`);
+                    updateResults.push({
+                        username,
+                        message: "No updates required"
+                    });
+                }
             } catch (tokenError) {
                 console.error(`Error fetching token for account: ${username}. Error:`, tokenError.message);
                 updateResults.push({
@@ -187,6 +241,7 @@ exports.updateNoonesWebhooksForAllAccounts = async (req, res) => {
         res.status(500).json({ error: error.response ? error.response.data : error.message });
     }
 };
+
 
 
 
