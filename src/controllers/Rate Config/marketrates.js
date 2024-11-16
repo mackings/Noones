@@ -1,6 +1,7 @@
 const axios = require('axios');
 const qs = require('qs');
 const querystring = require('querystring');
+const SellingPrice = require("../Model/sellingprice");
 
 
 const getPaxfulRatesToken = async (clientId, clientSecret) => {
@@ -99,5 +100,43 @@ exports.getAllDollarRates = async (req, res) => {
       console.error('Error:', error.message);
     }
     res.status(500).json({ error: 'Failed to fetch rates from all sources' });
+  }
+};
+
+
+exports.saveSellingPrice = async (req, res) => {
+  try {
+      const { price } = req.body;
+
+      // Validate that price is provided and is a valid number
+      if (price === undefined || typeof price !== 'number' || price <= 0) {
+          return res.status(400).json({ message: 'A valid price is required and must be greater than 0.' });
+      }
+
+      // Save the price (either to a database or another process)
+      const newSellingPrice = new SellingPrice({ price }); // Replace with appropriate saving logic
+      await newSellingPrice.save();
+
+      res.status(201).json({ message: 'Selling price saved successfully', data: newSellingPrice });
+  } catch (error) {
+      console.error('Error saving selling price:', error);
+      res.status(500).json({ message: 'An error occurred while saving the selling price', error });
+  }
+};
+
+
+exports.getSellingPrice = async (req, res) => {
+  try {
+      // Fetch the most recent selling price
+      const sellingPrice = await SellingPrice.findOne().sort({ createdAt: -1 });
+
+      if (!sellingPrice) {
+          return res.status(404).json({ message: 'No selling price found' });
+      }
+
+      res.status(200).json({ message: 'Selling price retrieved successfully', data: sellingPrice });
+  } catch (error) {
+      console.error('Error retrieving selling price:', error);
+      res.status(500).json({ message: 'An error occurred while retrieving the selling price', error });
   }
 };

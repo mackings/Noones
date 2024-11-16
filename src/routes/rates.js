@@ -2,7 +2,7 @@ const express = require('express');
 const { updatePaxfulPrice, getPaxfulUserInfo, getMultiplePaxfulUserInfo } = require('../controllers/Rate Config/paxful');
 const { getPaxfulOffers, UpdateSingleMargin } = require('../controllers/Rate Config/Offers Config/paxfulOffer');
 const { getMultiplePaxfulOffers, updatePricesForAllAccounts, updateOffersForSpecificAccount } = require('../controllers/Rate Config/flash Offer/paxful');
-const { getBinanceRate, getAllDollarRates } = require('../controllers/Rate Config/marketrates');
+const { getBinanceRate, getAllDollarRates, saveSellingPrice, getSellingPrice } = require('../controllers/Rate Config/marketrates');
 const { getMultiplenoonesOffers, updatenoonesPricesForAllAccounts, updatenoonesOffersForSpecificAccount, updateNoonesWebhooksForAllAccounts, GetNoonesWebhooksForAllAccounts, getNoonesWebhooksForAllAccounts } = require('../controllers/Rate Config/flash Offer/noones');
 const router = express.Router();
 
@@ -46,5 +46,7 @@ router.post("/offers/paxful/margin/update-single-account", updateOffersForSpecif
 
 //Market Rates
 router.post("/market/rates", getAllDollarRates);
+router.post("/selling/upload", saveSellingPrice);
+router.get("/get-sprice", getSellingPrice);
 
 module.exports = router;
