@@ -33,118 +33,119 @@ const serviceAccount = {
 
 
 
+
 // In-memory tracking of trade hashes..
 // First list (temporary check for trades that are about to be assigned)
 const assignedTradeHashes = new Set();
-
-// Second list (strict check to ensure no duplicate trade hashes are assigned)
 const strictAssignedTradeHashes = new Set();
 
 const assignTradeToStaff = async (tradePayload) => {
   try {
-    // Check if trade_hash is already assigned in memory (first list)
+    // First list check to avoid duplicate trade assignments
     if (assignedTradeHashes.has(tradePayload.trade_hash)) {
-      console.log(`Trade ${tradePayload.trade_hash} is already being processed in the first check list.`);
-
-      // Wait for 3 seconds to ensure no duplicates when moving to second list (strict check)
-      console.log(`Waiting for 3 seconds before adding trade ${tradePayload.trade_hash} to strict check list...`);
+      console.log(`Trade ${tradePayload.trade_hash} is already being processed.`);
+      console.log(`Waiting 3 seconds before adding trade ${tradePayload.trade_hash} to the strict check list.`);
       await new Promise(resolve => setTimeout(resolve, 3000));
-
-      // Add to the strict list for final duplication check
       strictAssignedTradeHashes.add(tradePayload.trade_hash);
-      console.log(`Trade ${tradePayload.trade_hash} added to strict check list.`);
+      console.log(`Trade ${tradePayload.trade_hash} added to the strict check list.`);
     } else {
-      // If the trade hash is not in the first list, add it and proceed with the assignment
-      console.log(`Adding trade ${tradePayload.trade_hash} to first check list.`);
+      console.log(`Adding trade ${tradePayload.trade_hash} to the first check list.`);
       assignedTradeHashes.add(tradePayload.trade_hash);
     }
 
-    // Check in the strict check list (second list) to ensure no duplicates before assignment
+    // Strict duplicate check before processing
     if (strictAssignedTradeHashes.has(tradePayload.trade_hash)) {
-      console.log(`Trade ${tradePayload.trade_hash} already assigned or processed. Skipping staff assignment.`);
-      return; // Exit if trade hash has already been assigned and processed
+      console.log(`Trade ${tradePayload.trade_hash} already assigned or processed. Skipping assignment.`);
+      return;
     }
 
+    // Retrieve eligible staff from Firestore
     const staffSnapshot = await db.collection('Allstaff').get();
     let eligibleStaff = [];
 
-    // Filter eligible staff (clocked in and no pending unpaid trades)
-    staffSnapshot.docs.forEach((doc) => {
+    staffSnapshot.docs.forEach(doc => {
       const staffData = doc.data();
-      const hasPendingTrades = staffData.assignedTrades.some((trade) => !trade.isPaid);
+      const hasPendingTrades = staffData.assignedTrades.some(trade => !trade.isPaid);
 
       if (!hasPendingTrades && staffData.clockedIn) {
         eligibleStaff.push(doc);
       }
 
-      // Check each staff's assignedTrades for the trade_hash
-      if (
-        staffData.assignedTrades.some((trade) => trade.trade_hash === tradePayload.trade_hash)
-      ) {
-        console.log(
-          `Trade ${tradePayload.trade_hash} already exists in assignedTrades of staff: ${staffData.name}.`
-        );
-        strictAssignedTradeHashes.add(tradePayload.trade_hash); // Update strict check list
-        console.log(
-          `Duplicate trade detected in strict check list. Skipping assignment for ${tradePayload.trade_hash}.`
-        );
+      // Check for existing trade_hash
+      if (staffData.assignedTrades.some(trade => trade.trade_hash === tradePayload.trade_hash)) {
+        console.log(`Trade ${tradePayload.trade_hash} already exists for staff: ${staffData.name}.`);
+        strictAssignedTradeHashes.add(tradePayload.trade_hash);
+        console.log(`Duplicate trade detected. Skipping assignment for ${tradePayload.trade_hash}.`);
       }
     });
 
     if (eligibleStaff.length === 0) {
       console.log('No eligible staff found. Saving trade to manual unassigned collection.');
-
-      // Save the trade in the unassignedTrades collection
       await db.collection('manualunassigned').add({
         trade_hash: tradePayload.trade_hash,
         fiat_amount_requested: tradePayload.fiat_amount_requested,
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
       });
-
       return;
     }
 
-    // Find staff with the least number of trades
+    // Select staff with the least trades
     let staffWithLeastTrades = eligibleStaff[0];
-    eligibleStaff.forEach((doc) => {
+    eligibleStaff.forEach(doc => {
       if (doc.data().assignedTrades.length < staffWithLeastTrades.data().assignedTrades.length) {
         staffWithLeastTrades = doc;
       }
     });
 
-    const assignedStaffId = staffWithLeastTrades.id; // Firestore document ID
+    const assignedStaffId = staffWithLeastTrades.id;
     const staffRef = db.collection('Allstaff').doc(assignedStaffId);
     const assignedAt = new Date();
 
-    // Update the assignedTrades array in Firestore
+    const tradeData = {
+      trade_hash: tradePayload.trade_hash,
+      fiat_amount_requested: tradePayload.fiat_amount_requested,
+      assignedAt: assignedAt,
+      handle: tradePayload.buyer_name,
+      account: "Noones",
+      isPaid: false,
+      seller_name: tradePayload.seller_name,
+      analytics: tradePayload,
+    };
+
+    // Update Firestore
     await staffRef.update({
-      assignedTrades: admin.firestore.FieldValue.arrayUnion({
-        trade_hash: tradePayload.trade_hash,
-        fiat_amount_requested: tradePayload.fiat_amount_requested,
-        assignedAt: assignedAt,
-        handle: tradePayload.buyer_name,
-        account: "Noones",
-        isPaid: false,
-        seller_name: tradePayload.seller_name,
-        analytics: tradePayload,
-      }),
+      assignedTrades: admin.firestore.FieldValue.arrayUnion(tradeData),
     });
+
+    // Synchronize with MongoDB
+    const staffData = staffWithLeastTrades.data();
+    const mongoUpdate = await Allstaff.findOneAndUpdate(
+      { username: staffData.username }, // Match by username
+      { $push: { assignedTrades: tradeData } }, // Add the trade data to assignedTrades
+      { new: true, upsert: false } // No upsert; update only if the document exists
+    );
+
+    if (!mongoUpdate) {
+      console.error(`Failed to assign trade in MongoDB. Staff not found with username: ${staffData.username}`);
+    } else {
+      console.log(`Trade ${tradePayload.trade_hash} successfully assigned to MongoDB staff ${staffData.username}.`);
+    }
 
     // Add to strict list after successful assignment
     strictAssignedTradeHashes.add(tradePayload.trade_hash);
-
-    console.log(`Trade ${tradePayload.trade_hash} successfully assigned to staff ${assignedStaffId}.`);
+    console.log(`Trade ${tradePayload.trade_hash} successfully assigned to Firestore staff ${assignedStaffId}.`);
   } catch (error) {
     console.error('Error assigning trade to staff:', error.message || error);
   }
 };
 
-// Periodically clear both lists every 2 minutes to reduce memory load
+// Periodic cleanup of in-memory trade hash sets
 setInterval(() => {
-  console.log('Clearing assignedTradeHashes and strictAssignedTradeHashes sets to reduce memory load...');
+  console.log('Clearing assignedTradeHashes and strictAssignedTradeHashes sets to reduce memory usage.');
   assignedTradeHashes.clear();
   strictAssignedTradeHashes.clear();
-}, 120000); // 120000 ms = 2 minutes
+}, 120000);
+ // 120000 ms = 2 minutes
 
 
 
