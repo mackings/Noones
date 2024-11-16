@@ -58,6 +58,70 @@ const getnoonesToken = async (clientId, clientSecret) => {
 
 
 
+const markTradeAsPaidForAccount = async (tradeHash, clientId, clientSecret) => {
+    const apiEndpoint = 'https://api.noones.com/noones/v1/trade/paid';
+
+    try {
+        const token = await getnoonesToken(clientId, clientSecret);
+
+        const response = await axios.post(
+            apiEndpoint,
+            { trade_hash: tradeHash },
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+
+        console.log(`Trade ${tradeHash} marked as paid successfully for account ${clientId}.`);
+        return response.data;
+    } catch (error) {
+        console.error(
+            `Error marking trade ${tradeHash} as paid for account ${clientId}:`,
+            error.response ? error.response.data : error.message
+        );
+        throw new Error('Failed to mark trade as paid');
+    }
+};
+
+// Exported API Endpoint
+exports.markTradeAsPaid = async (req, res) => {
+    const { trade_hash } = req.body;
+
+    if (!trade_hash) {
+        return res.status(400).json({ error: 'trade_hash is required in the request body.' });
+    }
+
+    try {
+        const results = [];
+
+        // Process each account
+        for (const account of accounts) {
+            const { clientId, clientSecret, username } = account;
+
+            try {
+                console.log(`Processing trade ${trade_hash} for account: ${username}`);
+                const result = await markTradeAsPaidForAccount(trade_hash, clientId, clientSecret);
+
+                results.push({ username, success: true, data: result });
+            } catch (error) {
+                console.error(`Failed to process trade ${trade_hash} for account ${username}:`, error.message);
+                results.push({ username, success: false, error: error.message });
+            }
+        }
+
+        return res.status(200).json({ message: 'Trade processing completed.', results });
+    } catch (error) {
+        console.error('Error processing trades:', error.message);
+        return res.status(500).json({ error: 'An error occurred while processing trades.' });
+    }
+};
+
+
+
+
 exports.getNoonesWebhooksForAllAccounts = async (req, res) => {
     const webhookUrl = 'https://api.noones.com/webhook/v1/user/webhooks';
     const getResults = [];
