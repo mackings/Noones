@@ -58,23 +58,45 @@ const getnoonesToken = async (clientId, clientSecret) => {
 
 
 
-exports.markTradeAsPaid = async (req, res) => {
-    const { trade_hash } = req.body;
+const tokens = {};
 
-    if (!trade_hash) {
-        return res.status(400).json({ error: 'trade_hash is required in the request body.' });
+const getTokenForAccount = async (username) => {
+    const account = accounts.find(acc => acc.username === username);
+    if (!account) {
+        throw new Error('Account not found');
+    }
+
+    // Check if token is stored and valid (expires in 5 hours)
+    const now = Date.now();
+    if (tokens[username] && tokens[username].expiry > now) {
+        return tokens[username].token;
+    }
+
+    // Token is either not present or expired, so generate a new one
+    const token = await getnoonesToken(account.clientId, account.clientSecret);
+    tokens[username] = {
+        token,
+        expiry: now + 5 * 60 * 60 * 1000 // Token expiry set to 5 hours
+    };
+
+    return token;
+};
+
+// Function to mark the trade as paid for the given username
+exports.markTradeAsPaid = async (req, res) => {
+    const { trade_hash, username } = req.body;
+
+    if (!trade_hash || !username) {
+        return res.status(400).json({ error: 'trade_hash and username are required in the request body.' });
     }
 
     try {
-        // Use the first account in the list
-        const { clientId, clientSecret, username } = accounts[0];
+        console.log(`Processing trade ${trade_hash} for user ${username}`);
 
-        console.log(`Using account: ${username} to mark trade ${trade_hash} as paid.`);
+        // Get the token for the specified username
+        const token = await getTokenForAccount(username);
 
-        // Get the token
-        const token = await getnoonesToken(clientId, clientSecret);
-
-        // Prepare the API call
+        // Prepare the API call to mark trade as paid
         const apiEndpoint = 'https://api.noones.com/noones/v1/trade/paid';
         const requestBody = querystring.stringify({ trade_hash });
 
@@ -85,13 +107,13 @@ exports.markTradeAsPaid = async (req, res) => {
             },
         });
 
-        console.log(`Trade ${trade_hash} marked as paid successfully.`);
+        console.log(`Trade ${trade_hash} marked as paid successfully for ${username}.`);
         return res.status(200).json({
             message: `Trade ${trade_hash} marked as paid successfully.`,
             data: response.data,
         });
     } catch (error) {
-        console.error(`Error marking trade ${trade_hash} as paid:`, error.response ? error.response.data : error.message);
+        console.error(`Error marking trade ${trade_hash} as paid for ${username}:`, error.response ? error.response.data : error.message);
         return res.status(500).json({
             error: 'Failed to mark trade as paid.',
             details: error.response ? error.response.data : error.message,
