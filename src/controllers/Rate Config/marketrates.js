@@ -113,16 +113,20 @@ exports.saveSellingPrice = async (req, res) => {
           return res.status(400).json({ message: 'A valid price is required and must be greater than 0.' });
       }
 
-      // Save the price (either to a database or another process)
-      const newSellingPrice = new SellingPrice({ price }); // Replace with appropriate saving logic
-      await newSellingPrice.save();
+      // Check if a selling price already exists and update it
+      const updatedSellingPrice = await SellingPrice.findOneAndUpdate(
+          {}, // No filter to update the single document
+          { price }, // Set the new price
+          { new: true, upsert: true } // Create a new document if none exists
+      );
 
-      res.status(201).json({ message: 'Selling price saved successfully', data: newSellingPrice });
+      res.status(200).json({ message: 'Selling price updated successfully', data: updatedSellingPrice });
   } catch (error) {
-      console.error('Error saving selling price:', error);
-      res.status(500).json({ message: 'An error occurred while saving the selling price', error });
+      console.error('Error updating selling price:', error);
+      res.status(500).json({ message: 'An error occurred while updating the selling price', error });
   }
 };
+
 
 
 exports.getSellingPrice = async (req, res) => {
