@@ -58,35 +58,6 @@ const getnoonesToken = async (clientId, clientSecret) => {
 
 
 
-const markTradeAsPaidForAccount = async (tradeHash, clientId, clientSecret) => {
-    const apiEndpoint = 'https://api.noones.com/noones/v1/trade/paid';
-
-    try {
-        const token = await getnoonesToken(clientId, clientSecret);
-
-        const response = await axios.post(
-            apiEndpoint,
-            { trade_hash: tradeHash },
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-            }
-        );
-
-        console.log(`Trade ${tradeHash} marked as paid successfully for account ${clientId}.`);
-        return response.data;
-    } catch (error) {
-        console.error(
-            `Error marking trade ${tradeHash} as paid for account ${clientId}:`,
-            error.response ? error.response.data : error.message
-        );
-        throw new Error('Failed to mark trade as paid');
-    }
-};
-
-// Exported API Endpoint
 exports.markTradeAsPaid = async (req, res) => {
     const { trade_hash } = req.body;
 
@@ -95,30 +66,38 @@ exports.markTradeAsPaid = async (req, res) => {
     }
 
     try {
-        const results = [];
+        // Use the first account in the list
+        const { clientId, clientSecret, username } = accounts[0];
 
-        // Process each account
-        for (const account of accounts) {
-            const { clientId, clientSecret, username } = account;
+        console.log(`Using account: ${username} to mark trade ${trade_hash} as paid.`);
 
-            try {
-                console.log(`Processing trade ${trade_hash} for account: ${username}`);
-                const result = await markTradeAsPaidForAccount(trade_hash, clientId, clientSecret);
+        // Get the token
+        const token = await getnoonesToken(clientId, clientSecret);
 
-                results.push({ username, success: true, data: result });
-            } catch (error) {
-                console.error(`Failed to process trade ${trade_hash} for account ${username}:`, error.message);
-                results.push({ username, success: false, error: error.message });
-            }
-        }
+        // Prepare the API call
+        const apiEndpoint = 'https://api.noones.com/noones/v1/trade/paid';
+        const requestBody = querystring.stringify({ trade_hash });
 
-        return res.status(200).json({ message: 'Trade processing completed.', results });
+        const response = await axios.post(apiEndpoint, requestBody, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        console.log(`Trade ${trade_hash} marked as paid successfully.`);
+        return res.status(200).json({
+            message: `Trade ${trade_hash} marked as paid successfully.`,
+            data: response.data,
+        });
     } catch (error) {
-        console.error('Error processing trades:', error.message);
-        return res.status(500).json({ error: 'An error occurred while processing trades.' });
+        console.error(`Error marking trade ${trade_hash} as paid:`, error.response ? error.response.data : error.message);
+        return res.status(500).json({
+            error: 'Failed to mark trade as paid.',
+            details: error.response ? error.response.data : error.message,
+        });
     }
 };
-
 
 
 
