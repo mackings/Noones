@@ -33,9 +33,6 @@ const serviceAccount = {
 
 
 
-
-// In-memory tracking of trade hashes..
-// First list (temporary check for trades that are about to be assigned)
 const assignedTradeHashes = new Set();
 const strictAssignedTradeHashes = new Set();
 
@@ -292,36 +289,6 @@ setInterval(() => {
    strictProcessingMessages.clear();
  }, 120000); // Clear every 2 minutes
  
-
-
-
-// const saveChatMessageToFirestore = async (payload, messages) => {
-//     try {
-//         const docRef = db.collection('manualmessages').doc(payload.trade_hash);
-//         await db.runTransaction(async (transaction) => {
-//             const doc = await transaction.get(docRef);
-//             if (!doc.exists) {
-//                 console.log(`Noones Chats for trade ${payload.trade_hash} does not exist. Opening New Chat`);
-//                 transaction.set(docRef, {
-//                     trade_hash: payload.trade_hash,
-//                     messages: messages,
-//                     timestamp: admin.firestore.FieldValue.serverTimestamp(),
-//                 });
-//             } else {
-//                 console.log(`Noones Chat for trade ${payload.trade_hash} exists. Adding to thread`);
-//                 transaction.update(docRef, {
-//                     messages: admin.firestore.FieldValue.arrayUnion(...messages),
-//                     timestamp: admin.firestore.FieldValue.serverTimestamp(),
-//                 });
-//             }
-//         });
-//         console.log(`Noones Chat messages for trade ${payload.trade_hash} saved to Firestore.`);
-//     } catch (error) {
-//         console.error('Error saving chat messages to Firestore:', error);
-//     }
-// };
-
-
 
 // Signature validation function
 

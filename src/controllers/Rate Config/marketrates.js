@@ -41,7 +41,6 @@ const getNoonesRatesToken = async () => {
 };
 
 
-
 exports.getAllDollarRates = async (req, res) => {
   try {
     // Fetch Noones rates

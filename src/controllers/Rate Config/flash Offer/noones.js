@@ -2,12 +2,6 @@ const axios = require('axios');
 const querystring = require('querystring');
 const cron = require('node-cron');
 
-// {
-//     clientId: 'xQpyqheZ9o0hmPlGmUbazV5VWY1Cv63qXVhZy450IN11bgvR',
-//     clientSecret: '9R77pmoW58eJ2ZoVpWndDfdmLjDqQbfQ1UNa4DjGbqtpL0vp',
-//     username: 'Eden_Ageh'
-// },
-
 
 const accounts = [
 
@@ -181,22 +175,23 @@ exports.getNoonesWebhooksForAllAccounts = async (req, res) => {
 
 
 
+
 const updateNoonesWebhooksForAllAccounts = async () => {
+    
     const webhookUrl = 'https://api.noones.com/webhook/v1/user/webhooks';
     const updateResults = [];
 
     try {
         for (const account of accounts) {
-            const { username, clientId, clientSecret } = account;
+            const { username } = account;
 
             try {
-                const token = await getnoonesToken(clientId, clientSecret);
-
+                const token = await getTokenForAccount(username);
                 console.log(`Checking webhooks for account: ${username}`);
 
                 const response = await axios.get(webhookUrl, {
                     headers: {
-                        'Authorization': `Bearer ${token}`,
+                        Authorization: `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     }
                 });
@@ -217,17 +212,14 @@ const updateNoonesWebhooksForAllAccounts = async () => {
 
                 if (requiresUpdate) {
                     console.log(`Updating webhooks for account: ${username}`);
-
-                    // Delete existing webhooks
                     await axios.delete(webhookUrl, {
                         headers: {
-                            'Authorization': `Bearer ${token}`,
+                            Authorization: `Bearer ${token}`,
                             'Content-Type': 'application/json'
                         }
                     });
 
                     console.log(`Re-creating webhooks for account: ${username}`);
-
                     const requestBody = {
                         tag: "string",
                         endpoints: [
@@ -246,7 +238,7 @@ const updateNoonesWebhooksForAllAccounts = async () => {
 
                     const createResponse = await axios.post(webhookUrl, requestBody, {
                         headers: {
-                            'Authorization': `Bearer ${token}`,
+                            Authorization: `Bearer ${token}`,
                             'Content-Type': 'application/json'
                         }
                     });
@@ -256,6 +248,7 @@ const updateNoonesWebhooksForAllAccounts = async () => {
                     updateResults.push({ username, message: "No updates required" });
                 }
             } catch (error) {
+                console.error(`Error updating webhooks for account: ${username}. Error:`, error.message);
                 updateResults.push({ username, error: error.message });
             }
         }
@@ -266,11 +259,14 @@ const updateNoonesWebhooksForAllAccounts = async () => {
     }
 };
 
-// Schedule the task to run every 5 minutes
-cron.schedule('*/5 * * * *', () => {
+
+// Schedule the task to run every 2 minutes
+cron.schedule('*/2 * * * *', () => {
     console.log('Running Automatic webhook updater...>>>>>>>>');
     updateNoonesWebhooksForAllAccounts();
 });
+
+
 
 
 
@@ -316,6 +312,8 @@ const getnoonesOffersForAllAccounts = async () => {
     console.log('Finished fetching offers for all accounts.');
     return allOffers;
 };
+
+
 
 
 
