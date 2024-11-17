@@ -147,7 +147,6 @@ setInterval(() => {
 
 
 //Assign Unassigned 
-
 let lastDoc = null; // Pagination state
 
 // Function to assign unassigned trades periodically
@@ -168,26 +167,35 @@ const processUnassignedTrades = async () => {
       return;
     }
 
+    const tradesToProcess = unassignedSnapshot.docs;
+    console.log(`Found ${tradesToProcess.length} trades to process.`);
 
-    // Process each unassigned trade
-    const batch = db.batch(); // Batch deletion
-    unassignedSnapshot.docs.forEach(async (doc) => {
+    // Process each trade and commit batch in chunks
+    const batch = db.batch();
+
+    for (const doc of tradesToProcess) {
       const tradePayload = doc.data();
       console.log(`Processing unassigned trade: ${tradePayload.trade_hash}`);
 
-      // Attempt to assign the trade
-      await assignTradeToStaff(tradePayload);
+      try {
+        await assignTradeToStaff(tradePayload); // Assign the trade
+        // Mark trade for deletion in the batch
+        const unassignedTradeDoc = db.collection('manualunassigned').doc(doc.id);
+        batch.delete(unassignedTradeDoc);
+      } catch (error) {
+        console.error(
+          `Error assigning trade ${tradePayload.trade_hash}:`,
+          error.message || error
+        );
+      }
+    }
 
-      // Mark trade for deletion
-      const unassignedTradeDoc = db.collection('manualunassigned').doc(doc.id);
-      batch.delete(unassignedTradeDoc);
-    });
-
-    await batch.commit(); // Perform all deletions at once
+    // Commit the batch
+    await batch.commit();
     console.log('Batch deletion of processed trades completed.');
 
     // Update pagination state
-    lastDoc = unassignedSnapshot.docs[unassignedSnapshot.docs.length - 1];
+    lastDoc = tradesToProcess[tradesToProcess.length - 1];
   } catch (error) {
     console.error('Error processing unassigned trades:', error.message || error);
   }
@@ -198,6 +206,7 @@ cron.schedule('*/5 * * * *', async () => {
   console.log('Running cron job for unassigned trades...');
   await processUnassignedTrades();
 });
+
 
 
 
