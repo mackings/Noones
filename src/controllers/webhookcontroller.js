@@ -146,66 +146,97 @@ setInterval(() => {
  // 120000 ms = 2 minutes
 
 
-//Assign Unassigned 
-let lastDoc = null; // Pagination state
-
-// Function to assign unassigned trades periodically
-const processUnassignedTrades = async () => {
+ const assignUnassignedTrade = async () => {
   try {
-    console.log('Checking for unassigned trades...');
-    const unassignedSnapshot = lastDoc
-      ? await db.collection('manualunassigned')
-          .startAfter(lastDoc)
-          .limit(10) // Batch size
-          .get()
-      : await db.collection('manualunassigned')
-          .limit(10) // Initial batch size
-          .get();
+    // Check for free staff
+    const staffSnapshot = await db.collection('staff').get();
+    let eligibleStaff = [];
 
-    if (unassignedSnapshot.empty) {
-      console.log('No unassigned trades found.');
+    staffSnapshot.docs.forEach(doc => {
+      const staffData = doc.data();
+      const hasPendingTrades = staffData.assignedTrades.some(trade => !trade.isPaid);
+
+      if (!hasPendingTrades) {
+        eligibleStaff.push(doc);
+      }
+    });
+
+    if (eligibleStaff.length === 0) {
+      console.log('No eligible staff available to assign unassigned trades.');
       return;
     }
 
-    const tradesToProcess = unassignedSnapshot.docs;
-    console.log(`Found ${tradesToProcess.length} trades to process.`);
+    // Fetch the oldest unassigned trade
+    const unassignedTradesSnapshot = await db.collection('unassignedTrades')
+      .orderBy('timestamp')
+      .limit(1)
+      .get();
 
-    // Process each trade and commit batch in chunks
-    const batch = db.batch();
-
-    for (const doc of tradesToProcess) {
-      const tradePayload = doc.data();
-      console.log(`Processing unassigned trade: ${tradePayload.trade_hash}`);
-
-      try {
-        await assignTradeToStaff(tradePayload); // Assign the trade
-        // Mark trade for deletion in the batch
-        const unassignedTradeDoc = db.collection('manualunassigned').doc(doc.id);
-        batch.delete(unassignedTradeDoc);
-      } catch (error) {
-        console.error(
-          `Error assigning trade ${tradePayload.trade_hash}:`,
-          error.message || error
-        );
-      }
+    if (unassignedTradesSnapshot.empty) {
+      console.log('No unassigned trades available.');
+      return;
     }
 
-    // Commit the batch
-    await batch.commit();
-    console.log('Batch deletion of processed trades completed.');
+    const unassignedTradeDoc = unassignedTradesSnapshot.docs[0];
+    const unassignedTrade = unassignedTradeDoc.data();
 
-    // Update pagination state
-    lastDoc = tradesToProcess[tradesToProcess.length - 1];
+    // Find the staff with the least number of trades
+    let staffWithLeastTrades = eligibleStaff[0];
+    eligibleStaff.forEach(doc => {
+      if (doc.data().assignedTrades.length < staffWithLeastTrades.data().assignedTrades.length) {
+        staffWithLeastTrades = doc;
+      }
+    });
+
+    const assignedStaff = staffWithLeastTrades.id;
+    const staffRef = db.collection('staff').doc(assignedStaff);
+
+    // Assign the entire trade payload to the free staff
+    await staffRef.update({
+      assignedTrades: admin.firestore.FieldValue.arrayUnion({
+        ...unassignedTrade, // Include all properties of the trade
+        isPaid: false, // Ensure this property remains consistent
+        assignedAt: admin.firestore.Timestamp.now() // Add current timestamp
+      }),
+    });
+
+    await db.collection('unassignedTrades').doc(unassignedTradeDoc.id).delete();
+
+    console.log(`Unassigned trade ${unassignedTrade.trade_hash} assigned to ${assignedStaff}.`);
+  } catch (error) {
+    console.error('Error assigning unassigned trade:', error);
+  }
+};
+
+
+// Function to continuously process unassigned trades using assignUnassignedTrade
+const processUnassignedTrades = async () => {
+  try {
+    console.log('Checking for unassigned trades...');
+    while (true) {
+      // Call assignUnassignedTrade to process a single trade
+      console.log('Attempting to assign an unassigned trade...');
+      await assignUnassignedTrade();
+      
+      // Exit loop if no unassigned trades remain
+      const unassignedTradesSnapshot = await db.collection('unassignedTrades').limit(1).get();
+      if (unassignedTradesSnapshot.empty) {
+        console.log('No unassigned trades remaining.');
+        break;
+      }
+    }
+    console.log('All unassigned trades have been processed.');
   } catch (error) {
     console.error('Error processing unassigned trades:', error.message || error);
   }
 };
 
-// Schedule the cron job to run every 5 minutes
+// Schedule the cron job to run every minute
 cron.schedule('*/1 * * * *', async () => {
   console.log('Running cron job for unassigned trades...');
   await processUnassignedTrades();
 });
+
 
 
 
