@@ -40,11 +40,11 @@ const assignTradeToStaff = async (tradePayload) => {
   try {
     // First list check to avoid duplicate trade assignments
     if (assignedTradeHashes.has(tradePayload.trade_hash)) {
-      console.log(`Trade ${tradePayload.trade_hash} is already being processed.`);
-      console.log(`Waiting 3 seconds before adding trade ${tradePayload.trade_hash} to the strict check list.`);
+      //console.log(`Trade ${tradePayload.trade_hash} is already being processed.`);
+      //console.log(`Waiting 3 seconds before adding trade ${tradePayload.trade_hash} to the strict check list.`);
       await new Promise(resolve => setTimeout(resolve, 3000));
       strictAssignedTradeHashes.add(tradePayload.trade_hash);
-      console.log(`Trade ${tradePayload.trade_hash} added to the strict check list.`);
+     // console.log(`Trade ${tradePayload.trade_hash} added to the strict check list.`);
     } else {
       console.log(`Adding trade ${tradePayload.trade_hash} to the first check list.`);
       assignedTradeHashes.add(tradePayload.trade_hash);
@@ -52,7 +52,7 @@ const assignTradeToStaff = async (tradePayload) => {
 
     // Strict duplicate check before processing
     if (strictAssignedTradeHashes.has(tradePayload.trade_hash)) {
-      console.log(`Trade ${tradePayload.trade_hash} already assigned or processed. Skipping assignment.`);
+     // console.log(`Trade ${tradePayload.trade_hash} already assigned or processed. Skipping assignment.`);
       return;
     }
 
@@ -70,7 +70,7 @@ const assignTradeToStaff = async (tradePayload) => {
 
       // Check for existing trade_hash
       if (staffData.assignedTrades.some(trade => trade.trade_hash === tradePayload.trade_hash)) {
-        console.log(`Trade ${tradePayload.trade_hash} already exists for staff: ${staffData.name}.`);
+       // console.log(`Trade ${tradePayload.trade_hash} already exists for staff: ${staffData.name}.`);
         strictAssignedTradeHashes.add(tradePayload.trade_hash);
         console.log(`Duplicate trade detected. Skipping assignment for ${tradePayload.trade_hash}.`);
       }
@@ -138,7 +138,7 @@ const assignTradeToStaff = async (tradePayload) => {
 
 // Periodic cleanup of in-memory trade hash sets
 setInterval(() => {
-  console.log('Clearing assignedTradeHashes and strictAssignedTradeHashes sets to reduce memory usage.');
+ // console.log('Clearing assignedTradeHashes and strictAssignedTradeHashes sets to reduce memory usage.');
   assignedTradeHashes.clear();
   strictAssignedTradeHashes.clear();
 }, 120000);
@@ -160,7 +160,7 @@ const saveTradeToFirestore = async (payload) => {
   try {
     // Check if the trade is in the first list (processedTradeHashes)
     if (processedTradeHashes.has(payload.trade_hash)) {
-      console.log(`Trade ${payload.trade_hash} already exists in the first check list. Skipping initial check.`);
+     // console.log(`Trade ${payload.trade_hash} already exists in the first check list. Skipping initial check.`);
       
       // Now check in the second list (strict check)
       if (strictTradeHashes.has(payload.trade_hash)) {
@@ -169,7 +169,7 @@ const saveTradeToFirestore = async (payload) => {
       }
 
       // Wait for 3 seconds to ensure there are no duplicates when moving to second list
-      console.log(`Waiting for 3 seconds before moving trade ${payload.trade_hash} to strict check list...`);
+     // console.log(`Waiting for 3 seconds before moving trade ${payload.trade_hash} to strict check list...`);
       await new Promise(resolve => setTimeout(resolve, 3000));
 
       // Add to the second list for strict checking
@@ -177,7 +177,7 @@ const saveTradeToFirestore = async (payload) => {
       console.log(`Trade ${payload.trade_hash} added to strict check list.`);
     } else {
       // If the trade hash is not in the first list, add it and proceed with saving
-      console.log(`Adding trade ${payload.trade_hash} to first check list.`);
+     // console.log(`Adding trade ${payload.trade_hash} to first check list.`);
       processedTradeHashes.add(payload.trade_hash);
     }
 
@@ -201,7 +201,7 @@ const saveTradeToFirestore = async (payload) => {
 
 // Periodically clear the processedTradeHashes and strictTradeHashes every 2 minutes
 setInterval(() => {
-  console.log('Clearing processedTradeHashes and strictTradeHashes sets to reduce memory load...');
+//  console.log('Clearing processedTradeHashes and strictTradeHashes sets to reduce memory load...');
   processedTradeHashes.clear();
   strictTradeHashes.clear();
 }, 120000); // 120000 ms = 2 minutes
@@ -222,7 +222,7 @@ setInterval(() => {
        const existingMessages = normalProcessingMessages.get(message.trade_hash) || new Set();
  
        if (existingMessages.has(message.id)) {
-         console.log(`Message ID ${message.id} for trade ${message.trade_hash} already processed in normal check. Skipping.`);
+        // console.log(`Message ID ${message.id} for trade ${message.trade_hash} already processed in normal check. Skipping.`);
          return false;
        }
  
@@ -233,7 +233,7 @@ setInterval(() => {
      });
  
      if (normalMessages.length === 0) {
-       console.log(`No new messages to process for trade ${payload.trade_hash} in normal list.`);
+      // console.log(`No new messages to process for trade ${payload.trade_hash} in normal list.`);
        return; // Exit if no new messages for normal processing
      }
  
@@ -242,7 +242,7 @@ setInterval(() => {
        const existingTexts = strictProcessingMessages.get(message.trade_hash) || new Set();
  
        if (existingTexts.has(message.text)) {
-         console.log(`Duplicate message text for trade ${message.trade_hash}: "${message.text}". Skipping strict check.`);
+       //  console.log(`Duplicate message text for trade ${message.trade_hash}: "${message.text}". Skipping strict check.`);
          return false;
        }
  
@@ -253,7 +253,7 @@ setInterval(() => {
      });
  
      if (uniqueMessages.length === 0) {
-       console.log(`No new unique messages to save for trade ${payload.trade_hash} in strict list.`);
+      // console.log(`No new unique messages to save for trade ${payload.trade_hash} in strict list.`);
        return; // Exit if no unique messages for strict processing
      }
  
@@ -269,7 +269,7 @@ setInterval(() => {
          timestamp: admin.firestore.FieldValue.serverTimestamp(),
        });
      } else {
-       console.log(`Updating chat for trade ${payload.trade_hash}.`);
+      // console.log(`Updating chat for trade ${payload.trade_hash}.`);
        await docRef.update({
          messages: admin.firestore.FieldValue.arrayUnion(...uniqueMessages),
          timestamp: admin.firestore.FieldValue.serverTimestamp(),
@@ -284,7 +284,7 @@ setInterval(() => {
  
  // Periodically clear the two maps to reduce memory load
  setInterval(() => {
-   console.log('Clearing normalProcessingMessages and strictProcessingMessages maps to reduce memory load...');
+  // console.log('Clearing normalProcessingMessages and strictProcessingMessages maps to reduce memory load...');
    normalProcessingMessages.clear();
    strictProcessingMessages.clear();
  }, 120000); // Clear every 2 minutes
