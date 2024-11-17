@@ -80,8 +80,14 @@ const assignTradeToStaff = async (tradePayload) => {
     if (eligibleStaff.length === 0) {
       console.log('No eligible staff found. Saving trade to manual unassigned collection.');
       await db.collection('manualunassigned').add({
-        ...tradePayload, // Spread the entire tradePayload object
-        timestamp: admin.firestore.FieldValue.serverTimestamp(), // Add/override the timestamp field
+        account:"Noones",
+        analytics:unassignedTrade,
+        isPaid: false, 
+        assignedAt: admin.firestore.Timestamp.now(), 
+        trade_hash:unassignedTrade.trade_hash,
+        seller_name:unassignedTrade.seller_name,
+        handle:unassignedTrade.buyer_name,
+        fiat_amount_requested:unassignedTrade.fiat_amount_requested// Add/override the timestamp field
       });
       
       return;
