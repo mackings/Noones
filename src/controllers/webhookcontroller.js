@@ -194,9 +194,15 @@ setInterval(() => {
     // Assign the entire trade payload to the free staff
     await staffRef.update({
       assignedTrades: admin.firestore.FieldValue.arrayUnion({
-        ...unassignedTrade, // Include all properties of the trade
-        isPaid: false, // Ensure this property remains consistent
-        assignedAt: admin.firestore.Timestamp.now() // Add current timestamp
+        account:"Noones",
+        analytics:unassignedTrade,
+        isPaid: false, 
+        assignedAt: admin.firestore.Timestamp.now(), 
+        trade_hash:unassignedTrade.trade_hash,
+        seller_name:unassignedTrade.seller_name,
+        handle:unassignedTrade.buyer_name,
+        fiat_amount_requested:unassignedTrade.fiat_amount_requested
+
       }),
     });
 
