@@ -149,7 +149,7 @@ setInterval(() => {
  const assignUnassignedTrade = async () => {
   try {
     // Check for free staff
-    const staffSnapshot = await db.collection('staff').get();
+    const staffSnapshot = await db.collection('Allstaff').get();
     let eligibleStaff = [];
 
     staffSnapshot.docs.forEach(doc => {
@@ -167,7 +167,7 @@ setInterval(() => {
     }
 
     // Fetch the oldest unassigned trade
-    const unassignedTradesSnapshot = await db.collection('unassignedTrades')
+    const unassignedTradesSnapshot = await db.collection('manualunassigned')
       .orderBy('timestamp')
       .limit(1)
       .get();
@@ -189,7 +189,7 @@ setInterval(() => {
     });
 
     const assignedStaff = staffWithLeastTrades.id;
-    const staffRef = db.collection('staff').doc(assignedStaff);
+    const staffRef = db.collection('Allstaff').doc(assignedStaff);
 
     // Assign the entire trade payload to the free staff
     await staffRef.update({
@@ -200,7 +200,7 @@ setInterval(() => {
       }),
     });
 
-    await db.collection('unassignedTrades').doc(unassignedTradeDoc.id).delete();
+    await db.collection('manualunassigned').doc(unassignedTradeDoc.id).delete();
 
     console.log(`Unassigned trade ${unassignedTrade.trade_hash} assigned to ${assignedStaff}.`);
   } catch (error) {
@@ -219,7 +219,7 @@ const processUnassignedTrades = async () => {
       await assignUnassignedTrade();
       
       // Exit loop if no unassigned trades remain
-      const unassignedTradesSnapshot = await db.collection('unassignedTrades').limit(1).get();
+      const unassignedTradesSnapshot = await db.collection('manualunassigned').limit(1).get();
       if (unassignedTradesSnapshot.empty) {
         console.log('No unassigned trades remaining.');
         break;
