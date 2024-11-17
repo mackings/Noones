@@ -200,7 +200,7 @@ setInterval(() => {
     // Assign the entire trade payload to the free staff
     await staffRef.update({
       assignedTrades: admin.firestore.FieldValue.arrayUnion({
-        account:"Noones",
+        account:unassignedTrade.account,
         analytics:unassignedTrade,
         isPaid: false, 
         assignedAt: admin.firestore.Timestamp.now(), 
