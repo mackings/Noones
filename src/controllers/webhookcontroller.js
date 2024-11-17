@@ -80,16 +80,19 @@ const assignTradeToStaff = async (tradePayload) => {
     if (eligibleStaff.length === 0) {
       console.log('No eligible staff found. Saving trade to manual unassigned collection.');
       await db.collection('manualunassigned').add({
+
         account:"Noones",
-        analytics:unassignedTrade,
+        analytics:tradePayload,
         isPaid: false, 
         assignedAt: admin.firestore.Timestamp.now(), 
-        trade_hash:unassignedTrade.trade_hash,
-        seller_name:unassignedTrade.seller_name,
-        handle:unassignedTrade.buyer_name,
-        fiat_amount_requested:unassignedTrade.fiat_amount_requested// Add/override the timestamp field
+        trade_hash:tradePayload.trade_hash,
+        seller_name:tradePayload.seller_name,
+        handle:tradePayload.buyer_name,
+        fiat_amount_requested:tradePayload.fiat_amount_requested
+        // ...tradePayload, // Spread the entire tradePayload object
+        // timestamp: admin.firestore.FieldValue.serverTimestamp(), // Add/override the timestamp field
       });
-      
+
       return;
     }
 
@@ -207,7 +210,7 @@ setInterval(() => {
     // Assign the entire trade payload to the free staff
     await staffRef.update({
       assignedTrades: admin.firestore.FieldValue.arrayUnion({
-        account:unassignedTrade.a,
+        account:"Noones",
         analytics:unassignedTrade,
         isPaid: false, 
         assignedAt: admin.firestore.Timestamp.now(), 
