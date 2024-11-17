@@ -55,6 +55,78 @@ const getPaxfulToken = async (clientId, clientSecret) => {
 };
 
 
+
+
+const tokens = {};
+
+// Function to get the token for a specific account (checks expiration)
+
+const getTokenForAccount = async (username) => {
+    const account = accounts.find(acc => acc.username === username);
+    if (!account) {
+        throw new Error('Account not found');
+    }
+
+    // Check if token is stored and valid (expires in 5 hours)
+    const now = Date.now();
+    if (tokens[username] && tokens[username].expiry > now) {
+        return tokens[username].token;
+    }
+
+    // Token is either not present or expired, so generate a new one
+    const token = await getPaxfulToken(account.clientId, account.clientSecret);
+    tokens[username] = {
+        token,
+        expiry: now + 5 * 60 * 60 * 1000 // Token expiry set to 5 hours
+    };
+
+    return token;
+};
+
+// Function to mark the trade as paid for Paxful account
+
+
+
+exports.markPaxfulTradeAsPaid = async (req, res) => {
+
+    const { trade_hash, username } = req.body;
+
+    if (!trade_hash || !username) {
+        return res.status(400).json({ error: 'trade_hash and username are required in the request body.' });
+    }
+
+    try {
+
+        console.log(`Processing trade ${trade_hash} for user ${username}`);
+        const token = await getTokenForAccount(username);
+        const apiEndpoint = 'https://api.paxful.com/paxful/v1/trade/paid';
+        const requestBody = querystring.stringify({ trade_hash });
+
+        const response = await axios.post(apiEndpoint, requestBody, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        console.log(`Trade ${trade_hash} marked as paid successfully for ${username}.`);
+        return res.status(200).json({
+            message: `Trade ${trade_hash} marked as paid successfully.`,
+            data: response.data,
+        });
+    } catch (error) {
+        console.error(`Error marking trade ${trade_hash} as paid for ${username}:`, error.response ? error.response.data : error.message);
+        return res.status(500).json({
+            error: 'Failed to mark trade as paid.',
+            details: error.response ? error.response.data : error.message,
+        });
+    }
+};
+
+
+
+
+
 // Function to get offers for all accounts
 const getOffersForAllAccounts = async () => {
     const allOffers = [];
