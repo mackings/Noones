@@ -334,12 +334,12 @@ const webhookHandler = async (req, res) => {
 
     // Define your trade started and message handler functions
     const handleTradeStarted = async (payload) => {
-        console.log('Handling trade started event:', payload);
+        //console.log('Handling trade started event:', payload);
         await saveTradeToFirestore(payload);
     };
 
     const handleTradeMessage = async (payload) => {
-        console.log('Handling trade message event:', payload);
+      //  console.log('Handling trade message event:', payload);
         const messages = [{
             id: payload.id,
             timestamp: payload.timestamp,
