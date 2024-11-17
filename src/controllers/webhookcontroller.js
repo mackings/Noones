@@ -152,6 +152,13 @@ setInterval(() => {
  // 120000 ms = 2 minutes
 
 
+
+
+
+
+
+
+
  const assignUnassignedTrade = async () => {
   try {
     // Check for free staff
@@ -200,7 +207,7 @@ setInterval(() => {
     // Assign the entire trade payload to the free staff
     await staffRef.update({
       assignedTrades: admin.firestore.FieldValue.arrayUnion({
-        account:unassignedTrade.account,
+        account:unassignedTrade.a,
         analytics:unassignedTrade,
         isPaid: false, 
         assignedAt: admin.firestore.Timestamp.now(), 
@@ -244,10 +251,10 @@ const processUnassignedTrades = async () => {
 };
 
 // Schedule the cron job to run every minute
-cron.schedule('*/1 * * * *', async () => {
-  console.log('Running cron job for unassigned trades...');
-  await processUnassignedTrades();
-});
+// cron.schedule('*/1 * * * *', async () => {
+//   console.log('Running cron job for unassigned trades...');
+//   await processUnassignedTrades();
+// });
 
 
 
@@ -304,11 +311,11 @@ const saveTradeToFirestore = async (payload) => {
 };
 
 // Periodically clear the processedTradeHashes and strictTradeHashes every 2 minutes
-// setInterval(() => {
-// //  console.log('Clearing processedTradeHashes and strictTradeHashes sets to reduce memory load...');
-//   processedTradeHashes.clear();
-//   strictTradeHashes.clear();
-// }, 120000); // 120000 ms = 2 minutes
+setInterval(() => {
+//  console.log('Clearing processedTradeHashes and strictTradeHashes sets to reduce memory load...');
+  processedTradeHashes.clear();
+  strictTradeHashes.clear();
+}, 120000); // 120000 ms = 2 minutes
  // 120000 ms = 2 minutes
 
 
