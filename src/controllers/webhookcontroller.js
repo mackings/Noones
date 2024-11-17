@@ -145,7 +145,58 @@ setInterval(() => {
  // 120000 ms = 2 minutes
 
 
+//Assign Unassigned 
 
+let lastDoc = null; // Pagination state
+
+// Function to assign unassigned trades periodically
+const processUnassignedTrades = async () => {
+  try {
+    console.log('Checking for unassigned trades...');
+    const unassignedSnapshot = lastDoc
+      ? await db.collection('manualunassigned')
+          .startAfter(lastDoc)
+          .limit(10) // Batch size
+          .get()
+      : await db.collection('manualunassigned')
+          .limit(10) // Initial batch size
+          .get();
+
+    if (unassignedSnapshot.empty) {
+      console.log('No unassigned trades found.');
+      return;
+    }
+
+    
+    // Process each unassigned trade
+    const batch = db.batch(); // Batch deletion
+    unassignedSnapshot.docs.forEach(async (doc) => {
+      const tradePayload = doc.data();
+      console.log(`Processing unassigned trade: ${tradePayload.trade_hash}`);
+
+      // Attempt to assign the trade
+      await assignTradeToStaff(tradePayload);
+
+      // Mark trade for deletion
+      const unassignedTradeDoc = db.collection('manualunassigned').doc(doc.id);
+      batch.delete(unassignedTradeDoc);
+    });
+
+    await batch.commit(); // Perform all deletions at once
+    console.log('Batch deletion of processed trades completed.');
+
+    // Update pagination state
+    lastDoc = unassignedSnapshot.docs[unassignedSnapshot.docs.length - 1];
+  } catch (error) {
+    console.error('Error processing unassigned trades:', error.message || error);
+  }
+};
+
+// Schedule the cron job to run every 5 minutes
+cron.schedule('*/5 * * * *', async () => {
+  console.log('Running cron job for unassigned trades...');
+  await processUnassignedTrades();
+});
 
 
 
@@ -289,6 +340,9 @@ setInterval(() => {
    strictProcessingMessages.clear();
  }, 120000); // Clear every 2 minutes
  
+
+
+
 
 // Signature validation function
 
