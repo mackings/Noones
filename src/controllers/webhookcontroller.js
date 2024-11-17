@@ -304,11 +304,11 @@ const saveTradeToFirestore = async (payload) => {
 };
 
 // Periodically clear the processedTradeHashes and strictTradeHashes every 2 minutes
-setInterval(() => {
-//  console.log('Clearing processedTradeHashes and strictTradeHashes sets to reduce memory load...');
-  processedTradeHashes.clear();
-  strictTradeHashes.clear();
-}, 120000); // 120000 ms = 2 minutes
+// setInterval(() => {
+// //  console.log('Clearing processedTradeHashes and strictTradeHashes sets to reduce memory load...');
+//   processedTradeHashes.clear();
+//   strictTradeHashes.clear();
+// }, 120000); // 120000 ms = 2 minutes
  // 120000 ms = 2 minutes
 
 
