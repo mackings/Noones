@@ -5,6 +5,7 @@ const app = express();
 const dotenv = require('dotenv').config();
 const admin = require("firebase-admin");
 const axios = require("axios");
+const cron = require('node-cron');
 const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
 const mongoose = require('mongoose');
 const { Allstaff, Bank, Inflow } = require("./Model/staffmodel");
@@ -79,10 +80,10 @@ const assignTradeToStaff = async (tradePayload) => {
     if (eligibleStaff.length === 0) {
       console.log('No eligible staff found. Saving trade to manual unassigned collection.');
       await db.collection('manualunassigned').add({
-        trade_hash: tradePayload.trade_hash,
-        fiat_amount_requested: tradePayload.fiat_amount_requested,
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        ...tradePayload, // Spread the entire tradePayload object
+        timestamp: admin.firestore.FieldValue.serverTimestamp(), // Add/override the timestamp field
       });
+      
       return;
     }
 
@@ -167,7 +168,7 @@ const processUnassignedTrades = async () => {
       return;
     }
 
-    
+
     // Process each unassigned trade
     const batch = db.batch(); // Batch deletion
     unassignedSnapshot.docs.forEach(async (doc) => {
