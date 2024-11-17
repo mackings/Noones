@@ -202,7 +202,7 @@ const processUnassignedTrades = async () => {
 };
 
 // Schedule the cron job to run every 5 minutes
-cron.schedule('*/5 * * * *', async () => {
+cron.schedule('*/1 * * * *', async () => {
   console.log('Running cron job for unassigned trades...');
   await processUnassignedTrades();
 });
