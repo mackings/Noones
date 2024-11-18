@@ -231,7 +231,8 @@ setInterval(() => {
           trade_hash: unassignedTrade.trade_hash.toString(),
           seller_name: unassignedTrade.seller_name.toString(),
           handle: unassignedTrade.handle.toString(),
-          fiat_amount_requested: unassignedTrade.fiat_amount_requested.toString(),
+          fiat_amount_requested: `"${unassignedTrade.fiat_amount_requested}"`
+
         }),
       });
 
@@ -245,7 +246,8 @@ setInterval(() => {
         trade_hash: unassignedTrade.trade_hash,
         seller_name: unassignedTrade.seller_name,
         handle: unassignedTrade.handle,
-        fiat_amount_requested: unassignedTrade.fiat_amount_requested.toString(),
+        fiat_amount_requested: `"${unassignedTrade.fiat_amount_requested}"`
+
       });
       await staffWithLeastTrades.save();
 
