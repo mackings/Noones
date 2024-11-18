@@ -258,7 +258,7 @@ setInterval(() => {
       console.log(`Trade ${unassignedTrade.trade_hash} successfully assigned to ${assignedStaffUsername}.`);
     }
 
-    console.log("All available unassigned trades have been assigned.");
+   // console.log("All available unassigned trades have been assigned.");
   } catch (error) {
     console.error("Error assigning unassigned trade:", error.message || error);
   }
@@ -269,10 +269,11 @@ setInterval(() => {
 
 // Function to continuously process unassigned trades
 const processUnassignedTrades = async () => {
+
   try {
-    console.log("Checking for unassigned trades...");
+  //  console.log("Checking for unassigned trades...");
     while (true) {
-      console.log("Attempting to assign an unassigned trade...");
+    //  console.log("Attempting to assign an unassigned trade...");
       await assignUnassignedTrades();
 
       // Check if any unassigned trades remain in MongoDB
