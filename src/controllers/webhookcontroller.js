@@ -224,14 +224,14 @@ setInterval(() => {
 
       await staffRef.update({
         assignedTrades: admin.firestore.FieldValue.arrayUnion({
-          account: unassignedTrade.account,
+          account: unassignedTrade.account.toString(),
           analytics: unassignedTrade.analytics,
           isPaid: false,
           assignedAt: admin.firestore.Timestamp.now(),
-          trade_hash: unassignedTrade.trade_hash,
-          seller_name: unassignedTrade.seller_name,
-          handle: unassignedTrade.handle,
-          fiat_amount_requested: unassignedTrade.fiat_amount_requested,
+          trade_hash: unassignedTrade.trade_hash.toString(),
+          seller_name: unassignedTrade.seller_name.toString(),
+          handle: unassignedTrade.handle.toString(),
+          fiat_amount_requested: unassignedTrade.fiat_amount_requested.toString(),
         }),
       });
 
@@ -245,7 +245,7 @@ setInterval(() => {
         trade_hash: unassignedTrade.trade_hash,
         seller_name: unassignedTrade.seller_name,
         handle: unassignedTrade.handle,
-        fiat_amount_requested: unassignedTrade.fiat_amount_requested,
+        fiat_amount_requested: unassignedTrade.fiat_amount_requested.toString(),
       });
       await staffWithLeastTrades.save();
 
