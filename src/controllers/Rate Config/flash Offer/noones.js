@@ -542,7 +542,8 @@ exports.updatenoonesOffersForSpecificAccount = async (req, res) => {
     }
 };
 
-
+const assignedTradeHashes = new Set();
+const strictAssignedTradeHashes = new Set();
 
 const assignUnassignedTrades = async () => {
     try {
