@@ -38,6 +38,8 @@ const serviceAccount = {
   
   // Create a model for the collection
   const ManualUnassigned = mongoose.model('ManualUnassigned', manualUnassignedSchema);
+
+
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
@@ -174,107 +176,111 @@ setInterval(() => {
 
 
 
-
-
-
-
+ 
 
  const assignUnassignedTrade = async () => {
+
   try {
-    // Check for free staff
-    const staffSnapshot = await db.collection('Allstaff').get();
-    let eligibleStaff = [];
-
-    staffSnapshot.docs.forEach(doc => {
-      const staffData = doc.data();
-      const hasPendingTrades = staffData.assignedTrades.some(trade => !trade.isPaid);
-
-      if (!hasPendingTrades) {
-        eligibleStaff.push(doc);
-      }
+    // Step 1: Find free staff in MongoDB (no pending unpaid trades in `assignedTrades`)
+    console.log("Fetching free staff from MongoDB...");
+    const freeStaff = await Allstaff.find({
+      "assignedTrades.isPaid": { $ne: false }, // Staff with no unpaid trades in `assignedTrades`
     });
 
-    if (eligibleStaff.length === 0) {
-      console.log('No eligible staff available to assign unassigned trades.');
+    if (freeStaff.length === 0) {
+      console.log("No eligible staff available to assign unassigned trades.");
       return;
     }
 
-    // Fetch the oldest unassigned trade
-    const unassignedTradesSnapshot = await db.collection('manualunassigned')
-      .orderBy('timestamp')
-      .limit(1)
-      .get();
+    // Step 2: Fetch the oldest unassigned trade from MongoDB
+    console.log("Fetching unassigned trades from MongoDB...");
+    const unassignedTrade = await ManualUnassigned.findOne().sort({ assignedAt: 1 });
 
-    if (unassignedTradesSnapshot.empty) {
-      console.log('No unassigned trades available.');
+    if (!unassignedTrade) {
+      console.log("No unassigned trades available in MongoDB.");
       return;
     }
 
-    const unassignedTradeDoc = unassignedTradesSnapshot.docs[0];
-    const unassignedTrade = unassignedTradeDoc.data();
+    // Step 3: Select the staff with the least number of assigned trades
+    const staffWithLeastTrades = freeStaff.reduce((leastStaff, currentStaff) =>
+      currentStaff.assignedTrades.length < leastStaff.assignedTrades.length ? currentStaff : leastStaff
+    );
 
-    // Find the staff with the least number of trades
-    let staffWithLeastTrades = eligibleStaff[0];
-    eligibleStaff.forEach(doc => {
-      if (doc.data().assignedTrades.length < staffWithLeastTrades.data().assignedTrades.length) {
-        staffWithLeastTrades = doc;
-      }
-    });
+    // Get the username of the staff with the least trades
+    const assignedStaffUsername = staffWithLeastTrades.username;
 
-    const assignedStaff = staffWithLeastTrades.id;
-    const staffRef = db.collection('Allstaff').doc(assignedStaff);
+    // Step 4: Assign the trade to the selected staff in Firestore
+    console.log(
+      `Assigning trade ${unassignedTrade.trade_hash} to staff ${assignedStaffUsername} in Firestore...`
+    );
 
-    // Assign the entire trade payload to the free staff
+    const staffRef = admin.firestore().collection("Allstaff").doc(assignedStaffUsername);
+
     await staffRef.update({
       assignedTrades: admin.firestore.FieldValue.arrayUnion({
-        account:"Noones",
-        analytics:unassignedTrade,
-        isPaid: false, 
-        assignedAt: admin.firestore.Timestamp.now(), 
-        trade_hash:unassignedTrade.trade_hash,
-        seller_name:unassignedTrade.seller_name,
-        handle:unassignedTrade.buyer_name,
-        fiat_amount_requested:unassignedTrade.fiat_amount_requested
-
+        account: unassignedTrade.account,
+        analytics: unassignedTrade.analytics,
+        isPaid: false,
+        assignedAt: admin.firestore.Timestamp.now(),
+        trade_hash: unassignedTrade.trade_hash,
+        seller_name: unassignedTrade.seller_name,
+        handle: unassignedTrade.handle,
+        fiat_amount_requested: unassignedTrade.fiat_amount_requested,
       }),
     });
 
-    await db.collection('manualunassigned').doc(unassignedTradeDoc.id).delete();
+    // Step 5: Update the staff record in MongoDB
+    console.log(`Updating staff ${assignedStaffUsername} in MongoDB...`);
+    staffWithLeastTrades.assignedTrades.push({
+      account: unassignedTrade.account,
+      analytics: unassignedTrade.analytics,
+      isPaid: false,
+      assignedAt: admin.firestore.Timestamp.now(),
+      trade_hash: unassignedTrade.trade_hash,
+      seller_name: unassignedTrade.seller_name,
+      handle: unassignedTrade.handle,
+      fiat_amount_requested: unassignedTrade.fiat_amount_requested,
+    });
+    await staffWithLeastTrades.save();
 
-    console.log(`Unassigned trade ${unassignedTrade.trade_hash} assigned to ${assignedStaff}.`);
+    // Step 6: Delete the assigned trade from MongoDB
+    console.log(`Removing trade ${unassignedTrade.trade_hash} from MongoDB...`);
+    await ManualUnassigned.deleteOne({ _id: unassignedTrade._id });
+
+    console.log(`Trade ${unassignedTrade.trade_hash} successfully assigned.`);
   } catch (error) {
-    console.error('Error assigning unassigned trade:', error);
+    console.error("Error assigning unassigned trade:", error.message || error);
   }
 };
 
 
-// Function to continuously process unassigned trades using assignUnassignedTrade
+
+// Function to continuously process unassigned trades
 const processUnassignedTrades = async () => {
   try {
-    console.log('Checking for unassigned trades...');
+    console.log("Checking for unassigned trades...");
     while (true) {
-      // Call assignUnassignedTrade to process a single trade
-      console.log('Attempting to assign an unassigned trade...');
+      console.log("Attempting to assign an unassigned trade...");
       await assignUnassignedTrade();
-      
-      // Exit loop if no unassigned trades remain
-      const unassignedTradesSnapshot = await db.collection('manualunassigned').limit(1).get();
-      if (unassignedTradesSnapshot.empty) {
-        console.log('No unassigned trades remaining.');
+
+      // Check if any unassigned trades remain in MongoDB
+      const remainingTrades = await ManualUnassigned.countDocuments();
+      if (remainingTrades === 0) {
+        console.log("No unassigned trades remaining.");
         break;
       }
     }
-    console.log('All unassigned trades have been processed.');
+    console.log("All unassigned trades have been processed.");
   } catch (error) {
-    console.error('Error processing unassigned trades:', error.message || error);
+    console.error("Error processing unassigned trades:", error.message || error);
   }
 };
 
-// Schedule the cron job to run every minute
-// cron.schedule('*/1 * * * *', async () => {
-//   console.log('Running cron job for unassigned trades...');
-//   await processUnassignedTrades();
-// });
+// Schedule a cron job to run every minute
+cron.schedule("*/1 * * * *", async () => {
+  console.log("Running cron job for unassigned trades...");
+  await processUnassignedTrades();
+});
 
 
 
