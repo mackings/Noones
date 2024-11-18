@@ -524,5 +524,8 @@ const webhookHandler = async (req, res) => {
     res.status(200).send('Webhook received');
 };
 
-module.exports = { webhookHandler };
-module.exports = { serviceAccount};
+module.exports = {
+  webhookHandler,
+  serviceAccount,
+};
+
