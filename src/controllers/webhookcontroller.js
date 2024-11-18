@@ -25,6 +25,19 @@ const serviceAccount = {
     client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
   };
 
+  const manualUnassignedSchema = new mongoose.Schema({
+    account: { type: String, required: true },
+    analytics: { type: Object, required: true },
+    isPaid: { type: Boolean, default: false },
+    assignedAt: { type: Date, default: Date.now },
+    trade_hash: { type: String, required: true },
+    seller_name: { type: String, required: true },
+    handle: { type: String, required: true },
+    fiat_amount_requested: { type: Number, required: true }
+  });
+  
+  // Create a model for the collection
+  const ManualUnassigned = mongoose.model('ManualUnassigned', manualUnassignedSchema);
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
@@ -79,20 +92,24 @@ const assignTradeToStaff = async (tradePayload) => {
 
     if (eligibleStaff.length === 0) {
       console.log('No eligible staff found. Saving trade to manual unassigned collection.');
-      await db.collection('manualunassigned').add({
-
-        account:"Noones",
-        analytics:tradePayload,
-        isPaid: false, 
-        assignedAt: admin.firestore.Timestamp.now(), 
-        trade_hash:tradePayload.trade_hash,
-        seller_name:tradePayload.seller_name,
-        handle:tradePayload.buyer_name,
-        fiat_amount_requested:tradePayload.fiat_amount_requested
-        // ...tradePayload, // Spread the entire tradePayload object
-        // timestamp: admin.firestore.FieldValue.serverTimestamp(), // Add/override the timestamp field
+    
+      // Create a new document using the model
+      const manualUnassignedTrade = new ManualUnassigned({
+        account: "Noones",
+        analytics: tradePayload,
+        trade_hash: tradePayload.trade_hash,
+        seller_name: tradePayload.seller_name,
+        handle: tradePayload.buyer_name,
+        fiat_amount_requested: tradePayload.fiat_amount_requested
       });
-
+    
+      try {
+        await manualUnassignedTrade.save();
+        console.log('Trade saved to Mongoose manualUnassigned collection.');
+      } catch (error) {
+        console.error('Error saving trade:', error);
+      }
+    
       return;
     }
 

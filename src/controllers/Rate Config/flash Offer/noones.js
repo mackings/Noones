@@ -225,12 +225,12 @@ const updateNoonesWebhooksForAllAccounts = async () => {
                         endpoints: [
                             {
                                 event_type: "trade.started",
-                                url: "https://noones-v1.onrender.com/webhook",
+                                url: "https://b-backend-xe8q.onrender.com/webhook",
                                 enabled: true
                             },
                             {
                                 event_type: "trade.chat_message_received",
-                                url: "https://noones-v1.onrender.com/webhook",
+                                url: "https://b-backend-xe8q.onrender.com/webhook",
                                 enabled: true
                             }
                         ]
