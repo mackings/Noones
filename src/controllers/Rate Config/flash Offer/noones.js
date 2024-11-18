@@ -1,6 +1,10 @@
 const axios = require('axios');
 const querystring = require('querystring');
 const cron = require('node-cron');
+const mongoose = require('mongoose');
+const { Allstaff, Bank, Inflow } = require("../../Model/staffmodel");
+
+
 
 
 const accounts = [
@@ -51,6 +55,27 @@ const getnoonesToken = async (clientId, clientSecret) => {
 
 
 
+ const processUnassignedTrades = async () => {
+  
+    try {
+    //  console.log("Checking for unassigned trades...");
+      while (true) {
+      //  console.log("Attempting to assign an unassigned trade...");
+        await assignUnassignedTrades();
+  
+        // Check if any unassigned trades remain in MongoDB
+        const remainingTrades = await ManualUnassigned.countDocuments();
+        if (remainingTrades === 0) {
+          console.log("No unassigned trades remaining.");
+          break;
+        }
+      }
+      console.log("All unassigned trades have been processed.");
+    } catch (error) {
+      console.error("Error processing unassigned trades:", error.message || error);
+    }
+  };
+
 
 const tokens = {};
 
@@ -78,6 +103,7 @@ const getTokenForAccount = async (username) => {
 
 // Function to mark the trade as paid for the given username
 exports.markTradeAsPaid = async (req, res) => {
+
     const { trade_hash, username } = req.body;
 
     if (!trade_hash || !username) {
@@ -102,11 +128,16 @@ exports.markTradeAsPaid = async (req, res) => {
         });
 
         console.log(`Trade ${trade_hash} marked as paid successfully for ${username}.`);
+
+       // processUnassignedTrades();
+
         return res.status(200).json({
             message: `Trade ${trade_hash} marked as paid successfully.`,
             data: response.data,
         });
+         
     } catch (error) {
+       // processUnassignedTrades();
         console.error(`Error marking trade ${trade_hash} as paid for ${username}:`, error.response ? error.response.data : error.message);
         return res.status(500).json({
             error: 'Failed to mark trade as paid.',
@@ -172,8 +203,6 @@ exports.getNoonesWebhooksForAllAccounts = async (req, res) => {
         res.status(500).json({ error: error.response ? error.response.data : error.message });
     }
 };
-
-
 
 
 const updateNoonesWebhooksForAllAccounts = async () => {
@@ -531,3 +560,96 @@ exports.updatenoonesOffersForSpecificAccount = async (req, res) => {
     }
 };
 
+
+
+const assignUnassignedTrades = async () => {
+  
+    try {
+      // Step 1: Find free staff in MongoDB (clocked in and no pending unpaid trades)
+      console.log("Fetching free staff from MongoDB...");
+      const freeStaff = await Allstaff.find({
+        clockedIn: true, // Only consider staff who are clocked in
+        "assignedTrades.isPaid": { $ne: false }, // Staff with no unpaid trades
+      });
+  
+      if (freeStaff.length === 0) {
+        console.log("No eligible staff available to assign unassigned trades.");
+        return;
+      }
+  
+      // Step 2: Fetch all unassigned trades from MongoDB
+      console.log("Fetching unassigned trades from MongoDB...");
+      const unassignedTrades = await ManualUnassigned.find().sort({ assignedAt: 1 });
+  
+      if (unassignedTrades.length === 0) {
+        console.log("No unassigned trades available in MongoDB.");
+        return;
+      }
+  
+      // Step 3: Loop through unassigned trades and assign them to staff
+      for (const unassignedTrade of unassignedTrades) {
+        // Find the staff member with the least number of assigned trades who has no unpaid trades
+        const staffWithLeastTrades = freeStaff.find(staff =>
+          staff.assignedTrades.length === Math.min(...freeStaff.map(s => s.assignedTrades.length)) &&
+          !staff.assignedTrades.some(trade => trade.isPaid === false) // No unpaid trades
+        );
+  
+        if (!staffWithLeastTrades) {
+          console.log("No staff available to assign trade.");
+          break; // No available staff, exit loop
+        }
+  
+        const assignedStaffUsername = staffWithLeastTrades.username;
+  
+        // Step 4: Assign the trade to the selected staff in Firestore
+        console.log(
+          `Assigning trade ${unassignedTrade.trade_hash} to staff ${assignedStaffUsername} in Firestore...`
+        );
+  
+        const staffRef = admin.firestore().collection("Allstaff").doc(assignedStaffUsername);
+  
+        await staffRef.update({
+          assignedTrades: admin.firestore.FieldValue.arrayUnion({
+            account: unassignedTrade.account.toString(),
+            analytics: unassignedTrade.analytics,
+            isPaid: false,
+            assignedAt: admin.firestore.Timestamp.now(),
+            trade_hash: unassignedTrade.trade_hash.toString(),
+            seller_name: unassignedTrade.seller_name.toString(),
+            handle: unassignedTrade.handle.toString(),
+            fiat_amount_requested: `"${unassignedTrade.fiat_amount_requested}"`
+  
+          }),
+        });
+  
+        // Step 5: Update the staff record in MongoDB
+        console.log(`Updating staff ${assignedStaffUsername} in MongoDB...`);
+        staffWithLeastTrades.assignedTrades.push({
+          account: unassignedTrade.account,
+          analytics: unassignedTrade.analytics,
+          isPaid: false,
+          assignedAt: admin.firestore.Timestamp.now().toDate(),
+          trade_hash: unassignedTrade.trade_hash,
+          seller_name: unassignedTrade.seller_name,
+          handle: unassignedTrade.handle,
+          fiat_amount_requested: `"${unassignedTrade.fiat_amount_requested}"`
+  
+        });
+        await staffWithLeastTrades.save();
+  
+        // Step 6: Delete the assigned trade from MongoDB
+        console.log(`Removing trade ${unassignedTrade.trade_hash} from MongoDB...`);
+        await ManualUnassigned.deleteOne({ _id: unassignedTrade._id });
+  
+        console.log(`Trade ${unassignedTrade.trade_hash} successfully assigned to ${assignedStaffUsername}.`);
+      }
+  
+     // console.log("All available unassigned trades have been assigned.");
+    } catch (error) {
+      console.error("Error assigning unassigned trade:", error.message || error);
+    }
+  };
+  
+  
+
+  
