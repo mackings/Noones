@@ -287,11 +287,11 @@ const processUnassignedTrades = async () => {
   }
 };
 
-// Schedule a cron job to run every minute
-cron.schedule("*/1 * * * *", async () => {
-  console.log("Running cron job for unassigned trades...");
-  await processUnassignedTrades();
-});
+// // Schedule a cron job to run every minute
+// cron.schedule("*/1 * * * *", async () => {
+//   console.log("Running cron job for unassigned trades...");
+//   await processUnassignedTrades();
+// });
 
 
 

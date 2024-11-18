@@ -129,7 +129,7 @@ exports.markTradeAsPaid = async (req, res) => {
 
         console.log(`Trade ${trade_hash} marked as paid successfully for ${username}.`);
 
-       // processUnassignedTrades();
+        processUnassignedTrades();
 
         return res.status(200).json({
             message: `Trade ${trade_hash} marked as paid successfully.`,
@@ -137,7 +137,7 @@ exports.markTradeAsPaid = async (req, res) => {
         });
          
     } catch (error) {
-       // processUnassignedTrades();
+        processUnassignedTrades();
         console.error(`Error marking trade ${trade_hash} as paid for ${username}:`, error.response ? error.response.data : error.message);
         return res.status(500).json({
             error: 'Failed to mark trade as paid.',
