@@ -525,3 +525,4 @@ const webhookHandler = async (req, res) => {
 };
 
 module.exports = { webhookHandler };
+module.exports = { serviceAccount};

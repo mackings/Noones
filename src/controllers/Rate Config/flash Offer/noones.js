@@ -3,6 +3,8 @@ const querystring = require('querystring');
 const cron = require('node-cron');
 const mongoose = require('mongoose');
 const { Allstaff, Bank, Inflow } = require("../../Model/staffmodel");
+const { serviceAccount } = require("../../webhookcontroller");
+const admin = require("firebase-admin");
 
 const ManualUnassigned = require("../../Model/unassignedmodel");
 
@@ -610,7 +612,6 @@ const assignUnassignedTrades = async () => {
       });
       await availableStaff.save();
 
-      // Step 6: Delete the assigned trade from MongoDB
       console.log(`Removing trade ${unassignedTrade.trade_hash} from MongoDB...`);
       await ManualUnassigned.deleteOne({ _id: unassignedTrade._id });
 
