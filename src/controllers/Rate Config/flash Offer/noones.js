@@ -573,84 +573,85 @@ const assignUnassignedTrades = async () => {
       return;
     }
 
-    // Step 3: Loop through unassigned trades
-    for (const unassignedTrade of unassignedTrades) {
-      // Step 4: Strict duplicate check
-      if (assignedTradeHashes.has(unassignedTrade.trade_hash)) {
-        console.log(`Trade ${unassignedTrade.trade_hash} is already being processed.`);
-        strictAssignedTradeHashes.add(unassignedTrade.trade_hash);
-        continue; // Skip duplicate trades
-      }
+    // Step 3: Select the first available unassigned trade
+    const unassignedTrade = unassignedTrades[0];
 
-      console.log(`Processing trade ${unassignedTrade.trade_hash}...`);
-      assignedTradeHashes.add(unassignedTrade.trade_hash);
-
-      // Step 5: Select staff by rotating through the available staff
-      const assignedStaff = freeStaff[staffPointer]; // Use the current staff pointer
-      if (!assignedStaff) {
-        console.log("No eligible staff available to assign trade.");
-        continue;
-      }
-
-      const assignedStaffUsername = assignedStaff.username;
-
-      // Step 6: Assign trade to Firestore
-      const staffRef = admin.firestore().collection("Allstaff").doc(assignedStaffUsername);
-      const assignedAt = admin.firestore.Timestamp.now();
-      const tradeData = {
-        account: unassignedTrade.account.toString(),
-        analytics: unassignedTrade.analytics,
-        isPaid: false,
-        assignedAt: assignedAt,
-        trade_hash: unassignedTrade.trade_hash.toString(),
-        seller_name: unassignedTrade.seller_name.toString(),
-        handle: unassignedTrade.handle.toString(),
-        fiat_amount_requested: unassignedTrade.fiat_amount_requested.toString(),
-      };
-
-      try {
-        await staffRef.update({
-          assignedTrades: admin.firestore.FieldValue.arrayUnion(tradeData),
-        });
-      } catch (error) {
-        console.error(`Failed to assign trade in Firestore: ${error.message}`);
-        continue;
-      }
-
-      // Step 7: Update MongoDB
-      console.log(`Updating MongoDB for staff ${assignedStaffUsername}...`);
-      try {
-        assignedStaff.assignedTrades.push({
-          ...tradeData,
-          assignedAt: assignedAt.toDate(), // Convert Firestore Timestamp to Date
-        });
-        await assignedStaff.save();
-      } catch (error) {
-        console.error(`Failed to update MongoDB for staff ${assignedStaffUsername}: ${error.message}`);
-        continue;
-      }
-
-      // Step 8: Remove trade from MongoDB's ManualUnassigned collection
-      console.log(`Removing trade ${unassignedTrade.trade_hash} from ManualUnassigned collection...`);
-      try {
-        await ManualUnassigned.deleteOne({ _id: unassignedTrade._id });
-      } catch (error) {
-        console.error(`Failed to remove trade ${unassignedTrade.trade_hash}: ${error.message}`);
-        continue;
-      }
-
-      console.log(`Trade ${unassignedTrade.trade_hash} successfully assigned to ${assignedStaffUsername}.`);
-      strictAssignedTradeHashes.add(unassignedTrade.trade_hash); // Add to strict check list
-
-      // Step 9: Move to the next staff member for the next trade
-      staffPointer = (staffPointer + 1) % freeStaff.length; // Rotate the staff pointer
+    // Step 4: Strict duplicate check
+    if (assignedTradeHashes.has(unassignedTrade.trade_hash)) {
+      console.log(`Trade ${unassignedTrade.trade_hash} is already being processed.`);
+      strictAssignedTradeHashes.add(unassignedTrade.trade_hash);
+      return; // Skip duplicate trades
     }
 
-    console.log("All unassigned trades processed successfully.");
+    console.log(`Processing trade ${unassignedTrade.trade_hash}...`);
+    assignedTradeHashes.add(unassignedTrade.trade_hash);
+
+    // Step 5: Select the current staff member based on the staffPointer
+    const assignedStaff = freeStaff[staffPointer]; // Use the current staff pointer
+    if (!assignedStaff) {
+      console.log("No eligible staff available to assign trade.");
+      return;
+    }
+
+    const assignedStaffUsername = assignedStaff.username;
+
+    // Step 6: Assign trade to Firestore
+    const staffRef = admin.firestore().collection("Allstaff").doc(assignedStaffUsername);
+    const assignedAt = admin.firestore.Timestamp.now();
+    const tradeData = {
+      account: unassignedTrade.account.toString(),
+      analytics: unassignedTrade.analytics,
+      isPaid: false,
+      assignedAt: assignedAt,
+      trade_hash: unassignedTrade.trade_hash.toString(),
+      seller_name: unassignedTrade.seller_name.toString(),
+      handle: unassignedTrade.handle.toString(),
+      fiat_amount_requested: unassignedTrade.fiat_amount_requested.toString(),
+    };
+
+    try {
+      await staffRef.update({
+        assignedTrades: admin.firestore.FieldValue.arrayUnion(tradeData),
+      });
+    } catch (error) {
+      console.error(`Failed to assign trade in Firestore: ${error.message}`);
+      return;
+    }
+
+    // Step 7: Update MongoDB for assigned staff
+    console.log(`Updating MongoDB for staff ${assignedStaffUsername}...`);
+    try {
+      assignedStaff.assignedTrades.push({
+        ...tradeData,
+        assignedAt: assignedAt.toDate(), // Convert Firestore Timestamp to Date
+      });
+      await assignedStaff.save();
+    } catch (error) {
+      console.error(`Failed to update MongoDB for staff ${assignedStaffUsername}: ${error.message}`);
+      return;
+    }
+
+    // Step 8: Remove trade from MongoDB's ManualUnassigned collection
+    console.log(`Removing trade ${unassignedTrade.trade_hash} from ManualUnassigned collection...`);
+    try {
+      await ManualUnassigned.deleteOne({ _id: unassignedTrade._id });
+    } catch (error) {
+      console.error(`Failed to remove trade ${unassignedTrade.trade_hash}: ${error.message}`);
+      return;
+    }
+
+    console.log(`Trade ${unassignedTrade.trade_hash} successfully assigned to ${assignedStaffUsername}.`);
+    strictAssignedTradeHashes.add(unassignedTrade.trade_hash); // Add to strict check list
+
+    // Step 9: Move to the next staff member for the next call
+    staffPointer = (staffPointer + 1) % freeStaff.length; // Rotate the staff pointer
+    console.log("Pointer moved to the next staff member for next API call.");
+
   } catch (error) {
     console.error("Error assigning unassigned trades:", error.message || error);
   }
 };
+
 
   
 
