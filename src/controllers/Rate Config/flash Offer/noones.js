@@ -55,27 +55,6 @@ const getnoonesToken = async (clientId, clientSecret) => {
 
 
 
- const processUnassignedTrades = async () => {
-  
-    try {
-    //  console.log("Checking for unassigned trades...");
-      while (true) {
-      //  console.log("Attempting to assign an unassigned trade...");
-        await assignUnassignedTrades();
-  
-        // Check if any unassigned trades remain in MongoDB
-        const remainingTrades = await ManualUnassigned.countDocuments();
-        if (remainingTrades === 0) {
-          console.log("No unassigned trades remaining.");
-          break;
-        }
-      }
-      console.log("All unassigned trades have been processed.");
-    } catch (error) {
-      console.error("Error processing unassigned trades:", error.message || error);
-    }
-  };
-
 
 const tokens = {};
 
@@ -129,7 +108,7 @@ exports.markTradeAsPaid = async (req, res) => {
 
         console.log(`Trade ${trade_hash} marked as paid successfully for ${username}.`);
 
-        processUnassignedTrades();
+        assignUnassignedTrades();
 
         return res.status(200).json({
             message: `Trade ${trade_hash} marked as paid successfully.`,
@@ -137,7 +116,8 @@ exports.markTradeAsPaid = async (req, res) => {
         });
          
     } catch (error) {
-        processUnassignedTrades();
+        assignUnassignedTrades();
+
         console.error(`Error marking trade ${trade_hash} as paid for ${username}:`, error.response ? error.response.data : error.message);
         return res.status(500).json({
             error: 'Failed to mark trade as paid.',
@@ -563,88 +543,88 @@ exports.updatenoonesOffersForSpecificAccount = async (req, res) => {
 
 
 const assignUnassignedTrades = async () => {
-    try {
-      // Step 1: Find free staff in MongoDB (clocked in and no pending unpaid trades)
-      console.log("Fetching free staff from MongoDB...");
-      const freeStaff = await Allstaff.find({
-        clockedIn: true, // Only consider staff who are clocked in
-        "assignedTrades.isPaid": { $ne: false }, // Staff with no unpaid trades
-      });
-  
-      if (freeStaff.length === 0) {
-        console.log("No eligible staff available to assign unassigned trades.");
-        return;
+  try {
+    // Step 1: Find free staff in MongoDB (clocked in)
+    console.log("Fetching free staff from MongoDB...");
+    const freeStaff = await Allstaff.find({
+      clockedIn: true, // Only consider staff who are clocked in
+    });
+
+    if (freeStaff.length === 0) {
+      console.log("No eligible staff available to assign unassigned trades.");
+      return;
+    }
+
+    // Step 2: Fetch all unassigned trades from MongoDB
+    console.log("Fetching unassigned trades from MongoDB...");
+    const unassignedTrades = await ManualUnassigned.find().sort({ assignedAt: 1 });
+
+    if (unassignedTrades.length === 0) {
+      console.log("No unassigned trades available in MongoDB.");
+      return;
+    }
+
+    // Step 3: Loop through unassigned trades and assign them to staff
+    for (const unassignedTrade of unassignedTrades) {
+      // Find the first available staff member who is clocked in
+      const availableStaff = freeStaff[0]; // Pick the first available staff member
+
+      if (!availableStaff) {
+        console.log("No staff available to assign trade.");
+        continue; // Move to the next unassigned trade
       }
-  
-      // Step 2: Fetch all unassigned trades from MongoDB
-      console.log("Fetching unassigned trades from MongoDB...");
-      const unassignedTrades = await ManualUnassigned.find().sort({ assignedAt: 1 });
-  
-      if (unassignedTrades.length === 0) {
-        console.log("No unassigned trades available in MongoDB.");
-        return;
-      }
-  
-      // Step 3: Loop through unassigned trades and assign them to staff
-      for (const unassignedTrade of unassignedTrades) {
-        // Find staff that are clocked in and have no unpaid trades
-        const staffWithNoUnpaidTrades = freeStaff.find(staff =>
-          staff.assignedTrades.every(trade => trade.isPaid === true) // Ensure no unpaid trades
-        );
-  
-        if (!staffWithNoUnpaidTrades) {
-          console.log("No staff available to assign trade.");
-          continue; // Move to the next unassigned trade
-        }
-  
-        const assignedStaffUsername = staffWithNoUnpaidTrades.username;
-  
-        // Step 4: Assign the trade to the selected staff in Firestore
-        console.log(
-          `Assigning trade ${unassignedTrade.trade_hash} to staff ${assignedStaffUsername} in Firestore...`
-        );
-  
-        const staffRef = admin.firestore().collection("Allstaff").doc(assignedStaffUsername);
-  
-        await staffRef.update({
-          assignedTrades: admin.firestore.FieldValue.arrayUnion({
-            account: unassignedTrade.account.toString(),
-            analytics: unassignedTrade.analytics,
-            isPaid: false,
-            assignedAt: admin.firestore.Timestamp.now(),
-            trade_hash: unassignedTrade.trade_hash.toString(),
-            seller_name: unassignedTrade.seller_name.toString(),
-            handle: unassignedTrade.handle.toString(),
-            fiat_amount_requested: `"${unassignedTrade.fiat_amount_requested}"`
-          }),
-        });
-  
-        // Step 5: Update the staff record in MongoDB
-        console.log(`Updating staff ${assignedStaffUsername} in MongoDB...`);
-        staffWithNoUnpaidTrades.assignedTrades.push({
-          account: unassignedTrade.account,
+
+      const assignedStaffUsername = availableStaff.username;
+
+      // Step 4: Assign the trade to the selected staff in Firestore
+      console.log(
+        `Assigning trade ${unassignedTrade.trade_hash} to staff ${assignedStaffUsername} in Firestore...`
+      );
+
+      const staffRef = admin.firestore().collection("Allstaff").doc(assignedStaffUsername);
+
+      await staffRef.update({
+        assignedTrades: admin.firestore.FieldValue.arrayUnion({
+          account: unassignedTrade.account.toString(),
           analytics: unassignedTrade.analytics,
           isPaid: false,
-          assignedAt: admin.firestore.Timestamp.now().toDate(),
-          trade_hash: unassignedTrade.trade_hash,
-          seller_name: unassignedTrade.seller_name,
-          handle: unassignedTrade.handle,
-          fiat_amount_requested: `"${unassignedTrade.fiat_amount_requested}"`
-        });
-        await staffWithNoUnpaidTrades.save();
-  
-        // Step 6: Delete the assigned trade from MongoDB
-        console.log(`Removing trade ${unassignedTrade.trade_hash} from MongoDB...`);
-        await ManualUnassigned.deleteOne({ _id: unassignedTrade._id });
-  
-        console.log(`Trade ${unassignedTrade.trade_hash} successfully assigned to ${assignedStaffUsername}.`);
-      }
-  
-      // console.log("All available unassigned trades have been assigned.");
-    } catch (error) {
-      console.error("Error assigning unassigned trade:", error.message || error);
+          assignedAt: admin.firestore.Timestamp.now(),
+          trade_hash: unassignedTrade.trade_hash.toString(),
+          seller_name: unassignedTrade.seller_name.toString(),
+          handle: unassignedTrade.handle.toString(),
+          fiat_amount_requested: `"${unassignedTrade.fiat_amount_requested}"`,
+        }),
+      });
+
+      // Step 5: Update the staff record in MongoDB
+      console.log(`Updating staff ${assignedStaffUsername} in MongoDB...`);
+      availableStaff.assignedTrades.push({
+        account: unassignedTrade.account,
+        analytics: unassignedTrade.analytics,
+        isPaid: false,
+        assignedAt: admin.firestore.Timestamp.now().toDate(),
+        trade_hash: unassignedTrade.trade_hash,
+        seller_name: unassignedTrade.seller_name,
+        handle: unassignedTrade.handle,
+        fiat_amount_requested: `"${unassignedTrade.fiat_amount_requested}"`,
+      });
+      await availableStaff.save();
+
+      // Step 6: Delete the assigned trade from MongoDB
+      console.log(`Removing trade ${unassignedTrade.trade_hash} from MongoDB...`);
+      await ManualUnassigned.deleteOne({ _id: unassignedTrade._id });
+
+      console.log(
+        `Trade ${unassignedTrade.trade_hash} successfully assigned to ${assignedStaffUsername}.`
+      );
     }
-  };
+
+    console.log("All available unassigned trades have been assigned.");
+  } catch (error) {
+    console.error("Error assigning unassigned trade:", error.message || error);
+  }
+};
+
   
   
 
