@@ -760,7 +760,7 @@ exports.resolveTradeComplaint = async (req, res) => {
 
 
 
-cron.schedule('20 10 * * *', async () => {
+cron.schedule('0 1 * * *', async () => {
     try {
         // Step 1: Reset all banks' amounts and set status to 'unavailable'
         await Bank.updateMany(
