@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { handleRequest, retrieveTransactionLogs} = require("../controllers/openbanking"); // Fix this import
 const { registerStaff, loginStaff, clockIn, clockOut, getstaffs, getStaffByName, resolveTradeComplaint, createBank, chooseBank, recordInflow, getAllBanks, getInflowsForStaff, addMoneyToBank, getStaffBankInfo } = require('../controllers/Staffs/staffauth');
-const { markTradeAsPaid } = require('../controllers/Rate Config/flash Offer/noones');
-const { markPaxfulTradeAsPaid } = require('../controllers/Rate Config/flash Offer/paxful');
+const { markTradeAsPaid, checkNoonesTrade } = require('../controllers/Rate Config/flash Offer/noones');
+const { markPaxfulTradeAsPaid, checkPaxfulTrade } = require('../controllers/Rate Config/flash Offer/paxful');
 
 
 //Staffs 
@@ -21,6 +21,12 @@ router.post("/clockout",clockOut);
 
 router.post("/Trade/noones/mark", markTradeAsPaid);
 router.post("/Trade/paxful/mark", markPaxfulTradeAsPaid);
+
+//Trade Checker
+
+router.post("/Trade/paxful/check", checkPaxfulTrade);
+router.post("Trade/noones/check", checkNoonesTrade);
+
 
 router.post("/Transfer", handleRequest);
 router.post("/Transactions", retrieveTransactionLogs);
