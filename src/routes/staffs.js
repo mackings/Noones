@@ -25,7 +25,7 @@ router.post("/Trade/paxful/mark", markPaxfulTradeAsPaid);
 //Trade Checker
 
 router.post("/Trade/paxful/check", checkPaxfulTrade);
-router.post("Trade/noones/check", checkNoonesTrade);
+router.post("/Trade/noones/check", checkNoonesTrade);
 
 
 router.post("/Transfer", handleRequest);
