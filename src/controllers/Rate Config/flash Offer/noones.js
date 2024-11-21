@@ -129,7 +129,7 @@ exports.checkNoonesTrade = async (req, res) => {
         return res.status(200).json({
             message,
             trade_status,
-            trade_details: tradeData,
+           // trade_details: tradeData,
         });
     } catch (error) {
         console.error(`Error retrieving status for trade ${trade_hash} for ${username}:`, error.response ? error.response.data : error.message);
