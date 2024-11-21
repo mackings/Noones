@@ -83,9 +83,66 @@ const getTokenForAccount = async (username) => {
     return token;
 };
 
+
+
+exports.checkPaxfulTrade = async (req, res) => {
+
+    const { trade_hash, username } = req.body;
+
+    if (!trade_hash || !username) {
+        return res.status(400).json({ error: 'trade_hash and username are required in the request body.' });
+    }
+
+    try {
+
+        console.log(`Checking trade ${trade_hash} for user ${username}`);
+        const token = await getTokenForAccount(username);
+
+        // Prepare the API call to check trade status
+        const apiEndpoint = 'https://api.paxful.com/paxful/v1/trade/get';
+        const requestBody = querystring.stringify({ trade_hash });
+
+        const response = await axios.post(apiEndpoint, requestBody, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        const tradeData = response.data.data.trade;
+
+        if (!tradeData) {
+            return res.status(404).json({ error: 'Trade not found.' });
+        }
+
+        const { trade_status } = tradeData;
+
+        let message;
+        if (trade_status === 'Paid') {
+            message = `Trade ${trade_hash} has been marked as paid.`;
+        } else {
+            message = `Trade ${trade_hash} is currently in status: ${trade_status}.`;
+        }
+
+        console.log(`Trade ${trade_hash} status retrieved successfully for ${username}: ${trade_status}`);
+
+        return res.status(200).json({
+            message,
+            trade_status,
+            trade_details: tradeData,
+        });
+    } catch (error) {
+        console.error(`Error retrieving status for trade ${trade_hash} for ${username}:`, error.response ? error.response.data : error.message);
+        return res.status(500).json({
+            error: 'Failed to retrieve trade status.',
+            details: error.response ? error.response.data : error.message,
+        });
+    }
+};
+
+
+
 // Function to mark the trade as paid for Paxful account
-
-
 
 exports.markPaxfulTradeAsPaid = async (req, res) => {
 
