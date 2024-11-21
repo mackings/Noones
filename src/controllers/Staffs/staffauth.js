@@ -447,14 +447,14 @@ exports.chooseBank = async (req, res) => {
                 availability: bank.availability,
                 status: 'in use',
                 amount: bank.amount, // Store the updated amount
-                openingBalance: bank.openingBalance,
+                openingBalance: bank.openingBalance, // Ensure this field is set
             });
         } else {
             // Update the existing bank's status and balances
             newBankRecord.status = 'in use';
             newBankRecord.availability = true;
-            newBankRecord.openingBalance = bank.openingBalance;
-            newBankRecord.amount = bank.amount;
+            newBankRecord.openingBalance = bank.openingBalance;  // Update openingBalance correctly
+            newBankRecord.amount = bank.amount;  // Update amount as well
         }
 
         // Save the updated staff document
@@ -482,6 +482,7 @@ exports.chooseBank = async (req, res) => {
         });
     }
 };
+
 
 
 
