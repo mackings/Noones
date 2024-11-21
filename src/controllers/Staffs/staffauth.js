@@ -391,7 +391,9 @@ exports.addMoneyToBank = async (req, res) => {
 // Fetch the bank details for a specific staff membe
 
 
+
 exports.chooseBank = async (req, res) => {
+
     const { username, bankId } = req.body;
 
     try {
@@ -400,7 +402,7 @@ exports.chooseBank = async (req, res) => {
         if (!bank || !bank.availability) {
             return res.status(400).json({
                 success: false,
-                message: 'Bank is unavailable',
+                message: 'Bank is unavailable'
             });
         }
 
@@ -409,36 +411,15 @@ exports.chooseBank = async (req, res) => {
         if (!staff) {
             return res.status(400).json({
                 success: false,
-                message: 'Staff not found',
+                message: 'Staff not found'
             });
         }
 
-        // Find the current bank in use by the staff
-        const currentBankInUse = staff.banks.find(b => b.status === 'in use');
-        if (currentBankInUse) {
-            // Find the old bank in the Bank collection
-            const oldBank = await Bank.findById(currentBankInUse._id);
-            if (oldBank) {
-                // Add the old bank's amount and opening balance to the new bank's amount and opening balance
-                bank.amount += oldBank.amount;
-                bank.openingBalance += oldBank.openingBalance;
+        // Check if the staff has already chosen this bank
+        const existingBank = staff.banks.find(b => b._id.toString() === bankId);
 
-                // Mark the old bank as unavailable
-                oldBank.status = 'unavailable';
-                oldBank.availability = false;
-                await oldBank.save();
-
-                // Update the staff's record for the old bank
-                currentBankInUse.status = 'unavailable';
-                currentBankInUse.availability = false;
-                currentBankInUse.closingBalance = oldBank.amount; // Log the closing balance
-            }
-        }
-
-        // Check if the staff already has the new bank in their banks list
-        let newBankRecord = staff.banks.find(b => b._id.toString() === bankId);
-        if (!newBankRecord) {
-            // Add the new bank to the staff's list
+        if (!existingBank) {
+            // Add the bank to the staff's list of banks
             staff.banks.push({
                 _id: bank._id,
                 bankName: bank.bankName,
@@ -446,43 +427,35 @@ exports.chooseBank = async (req, res) => {
                 bankAccountNumber: bank.bankAccountNumber,
                 availability: bank.availability,
                 status: 'in use',
-                amount: bank.amount, // Store the updated amount
-                openingBalance: bank.openingBalance, // Ensure this field is set
+                amount: bank.amount, // Store the current amount
+                openingBalance: bank.amount // Store as opening balance
             });
         } else {
-            // Update the existing bank's status and balances
-            newBankRecord.status = 'in use';
-            newBankRecord.availability = true;
-            newBankRecord.openingBalance = bank.openingBalance;  // Update openingBalance correctly
-            newBankRecord.amount = bank.amount;  // Update amount as well
+            // Update the existing bank's status
+            existingBank.status = 'in use';
         }
 
         // Save the updated staff document
         await staff.save();
 
-        // Mark the new bank as "in use" in the Bank collection
+        // Mark the bank as "in use" in the Bank collection
         bank.status = 'in use';
         await bank.save();
 
         return res.status(200).json({
             success: true,
             message: 'Bank chosen successfully',
-            data: {
-                bankId,
-                username,
-                openingBalance: bank.openingBalance,  // Return the updated opening balance
-            },
+            data: { bankId, username, openingBalance: bank.amount }
         });
     } catch (error) {
         console.error('Error choosing bank:', error);
         return res.status(500).json({
             success: false,
             message: 'Error processing request',
-            error: error.message,
+            error: error.message
         });
     }
 };
-
 
 
 
