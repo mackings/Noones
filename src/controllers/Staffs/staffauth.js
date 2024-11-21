@@ -392,11 +392,10 @@ exports.addMoneyToBank = async (req, res) => {
 
 
 exports.chooseBank = async (req, res) => {
-
-    const { username, bankId, shift } = req.body;  // Added shift info
+    const { username, bankId } = req.body;
 
     try {
-        // Find the bank by ID and check its availability
+        // Find the bank by ID and check availability
         const bank = await Bank.findById(bankId);
         if (!bank || !bank.availability) {
             return res.status(400).json({
@@ -414,11 +413,11 @@ exports.chooseBank = async (req, res) => {
             });
         }
 
-        // Find if the bank has already been selected for the given shift
-        const bankIndex = staff.banks.findIndex(b => b._id.toString() === bankId && b.shift === shift);
+        // Check if the staff has already chosen this bank
+        const existingBank = staff.banks.find(b => b._id.toString() === bankId);
 
-        if (bankIndex === -1) {
-            // If the bank has not been chosen for this shift, add it
+        if (!existingBank) {
+            // Add the bank to the staff's list of banks
             staff.banks.push({
                 _id: bank._id,
                 bankName: bank.bankName,
@@ -426,13 +425,12 @@ exports.chooseBank = async (req, res) => {
                 bankAccountNumber: bank.bankAccountNumber,
                 availability: bank.availability,
                 status: 'in use',
-                amount: bank.amount,
-                openingBalance: bank.amount,  // Store the opening balance for this shift
-                shift: shift,  // Store the shift information
+                amount: bank.amount, // Store the current amount
+                openingBalance: bank.amount // Store as opening balance
             });
         } else {
-            // If the bank is already in use for this shift, just update its status
-            staff.banks[bankIndex].status = 'in use';
+            // Update the existing bank's status
+            existingBank.status = 'in use';
         }
 
         // Save the updated staff document
@@ -440,15 +438,15 @@ exports.chooseBank = async (req, res) => {
 
         // Mark the bank as "in use" in the Bank collection
         bank.status = 'in use';
-        await bank.save();  // Save the updated bank
+        await bank.save();
 
         return res.status(200).json({
             success: true,
-            message: 'Bank chosen successfully for the shift',
+            message: 'Bank chosen successfully',
             data: { bankId, username, openingBalance: bank.amount }
         });
     } catch (error) {
-        console.log('Error choosing bank:', error);
+        console.error('Error choosing bank:', error);
         return res.status(500).json({
             success: false,
             message: 'Error processing request',
@@ -458,9 +456,11 @@ exports.chooseBank = async (req, res) => {
 };
 
 
+
+
 exports.updateClosingBalance = async (req, res) => {
-    
-    const { bankId, shift, closingBalance } = req.body;
+
+    const { username, bankId, closingBalance } = req.body;
 
     try {
         // Find the bank by ID
@@ -468,41 +468,53 @@ exports.updateClosingBalance = async (req, res) => {
         if (!bank) {
             return res.status(400).json({
                 success: false,
-                message: 'Bank not found'
+                message: 'Bank not found',
             });
         }
 
-        // Check if this bank is being used for the current shift
-        const staff = await Allstaff.find({ 'banks.bankId': bankId });
-        const staffForShift = staff.filter(s => 
-            s.banks.some(b => b._id.toString() === bankId && b.shift === shift)
-        );
-
-        if (staffForShift.length === 0) {
+        // Find the staff by username and check if the bank is in use
+        const staff = await Allstaff.findOne({ username });
+        if (!staff) {
             return res.status(400).json({
                 success: false,
-                message: 'Bank not selected for this shift'
+                message: 'Staff not found',
             });
         }
 
-        // Update the closing balance
-        bank.closingBalance = closingBalance;
-        await bank.save();  
+        const bankInUse = staff.banks.find(b => b._id.toString() === bankId && b.status === 'in use');
+        if (!bankInUse) {
+            return res.status(400).json({
+                success: false,
+                message: 'Bank is not in use by this staff',
+            });
+        }
+
+        // Update the bank's closing balance and reset its status
+        bank.amount = closingBalance; // Update the bank's amount for future users
+       // bank.status = 'available'; // Make the bank available again
+        await bank.save();
+
+        // Update the staff's record for the bank
+        bankInUse.status = 'closed';
+        bankInUse.closingBalance = closingBalance;
+        bankInUse.amount = closingBalance; // Update the amount in the staff's bank record
+        await staff.save();
 
         return res.status(200).json({
             success: true,
             message: 'Closing balance updated successfully',
-            data: { bankId, closingBalance }
+            data: { bankId, closingBalance },
         });
     } catch (error) {
-        console.log('Error updating closing balance:', error);
+        console.error('Error updating closing balance:', error);
         return res.status(500).json({
             success: false,
             message: 'Error updating closing balance',
-            error: error.message
+            error: error.message,
         });
     }
 };
+
 
 
 
@@ -556,7 +568,6 @@ exports.getStaffBankInfo = async (req, res) => {
         });
     }
 };
-
 
 
 // Record a debit as an inflow for the staff

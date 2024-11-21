@@ -1,4 +1,3 @@
-
 const mongoose = require('mongoose');
 
 const bankSchema = new mongoose.Schema({
@@ -46,4 +45,3 @@ bankSchema.pre('save', function (next) {
 const Bank = mongoose.model('Bank', bankSchema);
 
 module.exports = Bank;
-

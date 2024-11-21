@@ -136,13 +136,18 @@ const staffSchema = new mongoose.Schema({
       bankAccountNumber: { type: String, required: true },
       amount: { type: Number, required: true },
       availability: { type: Boolean, default: true },
-      status: { type: String, enum: ['available', 'in use', 'unavailable'], default: 'available' },
-      openingBalance: { type: Number, required: true },  // Added openingBalance field
+      status: { 
+        type: String, 
+        enum: ['available', 'in use', 'unavailable', 'closed'], 
+        default: 'available' 
+      },
+      openingBalance: { type: Number, required: true },
       createdAt: { type: Date, default: Date.now },
     }
   ],
   lastBankChoice: { type: Date, default: null },
   currentBankId: { type: mongoose.Schema.Types.ObjectId, ref: 'Bank', default: null },
+  
 });
 
 
