@@ -459,20 +459,10 @@ exports.chooseBank = async (req, res) => {
 
 
 exports.updateClosingBalance = async (req, res) => {
-
-    const { username, bankId, closingBalance } = req.body;
+    const { username, closingBalance } = req.body; 
 
     try {
-        // Find the bank by ID
-        const bank = await Bank.findById(bankId);
-        if (!bank) {
-            return res.status(400).json({
-                success: false,
-                message: 'Bank not found',
-            });
-        }
-
-        // Find the staff by username and check if the bank is in use
+        // Find the staff by username
         const staff = await Allstaff.findOne({ username });
         if (!staff) {
             return res.status(400).json({
@@ -481,17 +471,26 @@ exports.updateClosingBalance = async (req, res) => {
             });
         }
 
-        const bankInUse = staff.banks.find(b => b._id.toString() === bankId && b.status === 'in use');
+        // Find the bank that is currently "in use" by the staff
+        const bankInUse = staff.banks.find(b => b.status === 'in use');
         if (!bankInUse) {
             return res.status(400).json({
                 success: false,
-                message: 'Bank is not in use by this staff',
+                message: 'No bank is currently in use by this staff',
             });
         }
 
-        // Update the bank's closing balance and reset its status
+        // Find the bank by ID in the main Bank collection
+        const bank = await Bank.findById(bankInUse._id);
+        if (!bank) {
+            return res.status(400).json({
+                success: false,
+                message: 'Bank not found',
+            });
+        }
+
+        // Update the bank's closing balance and save
         bank.amount = closingBalance; // Update the bank's amount for future users
-       // bank.status = 'available'; // Make the bank available again
         await bank.save();
 
         // Update the staff's record for the bank
@@ -503,7 +502,10 @@ exports.updateClosingBalance = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: 'Closing balance updated successfully',
-            data: { bankId, closingBalance },
+            data: {
+                bankId: bankInUse._id,
+                closingBalance,
+            },
         });
     } catch (error) {
         console.error('Error updating closing balance:', error);
@@ -514,8 +516,6 @@ exports.updateClosingBalance = async (req, res) => {
         });
     }
 };
-
-
 
 
 
