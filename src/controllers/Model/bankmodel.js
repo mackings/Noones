@@ -1,3 +1,4 @@
+
 const mongoose = require('mongoose');
 
 const bankSchema = new mongoose.Schema({
@@ -17,6 +18,12 @@ const bankSchema = new mongoose.Schema({
         required: true,
         min: 0,
     },
+    closingBalance: {
+        type: Number,
+        required: true,
+        min: 0,
+        default: 0,
+    },
     availability: {
         type: Boolean,
         default: true,
@@ -31,7 +38,6 @@ const bankSchema = new mongoose.Schema({
     },
 });
 
-
 bankSchema.pre('save', function (next) {
     this.updatedAt = Date.now();
     next();
@@ -40,3 +46,4 @@ bankSchema.pre('save', function (next) {
 const Bank = mongoose.model('Bank', bankSchema);
 
 module.exports = Bank;
+

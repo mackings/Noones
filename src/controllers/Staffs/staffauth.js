@@ -390,9 +390,10 @@ exports.addMoneyToBank = async (req, res) => {
 
 // Fetch the bank details for a specific staff membe
 
+
 exports.chooseBank = async (req, res) => {
 
-    const { username, bankId } = req.body;
+    const { username, bankId, shift } = req.body;  // Added shift info
 
     try {
         // Find the bank by ID and check its availability
@@ -413,25 +414,11 @@ exports.chooseBank = async (req, res) => {
             });
         }
 
-        // Check if 24 hours have passed since the last bank choice
-        if (staff.lastBankChoice) {
-            const lastChoiceTime = new Date(staff.lastBankChoice);
-            const currentTime = new Date();
-            const timeDiff = currentTime - lastChoiceTime;  // Difference in milliseconds
-
-            if (timeDiff < 24 * 60 * 60 * 1000) {  // 24 hours in milliseconds
-                return res.status(400).json({
-                    success: false,
-                    message: 'You can only choose a bank once every 24 hours.'
-                });
-            }
-        }
-
-        // Add the bank to the staff's banks array with the opening balance
-        const bankIndex = staff.banks.findIndex(b => b._id.toString() === bankId);
+        // Find if the bank has already been selected for the given shift
+        const bankIndex = staff.banks.findIndex(b => b._id.toString() === bankId && b.shift === shift);
 
         if (bankIndex === -1) {
-            // If the bank is not already in the array, add it
+            // If the bank has not been chosen for this shift, add it
             staff.banks.push({
                 _id: bank._id,
                 bankName: bank.bankName,
@@ -440,16 +427,13 @@ exports.chooseBank = async (req, res) => {
                 availability: bank.availability,
                 status: 'in use',
                 amount: bank.amount,
-                openingBalance: bank.amount,  // Store the opening balance
+                openingBalance: bank.amount,  // Store the opening balance for this shift
+                shift: shift,  // Store the shift information
             });
         } else {
-            // If the bank already exists in the staff's array, update its status and opening balance
+            // If the bank is already in use for this shift, just update its status
             staff.banks[bankIndex].status = 'in use';
-            staff.banks[bankIndex].openingBalance = bank.amount; // Update opening balance
         }
-
-        // Update the last bank choice timestamp
-        staff.lastBankChoice = new Date();  // Set the current time as the last bank choice time
 
         // Save the updated staff document
         await staff.save();
@@ -460,7 +444,7 @@ exports.chooseBank = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: 'Bank chosen successfully for staff use',
+            message: 'Bank chosen successfully for the shift',
             data: { bankId, username, openingBalance: bank.amount }
         });
     } catch (error) {
@@ -474,11 +458,62 @@ exports.chooseBank = async (req, res) => {
 };
 
 
+exports.updateClosingBalance = async (req, res) => {
+    
+    const { bankId, shift, closingBalance } = req.body;
+
+    try {
+        // Find the bank by ID
+        const bank = await Bank.findById(bankId);
+        if (!bank) {
+            return res.status(400).json({
+                success: false,
+                message: 'Bank not found'
+            });
+        }
+
+        // Check if this bank is being used for the current shift
+        const staff = await Allstaff.find({ 'banks.bankId': bankId });
+        const staffForShift = staff.filter(s => 
+            s.banks.some(b => b._id.toString() === bankId && b.shift === shift)
+        );
+
+        if (staffForShift.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Bank not selected for this shift'
+            });
+        }
+
+        // Update the closing balance
+        bank.closingBalance = closingBalance;
+        await bank.save();  
+
+        return res.status(200).json({
+            success: true,
+            message: 'Closing balance updated successfully',
+            data: { bankId, closingBalance }
+        });
+    } catch (error) {
+        console.log('Error updating closing balance:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error updating closing balance',
+            error: error.message
+        });
+    }
+};
+
+
+
+
+
 
 
 
 exports.getStaffBankInfo = async (req, res) => {
-    const { username } = req.params; // Get the username from the URL parameter
+
+    const { username } = req.params;
 
     try {
         // Find the staff member by username
@@ -608,8 +643,6 @@ exports.recordInflow = async (req, res) => {
 };
 
 
-
-
 // Get all banks
 exports.getAllBanks = async (req, res) => {
     try {
@@ -628,6 +661,7 @@ exports.getAllBanks = async (req, res) => {
         });
     }
 };
+
 
 // Get inflows for a particular staff
 
