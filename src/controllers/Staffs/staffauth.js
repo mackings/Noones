@@ -393,7 +393,6 @@ exports.addMoneyToBank = async (req, res) => {
 
 
 exports.chooseBank = async (req, res) => {
-
     const { username, bankId } = req.body;
 
     try {
@@ -415,10 +414,19 @@ exports.chooseBank = async (req, res) => {
             });
         }
 
-        // Check if the staff has already chosen this bank
-        const existingBank = staff.banks.find(b => b._id.toString() === bankId);
+        // Find if the staff already has a bank
+        const existingBankIndex = staff.banks.findIndex(b => b.status === 'in use');
 
-        if (!existingBank) {
+        if (existingBankIndex !== -1) {
+            // Update the existing bank's balances
+            const existingBank = staff.banks[existingBankIndex];
+            existingBank.amount += bank.amount;
+            existingBank.openingBalance += bank.amount;
+            existingBank.bankName = bank.bankName;
+            existingBank.bankAccountName = bank.bankAccountName;
+            existingBank.bankAccountNumber = bank.bankAccountNumber;
+            existingBank._id = bank._id; // Replace with new bank's ID
+        } else {
             // Add the bank to the staff's list of banks
             staff.banks.push({
                 _id: bank._id,
@@ -430,9 +438,6 @@ exports.chooseBank = async (req, res) => {
                 amount: bank.amount, // Store the current amount
                 openingBalance: bank.amount // Store as opening balance
             });
-        } else {
-            // Update the existing bank's status
-            existingBank.status = 'in use';
         }
 
         // Save the updated staff document
@@ -445,7 +450,11 @@ exports.chooseBank = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: 'Bank chosen successfully',
-            data: { bankId, username, openingBalance: bank.amount }
+            data: { 
+                bankId: bank._id, 
+                username, 
+                totalAmount: existingBankIndex !== -1 ? staff.banks[existingBankIndex].amount : bank.amount 
+            }
         });
     } catch (error) {
         console.error('Error choosing bank:', error);
@@ -456,7 +465,6 @@ exports.chooseBank = async (req, res) => {
         });
     }
 };
-
 
 
 
