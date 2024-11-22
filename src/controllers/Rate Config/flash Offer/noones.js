@@ -335,7 +335,7 @@ const updateNoonesWebhooksForAllAccounts = async () => {
 // Schedule the task to run every 2 minutes
 cron.schedule('*/2 * * * *', () => {
     console.log('Running Automatic webhook updater...>>>>>>>>');
-   //updateNoonesWebhooksForAllAccounts();
+   updateNoonesWebhooksForAllAccounts();
 });
 
 
