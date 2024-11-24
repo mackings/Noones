@@ -428,10 +428,23 @@ const saveChatMessageToFirestore = async (payload, messages) => {
 
 // Periodically clear the caches to reduce memory load
 setInterval(() => {
+  // Log to see if clear is being called
   console.log('Clearing messageProcessingCache and tradeMessageCache to free memory...');
-  messageProcessingCache.clear(); // Clear the temporary cache for message processing
-  tradeMessageCache.clear(); // Clear the strict cache for unique trade messages
+  
+  if (messageProcessingCache.clear) {
+    messageProcessingCache.clear(); // Clear the temporary cache for message processing
+  } else {
+    console.error('Error: messageProcessingCache.clear is not a function');
+  }
+
+  if (tradeMessageCache.clear) {
+    tradeMessageCache.clear(); // Clear the strict cache for unique trade messages
+  } else {
+    console.error('Error: tradeMessageCache.clear is not a function');
+  }
+
 }, 120000); // Clear every 2 minutes
+// Clear every 2 minutes
 
 
 
