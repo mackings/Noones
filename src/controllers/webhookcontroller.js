@@ -26,8 +26,6 @@ const serviceAccount = {
     client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
   };
 
-
-
   const manualUnassignedSchema = new mongoose.Schema({
     account: { type: String, required: true },
     analytics: { type: Object, required: true },
@@ -41,6 +39,7 @@ const serviceAccount = {
   
   // Create a model for the collection
   const ManualUnassigned = mongoose.model('ManualUnassigned', manualUnassignedSchema);
+
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
@@ -299,11 +298,10 @@ const processUnassignedTrades = async () => {
 
 
 
-
-
+// Newest Saving of Trades
 
 const processedCache = new NodeCache({ stdTTL: 2 }); // Temporary deduplication (2 seconds)
-const strictCache = new NodeCache({ stdTTL: 600 }); // Strict deduplication (10 minutes)
+const strictCache = new NodeCache({ stdTTL: 300 }); // Strict deduplication (10 minutes)
 
 /**
  * Saves a trade to Firestore with in-memory deduplication checks.
@@ -350,6 +348,97 @@ const saveTradeToFirestore = async (payload) => {
 };
 
 
+
+//Messages New
+
+const messageProcessingCache = new NodeCache({ stdTTL: 2 }); // Temporary deduplication for message processing (2 seconds)
+const tradeMessageCache = new NodeCache({ stdTTL: 300 }); // Strict deduplication for unique trade messages (5 minutes)
+
+/**
+ * Saves a trade chat message to Firestore with in-memory deduplication checks.
+ * @param {Object} payload - The trade data to save.
+ * @param {Array} messages - The list of messages to process.
+ */
+const saveChatMessageToFirestore = async (payload, messages) => {
+  try {
+    // Step 1: Normal deduplication (Skip if already processed in messageProcessingCache)
+    const normalMessages = messages.filter((message) => {
+      const existingMessages = messageProcessingCache.get(message.trade_hash) || new Set();
+      
+      if (existingMessages.has(message.id)) {
+        // If this message has already been processed for this trade_hash, skip it.
+        return false;
+      }
+
+      // Mark the message as processed for this trade_hash in the messageProcessingCache
+      existingMessages.add(message.id);
+      messageProcessingCache.set(message.trade_hash, existingMessages);
+      return true;
+    });
+
+    if (normalMessages.length === 0) {
+      console.log(`No new messages to process for trade ${payload.trade_hash} in messageProcessingCache.`);
+      return; // Exit if no new messages for normal processing
+    }
+
+    // Step 2: Strict deduplication (Skip if already saved to Firestore for the same trade_hash and text)
+    const uniqueMessages = normalMessages.filter((message) => {
+      const existingTexts = tradeMessageCache.get(message.trade_hash) || new Set();
+      
+      if (existingTexts.has(message.text)) {
+        // If this message text has already been processed for this trade_hash, skip it.
+        return false;
+      }
+
+      // Mark the message as strictly processed for this trade_hash and text in the tradeMessageCache
+      existingTexts.add(message.text);
+      tradeMessageCache.set(message.trade_hash, existingTexts);
+      return true;
+    });
+
+    if (uniqueMessages.length === 0) {
+      console.log(`No new unique messages to save for trade ${payload.trade_hash} in tradeMessageCache.`);
+      return; // Exit if no unique messages for strict processing
+    }
+
+    // Save to Firestore
+    const docRef = db.collection('manualmessages').doc(payload.trade_hash);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      console.log(`Initializing chat for trade ${payload.trade_hash}.`);
+      await docRef.set({
+        trade_hash: payload.trade_hash,
+        messages: uniqueMessages,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } else {
+      console.log(`Updating chat for trade ${payload.trade_hash}.`);
+      await docRef.update({
+        messages: admin.firestore.FieldValue.arrayUnion(...uniqueMessages),
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+
+    console.log(`Messages for trade ${payload.trade_hash} saved successfully.`);
+  } catch (error) {
+    console.error('Error saving chat messages to Firestore:', error);
+  }
+};
+
+// Periodically clear the caches to reduce memory load
+setInterval(() => {
+  console.log('Clearing messageProcessingCache and tradeMessageCache to free memory...');
+  messageProcessingCache.clear(); // Clear the temporary cache for message processing
+  tradeMessageCache.clear(); // Clear the strict cache for unique trade messages
+}, 120000); // Clear every 2 minutes
+
+
+
+
+
+
+///Saving of Trdes OLD
 
 
 // // First list (temporary check for duplicates)
@@ -412,86 +501,84 @@ const saveTradeToFirestore = async (payload) => {
 
 
 
+//Messages OLD
 
-
-
-
- const normalProcessingMessages = new Map(); // Tracks messages for normal processing
- const strictProcessingMessages = new Map(); // Tracks unique messages for strict processing
+//  const normalProcessingMessages = new Map(); // Tracks messages for normal processing
+//  const strictProcessingMessages = new Map(); // Tracks unique messages for strict processing
  
- const saveChatMessageToFirestore = async (payload, messages) => {
-   try {
-     // First list: Filter out duplicates for normal processing
-     const normalMessages = messages.filter((message) => {
-       const existingMessages = normalProcessingMessages.get(message.trade_hash) || new Set();
+//  const saveChatMessageToFirestore = async (payload, messages) => {
+//    try {
+//      // First list: Filter out duplicates for normal processing
+//      const normalMessages = messages.filter((message) => {
+//        const existingMessages = normalProcessingMessages.get(message.trade_hash) || new Set();
  
-       if (existingMessages.has(message.id)) {
-        // console.log(`Message ID ${message.id} for trade ${message.trade_hash} already processed in normal check. Skipping.`);
-         return false;
-       }
+//        if (existingMessages.has(message.id)) {
+//         // console.log(`Message ID ${message.id} for trade ${message.trade_hash} already processed in normal check. Skipping.`);
+//          return false;
+//        }
  
-       // Mark the message as processed in the normal list
-       existingMessages.add(message.id);
-       normalProcessingMessages.set(message.trade_hash, existingMessages);
-       return true;
-     });
+//        // Mark the message as processed in the normal list
+//        existingMessages.add(message.id);
+//        normalProcessingMessages.set(message.trade_hash, existingMessages);
+//        return true;
+//      });
  
-     if (normalMessages.length === 0) {
-      // console.log(`No new messages to process for trade ${payload.trade_hash} in normal list.`);
-       return; // Exit if no new messages for normal processing
-     }
+//      if (normalMessages.length === 0) {
+//       // console.log(`No new messages to process for trade ${payload.trade_hash} in normal list.`);
+//        return; // Exit if no new messages for normal processing
+//      }
  
-     // Second list: Strict check to ensure no duplicate trade_hash and text in Firestore
-     const uniqueMessages = normalMessages.filter((message) => {
-       const existingTexts = strictProcessingMessages.get(message.trade_hash) || new Set();
+//      // Second list: Strict check to ensure no duplicate trade_hash and text in Firestore
+//      const uniqueMessages = normalMessages.filter((message) => {
+//        const existingTexts = strictProcessingMessages.get(message.trade_hash) || new Set();
  
-       if (existingTexts.has(message.text)) {
-       //  console.log(`Duplicate message text for trade ${message.trade_hash}: "${message.text}". Skipping strict check.`);
-         return false;
-       }
+//        if (existingTexts.has(message.text)) {
+//        //  console.log(`Duplicate message text for trade ${message.trade_hash}: "${message.text}". Skipping strict check.`);
+//          return false;
+//        }
  
-       // Mark the message as processed in the strict list
-       existingTexts.add(message.text);
-       strictProcessingMessages.set(message.trade_hash, existingTexts);
-       return true;
-     });
+//        // Mark the message as processed in the strict list
+//        existingTexts.add(message.text);
+//        strictProcessingMessages.set(message.trade_hash, existingTexts);
+//        return true;
+//      });
  
-     if (uniqueMessages.length === 0) {
-      // console.log(`No new unique messages to save for trade ${payload.trade_hash} in strict list.`);
-       return; // Exit if no unique messages for strict processing
-     }
+//      if (uniqueMessages.length === 0) {
+//       // console.log(`No new unique messages to save for trade ${payload.trade_hash} in strict list.`);
+//        return; // Exit if no unique messages for strict processing
+//      }
  
-     // Save to Firestore
-     const docRef = db.collection('manualmessages').doc(payload.trade_hash);
-     const doc = await docRef.get();
+//      // Save to Firestore
+//      const docRef = db.collection('manualmessages').doc(payload.trade_hash);
+//      const doc = await docRef.get();
  
-     if (!doc.exists) {
-       console.log(`Initializing chat for trade ${payload.trade_hash}.`);
-       await docRef.set({
-         trade_hash: payload.trade_hash,
-         messages: uniqueMessages,
-         timestamp: admin.firestore.FieldValue.serverTimestamp(),
-       });
-     } else {
-      // console.log(`Updating chat for trade ${payload.trade_hash}.`);
-       await docRef.update({
-         messages: admin.firestore.FieldValue.arrayUnion(...uniqueMessages),
-         timestamp: admin.firestore.FieldValue.serverTimestamp(),
-       });
-     }
+//      if (!doc.exists) {
+//        console.log(`Initializing chat for trade ${payload.trade_hash}.`);
+//        await docRef.set({
+//          trade_hash: payload.trade_hash,
+//          messages: uniqueMessages,
+//          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+//        });
+//      } else {
+//       // console.log(`Updating chat for trade ${payload.trade_hash}.`);
+//        await docRef.update({
+//          messages: admin.firestore.FieldValue.arrayUnion(...uniqueMessages),
+//          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+//        });
+//      }
  
-     console.log(`Messages for trade ${payload.trade_hash} saved successfully.`);
-   } catch (error) {
-     console.error('Error saving chat messages to Firestore:', error);
-   }
- };
+//      console.log(`Messages for trade ${payload.trade_hash} saved successfully.`);
+//    } catch (error) {
+//      console.error('Error saving chat messages to Firestore:', error);
+//    }
+//  };
  
- // Periodically clear the two maps to reduce memory load
- setInterval(() => {
-  // console.log('Clearing normalProcessingMessages and strictProcessingMessages maps to reduce memory load...');
-   normalProcessingMessages.clear();
-   strictProcessingMessages.clear();
- }, 120000); // Clear every 2 minutes
+//  // Periodically clear the two maps to reduce memory load
+//  setInterval(() => {
+//   // console.log('Clearing normalProcessingMessages and strictProcessingMessages maps to reduce memory load...');
+//    normalProcessingMessages.clear();
+//    strictProcessingMessages.clear();
+//  }, 120000); // Clear every 2 minutes
  
 
 
