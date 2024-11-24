@@ -9,6 +9,7 @@ const cron = require('node-cron');
 const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
 const mongoose = require('mongoose');
 const { Allstaff, Bank, Inflow } = require("./Model/staffmodel");
+const NodeCache = require('node-cache');
 const ObjectId = mongoose.Types.ObjectId; 
 
 
@@ -25,6 +26,8 @@ const serviceAccount = {
     client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
   };
 
+
+
   const manualUnassignedSchema = new mongoose.Schema({
     account: { type: String, required: true },
     analytics: { type: Object, required: true },
@@ -38,7 +41,6 @@ const serviceAccount = {
   
   // Create a model for the collection
   const ManualUnassigned = mongoose.model('ManualUnassigned', manualUnassignedSchema);
-
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
@@ -299,63 +301,114 @@ const processUnassignedTrades = async () => {
 
 
 
+const processedCache = new NodeCache({ stdTTL: 2 }); // Temporary deduplication (2 seconds)
+const strictCache = new NodeCache({ stdTTL: 600 }); // Strict deduplication (10 minutes)
 
-// First list (temporary check for duplicates)
-const processedTradeHashes = new Set();
-
-// Second list (strict check to process and save unique trade hashes)
-const strictTradeHashes = new Set();
-
+/**
+ * Saves a trade to Firestore with in-memory deduplication checks.
+ * @param {Object} payload - The trade data to save.
+ */
 const saveTradeToFirestore = async (payload) => {
   try {
-    // Check if the trade is in the first list (processedTradeHashes)
-    if (processedTradeHashes.has(payload.trade_hash)) {
-     // console.log(`Trade ${payload.trade_hash} already exists in the first check list. Skipping initial check.`);
-      
-      // Now check in the second list (strict check)
-      if (strictTradeHashes.has(payload.trade_hash)) {
-        console.log(`Trade ${payload.trade_hash} is already processed and saved. Skipping Firestore save.`);
-        return; // Exit if trade hash already processed in strict check list
-      }
+    const tradeHash = payload.trade_hash;
 
-      // Wait for 3 seconds to ensure there are no duplicates when moving to second list
-     // console.log(`Waiting for 3 seconds before moving trade ${payload.trade_hash} to strict check list...`);
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      // Add to the second list for strict checking
-      strictTradeHashes.add(payload.trade_hash);
-      console.log(`Trade ${payload.trade_hash} added to strict check list.`);
-    } else {
-      // If the trade hash is not in the first list, add it and proceed with saving
-     // console.log(`Adding trade ${payload.trade_hash} to first check list.`);
-      processedTradeHashes.add(payload.trade_hash);
+    // Step 1: Strict Deduplication - Skip if already saved
+    if (strictCache.has(tradeHash)) {
+      console.log(`Trade ${tradeHash} is already saved. Skipping.`);
+      return; // Exit if the trade is already saved
     }
 
-    // Save the trade to Firestore after 3 seconds of verification
-    console.log(`Saving trade ${payload.trade_hash} to Firestore...`);
-    const docRef = db.collection('manualsystem').doc(payload.trade_hash);
+    // Step 2: Temporary Deduplication - Skip if being processed
+    if (processedCache.has(tradeHash)) {
+      console.log(`Trade ${tradeHash} is currently being processed. Skipping.`);
+      return; // Exit if the trade is being processed
+    }
+
+    // Step 3: Add to processedCache and start processing
+    console.log(`Processing trade ${tradeHash}...`);
+    processedCache.set(tradeHash, true); // Mark as being processed (expires in 2 seconds)
+
+    // Save to Firestore
+    console.log(`Saving trade ${tradeHash} to Firestore...`);
+    const docRef = db.collection('manualsystem').doc(tradeHash);
     await docRef.set({
       ...payload,
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    console.log(`Noones Trade ${payload.trade_hash} saved to Firestore DB >>>>>>>>>>>>>`);
+    // Mark as strictly processed
+    console.log(`Trade ${tradeHash} saved successfully.`);
+    strictCache.set(tradeHash, true); // Mark as strictly processed (expires in 10 minutes)
 
-    // Assign the trade to a staff member
+    // Optional post-save actions (e.g., assign to staff)
     await assignTradeToStaff(payload);
 
   } catch (error) {
-    console.error('Error saving the trade to Firestore:', error);
+    console.error(`Error saving trade ${payload.trade_hash} to Firestore:`, error);
   }
 };
 
-// Periodically clear the processedTradeHashes and strictTradeHashes every 2 minutes
-setInterval(() => {
-//  console.log('Clearing processedTradeHashes and strictTradeHashes sets to reduce memory load...');
-  processedTradeHashes.clear();
-  strictTradeHashes.clear();
-}, 120000); // 120000 ms = 2 minutes
- // 120000 ms = 2 minutes
+
+
+
+// // First list (temporary check for duplicates)
+// const processedTradeHashes = new Set();
+
+// // Second list (strict check to process and save unique trade hashes)
+// const strictTradeHashes = new Set();
+
+// const saveTradeToFirestore = async (payload) => {
+//   try {
+//     // Check if the trade is in the first list (processedTradeHashes)
+//     if (processedTradeHashes.has(payload.trade_hash)) {
+//      // console.log(`Trade ${payload.trade_hash} already exists in the first check list. Skipping initial check.`);
+      
+//       // Now check in the second list (strict check)
+//       if (strictTradeHashes.has(payload.trade_hash)) {
+//         console.log(`Trade ${payload.trade_hash} is already processed and saved. Skipping Firestore save.`);
+//         return; // Exit if trade hash already processed in strict check list
+//       }
+
+//       // Wait for 3 seconds to ensure there are no duplicates when moving to second list
+//      // console.log(`Waiting for 3 seconds before moving trade ${payload.trade_hash} to strict check list...`);
+//       await new Promise(resolve => setTimeout(resolve, 3000));
+
+//       // Add to the second list for strict checking
+//       strictTradeHashes.add(payload.trade_hash);
+//       console.log(`Trade ${payload.trade_hash} added to strict check list.`);
+//     } else {
+//       // If the trade hash is not in the first list, add it and proceed with saving
+//      // console.log(`Adding trade ${payload.trade_hash} to first check list.`);
+//       processedTradeHashes.add(payload.trade_hash);
+//     }
+
+//     // Save the trade to Firestore after 3 seconds of verification
+//     console.log(`Saving trade ${payload.trade_hash} to Firestore...`);
+//     const docRef = db.collection('manualsystem').doc(payload.trade_hash);
+//     await docRef.set({
+//       ...payload,
+//       timestamp: admin.firestore.FieldValue.serverTimestamp(),
+//     });
+
+//     console.log(`Noones Trade ${payload.trade_hash} saved to Firestore DB >>>>>>>>>>>>>`);
+
+//     // Assign the trade to a staff member
+//     await assignTradeToStaff(payload);
+
+//   } catch (error) {
+//     console.error('Error saving the trade to Firestore:', error);
+//   }
+// };
+
+// // Periodically clear the processedTradeHashes and strictTradeHashes every 2 minutes
+// setInterval(() => {
+// //  console.log('Clearing processedTradeHashes and strictTradeHashes sets to reduce memory load...');
+//   processedTradeHashes.clear();
+//   strictTradeHashes.clear();
+// }, 120000); // 120000 ms = 2 minutes
+//  // 120000 ms = 2 minutes
+
+
 
 
 

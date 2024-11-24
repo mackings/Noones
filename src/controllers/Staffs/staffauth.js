@@ -18,8 +18,6 @@ const { Allstaff, Bank, Inflow } = require("../Model/staffmodel");
 
 
 
-
-
 const addNewStaff = async (staffId, staffDetails) => {
     try {
         const staffRef = db.collection('Allstaff').doc(staffId);
@@ -273,7 +271,6 @@ exports.getStaffByName = async (req, res) => {
         return responseController.errorResponse(res, 'Error fetching staff data', error);
     }
 };
-
 
 
 
