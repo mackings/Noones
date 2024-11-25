@@ -324,11 +324,11 @@ const saveTradeToFirestore = async (payload) => {
     }
 
     // Step 3: Add to processedCache and start processing
-    console.log(`Processing trade ${tradeHash}...`);
+   // console.log(`Processing trade ${tradeHash}...`);
     processedCache.set(tradeHash, true); // Mark as being processed (expires in 2 seconds)
 
     // Save to Firestore
-    console.log(`Saving trade ${tradeHash} to Firestore...`);
+   // console.log(`Saving trade ${tradeHash} to Firestore...`);
     const docRef = db.collection('manualsystem').doc(tradeHash);
     await docRef.set({
       ...payload,
@@ -406,21 +406,25 @@ const saveChatMessageToFirestore = async (payload, messages) => {
     const doc = await docRef.get();
 
     if (!doc.exists) {
+
       console.log(`Initializing chat for trade ${payload.trade_hash}.`);
       await docRef.set({
         trade_hash: payload.trade_hash,
         messages: uniqueMessages,
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
       });
+
     } else {
-      console.log(`Updating chat for trade ${payload.trade_hash}.`);
+
+      //console.log(`Updating chat for trade ${payload.trade_hash}.`);
       await docRef.update({
         messages: admin.firestore.FieldValue.arrayUnion(...uniqueMessages),
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
       });
+
     }
 
-    console.log(`Messages for trade ${payload.trade_hash} saved successfully.`);
+   // console.log(`Messages for trade ${payload.trade_hash} saved successfully.`);
   } catch (error) {
     console.error('Error saving chat messages to Firestore:', error);
   }
