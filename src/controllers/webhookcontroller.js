@@ -313,13 +313,13 @@ const saveTradeToFirestore = async (payload) => {
 
     // Step 1: Strict Deduplication - Skip if already saved
     if (strictCache.has(tradeHash)) {
-      console.log(`Trade ${tradeHash} is already saved. Skipping.`);
+    //  console.log(`Trade ${tradeHash} is already saved. Skipping.`);
       return; // Exit if the trade is already saved
     }
 
     // Step 2: Temporary Deduplication - Skip if being processed
     if (processedCache.has(tradeHash)) {
-      console.log(`Trade ${tradeHash} is currently being processed. Skipping.`);
+     // console.log(`Trade ${tradeHash} is currently being processed. Skipping.`);
       return; // Exit if the trade is being processed
     }
 
@@ -377,7 +377,7 @@ const saveChatMessageToFirestore = async (payload, messages) => {
     });
 
     if (normalMessages.length === 0) {
-      console.log(`No new messages to process for trade ${payload.trade_hash} in messageProcessingCache.`);
+     // console.log(`No new messages to process for trade ${payload.trade_hash} in messageProcessingCache.`);
       return; // Exit if no new messages for normal processing
     }
 
@@ -397,7 +397,7 @@ const saveChatMessageToFirestore = async (payload, messages) => {
     });
 
     if (uniqueMessages.length === 0) {
-      console.log(`No new unique messages to save for trade ${payload.trade_hash} in tradeMessageCache.`);
+     // console.log(`No new unique messages to save for trade ${payload.trade_hash} in tradeMessageCache.`);
       return; // Exit if no unique messages for strict processing
     }
 
