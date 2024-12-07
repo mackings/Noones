@@ -9,6 +9,9 @@ const admin = require("firebase-admin");
 const ManualUnassigned = require("../../Model/unassignedmodel");
 
 
+
+
+
 const accounts = [
 
     {
@@ -56,8 +59,6 @@ const getnoonesToken = async (clientId, clientSecret) => {
 };
 
 
-
-
 const tokens = {};
 
 const getTokenForAccount = async (username) => {
@@ -80,6 +81,61 @@ const getTokenForAccount = async (username) => {
     };
 
     return token;
+};
+
+
+
+const checkWalletBalances = async () => {
+
+    const apiEndpoint = 'https://api.noones.com/noones/v1/wallet/balance';
+    const cryptoCurrencies = ['BTC', 'USDT'];
+    const balances = {};
+
+    for (const account of accounts) {
+        try {
+            console.log(`Checking wallet balances for username: ${account.username}`);
+            
+            // Get the token for the account
+            const token = await getTokenForAccount(account.username);
+
+            balances[account.username] = {};
+
+            // Query balance for each cryptocurrency
+            for (const crypto of cryptoCurrencies) {
+                const requestBody = querystring.stringify({ crypto_currency_code: crypto });
+
+                const response = await axios.post(apiEndpoint, requestBody, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                });
+
+                const balance = response.data.data.balance || 'Unavailable';
+                balances[account.username][crypto] = balance;
+
+                console.log(`Balance for ${crypto} (user ${account.username}): ${balance}`);
+            }
+        } catch (error) {
+            console.error(`Error retrieving wallet balances for ${account.username}:`, error.response ? error.response.data : error.message);
+            balances[account.username].error = error.response ? error.response.data : error.message;
+        }
+    }
+
+    return balances;
+};
+
+
+
+
+exports.checkWalletBalances = async (req, res) => {
+    try {
+        const balances = await checkWalletBalances();
+        return res.status(200).json(balances);
+    } catch (error) {
+        console.error('Error checking wallet balances:', error.message);
+        return res.status(500).json({ error: 'Failed to check wallet balances.', details: error.message });
+    }
 };
 
 
