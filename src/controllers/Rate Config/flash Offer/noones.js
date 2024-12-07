@@ -98,22 +98,23 @@ const checkWalletBalances = async () => {
             // Get the token for the account
             const token = await getTokenForAccount(account.username);
 
-            // Make the GET request to retrieve wallet balances
+            // Make the GET request to retrieve wallet summary
             const response = await axios.get(apiEndpoint, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
             });
 
-            const walletData = response.data.data;
-            balances[account.username] = {
-                BTC: walletData.BTC?.balance || 'Unavailable',
-                USDT: walletData.USDT?.balance || 'Unavailable',
-            };
+            const walletAssets = response.data.assets;
+            balances[account.username] = {};
+
+            // Parse the assets for BTC and USDT balances
+            ['BTC', 'USDT'].forEach((crypto) => {
+                const asset = walletAssets.find((a) => a.currency_code === crypto);
+                balances[account.username][crypto] = asset?.balance || 'Unavailable';
+            });
 
             console.log(`Balances for ${account.username}:`, balances[account.username]);
-            console.log(walletData);
-
         } catch (error) {
             console.error(`Error retrieving wallet balances for ${account.username}:`, error.response ? error.response.data : error.message);
             balances[account.username] = {
