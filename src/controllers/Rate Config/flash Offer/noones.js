@@ -87,9 +87,10 @@ const getTokenForAccount = async (username) => {
 
 
 const checkWalletBalances = async () => {
-
     const apiEndpoint = 'https://api.noones.com/wallet/v3/summary';
     const balances = {};
+    let totalBTC = 0;
+    let totalUSDT = 0;
 
     for (const account of accounts) {
         try {
@@ -111,7 +112,12 @@ const checkWalletBalances = async () => {
             // Parse the assets for BTC and USDT balances
             ['BTC', 'USDT'].forEach((crypto) => {
                 const asset = walletAssets.find((a) => a.currency_code === crypto);
-                balances[account.username][crypto] = asset?.balance || 'Unavailable';
+                const balance = parseFloat(asset?.balance || 0);
+                balances[account.username][crypto] = balance;
+
+                // Add to total balances
+                if (crypto === 'BTC') totalBTC += balance;
+                if (crypto === 'USDT') totalUSDT += balance;
             });
 
             console.log(`Balances for ${account.username}:`, balances[account.username]);
@@ -123,9 +129,14 @@ const checkWalletBalances = async () => {
         }
     }
 
+    // Add total balances to the result
+    balances.total = {
+        BTC: totalBTC,
+        USDT: totalUSDT,
+    };
+
     return balances;
 };
-
 
 
 
@@ -138,6 +149,8 @@ exports.checkWalletBalances = async (req, res) => {
         return res.status(500).json({ error: 'Failed to check wallet balances.', details: error.message });
     }
 };
+
+
 
 
 
