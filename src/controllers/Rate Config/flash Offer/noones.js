@@ -102,7 +102,7 @@ const checkWalletBalances = async () => {
 
             // Query balance for each cryptocurrency
             for (const crypto of cryptoCurrencies) {
-                const requestBody = querystring.stringify({ crypto_currency_code: crypto });
+                const requestBody = querystring.stringify({ crypto_currency_code: 'BTC' });
 
                 const response = await axios.post(apiEndpoint, requestBody, {
                     headers: {
