@@ -85,10 +85,10 @@ const getTokenForAccount = async (username) => {
 
 
 
+
 const checkWalletBalances = async () => {
 
-    const apiEndpoint = 'https://api.noones.com/noones/v1/wallet/balance';
-    const cryptoCurrencies = ['BTC', 'USDT'];
+    const apiEndpoint = 'https://api.noones.com/wallet/v3/summary';
     const balances = {};
 
     for (const account of accounts) {
@@ -98,27 +98,27 @@ const checkWalletBalances = async () => {
             // Get the token for the account
             const token = await getTokenForAccount(account.username);
 
-            balances[account.username] = {};
+            // Make the GET request to retrieve wallet balances
+            const response = await axios.get(apiEndpoint, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
 
-            // Query balance for each cryptocurrency
-            for (const crypto of cryptoCurrencies) {
-                const requestBody = querystring.stringify({ crypto_currency_code: 'BTC' });
+            const walletData = response.data.data;
+            balances[account.username] = {
+                BTC: walletData.BTC?.balance || 'Unavailable',
+                USDT: walletData.USDT?.balance || 'Unavailable',
+            };
 
-                const response = await axios.post(apiEndpoint, requestBody, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                });
+            console.log(`Balances for ${account.username}:`, balances[account.username]);
+            console.log(walletData);
 
-                const balance = response.data.data.balance || 'Unavailable';
-                balances[account.username][crypto] = balance;
-
-                console.log(`Balance for ${crypto} (user ${account.username}): ${balance}`);
-            }
         } catch (error) {
             console.error(`Error retrieving wallet balances for ${account.username}:`, error.response ? error.response.data : error.message);
-            balances[account.username].error = error.response ? error.response.data : error.message;
+            balances[account.username] = {
+                error: error.response ? error.response.data : error.message,
+            };
         }
     }
 
