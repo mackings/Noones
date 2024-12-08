@@ -87,6 +87,7 @@ const getTokenForAccount = async (username) => {
 
 
 const checkWalletBalances = async () => {
+    
     const apiEndpoint = 'https://api.noones.com/wallet/v3/summary';
     const balances = {};
     let totalBTC = 0;

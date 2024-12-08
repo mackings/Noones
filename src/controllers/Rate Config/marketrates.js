@@ -7,8 +7,8 @@ const SellingPrice = require("../Model/sellingprice");
 const getPaxfulRatesToken = async (clientId, clientSecret) => {
 
   const tokenEndpoint = 'https://accounts.paxful.com/oauth2/token';
-  const id = '2HATIKk9764Vw2u2OQOOe1Q8vh6vEUom3piooipCQQKOsiP5'; 
-  const secret = 'v5gaTp66t8HgEfgNYlUTnzgu1To3f6nEwGqpSvRTfsuWewp6';
+  const id = 'PrjznBZL5BidL6cNxy3uMCZZDr1IibTPC8jCFxEBgmkhScRT'; 
+  const secret = '7OBdAwpIB07gCDZKOCKAeoTIgHmqCj6vp10SFgV6vSD6UfeX';
 
   const response = await axios.post(tokenEndpoint, querystring.stringify({
       grant_type: 'client_credentials',
