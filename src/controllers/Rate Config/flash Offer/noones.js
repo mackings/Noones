@@ -86,6 +86,144 @@ const getTokenForAccount = async (username) => {
 
 
 
+const offerApi = {
+    turnOn: 'https://api.noones.com/noones/v1/offer/turn-on',
+    turnOff: 'https://api.noones.com/noones/v1/offer/turn-off'
+};
+
+// Shared function to toggle offers (reused by both endpoints)
+
+const toggleOffers = async (endpoint, action) => {
+    const results = [];
+    for (const account of accounts) {
+        const { username } = account;
+        try {
+            // Get or refresh the token for the account
+            const token = await getTokenForAccount(username);
+
+            console.log(`${action} offers for account: ${username}`);
+
+            // Make the POST request to toggle offers
+            const response = await axios.post(endpoint, {}, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            console.log(`${action} offers success for account: ${username}`);
+
+            results.push({
+                username,
+                status: 'success',
+                response: response.data
+            });
+
+        } catch (error) {
+            console.error(`${action} offers failed for account: ${username}. Error: ${error.message}`);
+            results.push({
+                username,
+                status: 'error',
+                error: error.message
+            });
+        }
+    }
+
+    return results;
+};
+
+
+
+// Endpoint to turn ON offers
+exports.turnOnOffersForAllAccounts = async (req, res) => {
+    try {
+        const results = await toggleOffers(offerApi.turnOn, 'Turn on');
+        res.status(200).json({ results });
+        console.log(results);
+    } catch (error) {
+
+        console.error('Error turning on offers for all accounts:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+// Endpoint to turn OFF offers
+exports.turnOffOffersForAllAccounts = async (req, res) => {
+    try {
+        const results = await toggleOffers(offerApi.turnOff, 'Turn off');
+        res.status(200).json({ results });
+        console.log(results);
+    } catch (error) {
+        console.error('Error turning off offers for all accounts:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+
+
+
+
+exports.getNoonesWebhooksForAllAccounts = async (req, res) => {
+    const webhookUrl = 'https://api.noones.com/webhook/v1/user/webhooks';
+    const getResults = [];
+
+    try {
+        for (const account of accounts) {
+            const { username, clientId, clientSecret } = account;
+
+            // Get access token for the account
+            try {
+                const token = await getnoonesToken(clientId, clientSecret);
+
+                console.log(`Fetching webhooks for account: ${username}`);
+
+                // Send GET request to retrieve webhooks
+                try {
+                    const response = await axios.get(webhookUrl, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    console.log(`Fetched webhooks for account: ${username}. Response:`, response.data);
+
+                    // Store the result of the retrieval
+                    getResults.push({
+                        username,
+                        webhooks: response.data
+                    });
+                } catch (getError) {
+                    console.error(`Error fetching webhooks for account: ${username}. Error:`, getError.message);
+                    getResults.push({
+                        username,
+                        error: getError.message
+                    });
+                }
+
+            } catch (tokenError) {
+                console.error(`Error fetching token for account: ${username}. Error:`, tokenError.message);
+                getResults.push({
+                    username,
+                    error: tokenError.message
+                });
+            }
+        }
+
+        console.log('Webhook retrieval completed for all accounts.');
+        res.status(200).json({ getResults });
+
+    } catch (error) {
+        console.error('Error retrieving webhooks for all accounts:', error);
+        res.status(500).json({ error: error.response ? error.response.data : error.message });
+    }
+};
+
+
+
+
 const checkWalletBalances = async () => {
     
     const apiEndpoint = 'https://api.noones.com/wallet/v3/summary';
@@ -260,63 +398,6 @@ exports.markTradeAsPaid = async (req, res) => {
     }
 };
 
-
-
-exports.getNoonesWebhooksForAllAccounts = async (req, res) => {
-    const webhookUrl = 'https://api.noones.com/webhook/v1/user/webhooks';
-    const getResults = [];
-
-    try {
-        for (const account of accounts) {
-            const { username, clientId, clientSecret } = account;
-
-            // Get access token for the account
-            try {
-                const token = await getnoonesToken(clientId, clientSecret);
-
-                console.log(`Fetching webhooks for account: ${username}`);
-
-                // Send GET request to retrieve webhooks
-                try {
-                    const response = await axios.get(webhookUrl, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        }
-                    });
-
-                    console.log(`Fetched webhooks for account: ${username}. Response:`, response.data);
-
-                    // Store the result of the retrieval
-                    getResults.push({
-                        username,
-                        webhooks: response.data
-                    });
-                } catch (getError) {
-                    console.error(`Error fetching webhooks for account: ${username}. Error:`, getError.message);
-                    getResults.push({
-                        username,
-                        error: getError.message
-                    });
-                }
-
-            } catch (tokenError) {
-                console.error(`Error fetching token for account: ${username}. Error:`, tokenError.message);
-                getResults.push({
-                    username,
-                    error: tokenError.message
-                });
-            }
-        }
-
-        console.log('Webhook retrieval completed for all accounts.');
-        res.status(200).json({ getResults });
-
-    } catch (error) {
-        console.error('Error retrieving webhooks for all accounts:', error);
-        res.status(500).json({ error: error.response ? error.response.data : error.message });
-    }
-};
 
 
 const updateNoonesWebhooksForAllAccounts = async () => {

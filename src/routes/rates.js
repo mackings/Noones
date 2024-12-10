@@ -3,7 +3,7 @@ const { updatePaxfulPrice, getPaxfulUserInfo, getMultiplePaxfulUserInfo } = requ
 const { getPaxfulOffers, UpdateSingleMargin } = require('../controllers/Rate Config/Offers Config/paxfulOffer');
 const { getMultiplePaxfulOffers, updatePricesForAllAccounts, updateOffersForSpecificAccount } = require('../controllers/Rate Config/flash Offer/paxful');
 const { getBinanceRate, getAllDollarRates, saveSellingPrice, getSellingPrice } = require('../controllers/Rate Config/marketrates');
-const { getMultiplenoonesOffers, updatenoonesPricesForAllAccounts, updatenoonesOffersForSpecificAccount, updateNoonesWebhooksForAllAccounts, GetNoonesWebhooksForAllAccounts, getNoonesWebhooksForAllAccounts, checkWalletBalances } = require('../controllers/Rate Config/flash Offer/noones');
+const { getMultiplenoonesOffers, updatenoonesPricesForAllAccounts, updatenoonesOffersForSpecificAccount, updateNoonesWebhooksForAllAccounts, GetNoonesWebhooksForAllAccounts, getNoonesWebhooksForAllAccounts, checkWalletBalances, turnOnOffersForAllAccounts, turnOffOffersForAllAccounts } = require('../controllers/Rate Config/flash Offer/noones');
 const router = express.Router();
 
 
@@ -11,18 +11,19 @@ const router = express.Router();
 
 
 //Noones
-
-
-//Webhook Update
-
-//router.post("/webhook/noones/update-multiple",updateNoonesWebhooksForAllAccounts);
 router.get("/webhook/noones/get-multiple", getNoonesWebhooksForAllAccounts);
+
+
 
 // Offers
 router.get("/offers/noones/get-multiple", getMultiplenoonesOffers);
 
-//Update Margins
+//Turn ON / OFF
+router.post("/offers/noones/turn-on", turnOnOffersForAllAccounts);
+router.post("/offers/noones/turn-off", turnOffOffersForAllAccounts);
 
+
+//Update Margins
 router.post("/offers/noones/margin/update-single", UpdateSingleMargin);
 router.post("/offers/noones/margin/update-multiple", updatenoonesPricesForAllAccounts);
 router.post("/offers/noones/margin/update-single-account", updatenoonesOffersForSpecificAccount);
