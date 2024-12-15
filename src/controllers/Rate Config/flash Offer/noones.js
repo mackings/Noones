@@ -473,6 +473,7 @@ const updateNoonesWebhooksForAllAccounts = async () => {
                 }
             } catch (error) {
                 console.error(`Error updating webhooks for account: ${username}. Error:`, error.message);
+                console.log(error);
                 updateResults.push({ username, error: error.message });
             }
         }
