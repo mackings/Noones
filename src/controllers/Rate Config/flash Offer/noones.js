@@ -53,7 +53,7 @@ const getnoonesToken = async (clientId, clientSecret) => {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
 
-    console.log(`Token received for client: ${clientId}`);
+    console.log(`Token Received for client: ${clientId}`);
     console.log(response.data.access_token);
     return response.data.access_token;
 };
