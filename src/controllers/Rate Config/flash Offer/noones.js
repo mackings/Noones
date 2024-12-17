@@ -26,7 +26,7 @@ const accounts = [
 
     {
         clientId: 'RNWjXmTTE68f6cDI3ukTR91odKiTVEE9dEivJya4XzE6wP87',
-        clientSecret: 'yxS49CddF2EGS6zxHXM7zriiT2Br92169VXehZ4ZHbCuYlV3',
+        clientSecret: 'cy6WGOK44XCx8ELlekziFwENMMkwKTpH5Xh0rrjyGxdcXR7E',
         username: 'Turbopay'
     },
 
