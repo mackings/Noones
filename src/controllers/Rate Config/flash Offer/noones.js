@@ -10,6 +10,7 @@ const ManualUnassigned = require("../../Model/unassignedmodel");
 
 
 
+
 const accounts = [
 
     {
@@ -22,10 +23,10 @@ const accounts = [
         clientId: 'FJhXbm7jhO0VubJ5M2S45m9L9Kjw2ZjdVtN9WJ6SCFLYsMsl',
         clientSecret: 'T82u5ilRM5lZBvVxl6vGWGaIddrbqoe534Aefl7BI8GUMBdc',
         username: '2minutepay'
-    },
+    },  
 
     {
-        clientId: 'RNWjXmTTE68f6cDI3ukTR91odKiTVEE9dEivJya4XzE6wP87',
+        clientId: 'RNWjXmTTE68f6cDI3ukTR91odKiTVEE9dEivJya4XzE6wP87', 
         clientSecret: 'cy6WGOK44XCx8ELlekziFwENMMkwKTpH5Xh0rrjyGxdcXR7E',
         username: 'Turbopay'
     },

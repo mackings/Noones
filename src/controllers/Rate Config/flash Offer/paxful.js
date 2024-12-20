@@ -31,7 +31,7 @@ const accounts = [
 
     {
         clientId: 'ms6sGSHY2K5OTWEwV0tBXwd30MbWjrFQRFpPNgpxtJqb3CHj',
-        clientSecret: '8Rs5WLlBHnY0NY9sZwcGXaf9jyNEx31DHR4J4YHwrC30hwcT',
+        clientSecret:'8Rs5WLlBHnY0NY9sZwcGXaf9jyNEx31DHR4J4YHwrC30hwcT',
         username: '2minmax_pro'
     },
 
