@@ -11,29 +11,30 @@ const ManualUnassigned = require("../../Model/unassignedmodel");
 
 
 
+
 const accounts = [
 
     {
-        clientId: 'lOUSOgKfg3hTnYE5hd4nySUb0paQmyITxnhuj1RlgUR1WvD2',
-        clientSecret: 'yxS49CddF2EGS6zxHXM7zriiT2Br92169VXehZ4ZHbCuYlV2',
+        clientId: 'zAZErGl7XF4xRwTPgvlEXC6j9YhruABCu27B4zIODJ8nJOb3',
+        clientSecret: '9hCFso7sgBOfzv0WOWspVexH31vyQREbPtHN4WkwAxvMytk6',
         username: '2minmax_pro'
     },
 
     {
-        clientId: 'FJhXbm7jhO0VubJ5M2S45m9L9Kjw2ZjdVtN9WJ6SCFLYsMsl',
-        clientSecret: 'T82u5ilRM5lZBvVxl6vGWGaIddrbqoe534Aefl7BI8GUMBdc',
+        clientId: 'm8znK0Vy7OZKJFqcHXMre33mfH9MCsqLeF04FFh1DRYdg6AW',
+        clientSecret: '7v4LVjMPH3tWDVMw6G2rUb2gZOUl7SnwcBQc1jA55aZg4kjn',
         username: '2minutepay'
     },  
 
     {
-        clientId: 'RNWjXmTTE68f6cDI3ukTR91odKiTVEE9dEivJya4XzE6wP87', 
-        clientSecret: 'cy6WGOK44XCx8ELlekziFwENMMkwKTpH5Xh0rrjyGxdcXR7E',
+        clientId: 'FzTEKAG98abBwZcZhqCX3hfX58cB0jQ4j8h3krOIv8ZluOL4', 
+        clientSecret: 't4bPPOKuLYHOg1Q2okGPbISKr072lqWTmZYOLgbm6NNMtI5E',
         username: 'Turbopay'
     },
 
     {
-        clientId: 'WsDnv43BcWYAqO36yfW76u18sze5ilIkHAsUgsIlVYwnlwj9',
-        clientSecret: 'V1WX2SoaR4fAhbd7aMCenY2U171rrlz0E5EpGX85ZK9J7ss5',
+        clientId: 'X3w5EtYbzn6LAjYjUBqnODua5rOXPbdkIgxyj7TSbcCM7XNW',
+        clientSecret: 'wrDnVuSgzAJpENF2g7MgAevKWXDYf5POgc0XWsZbuAeJP3JD',
         username: '2fastpay'
     },
 
