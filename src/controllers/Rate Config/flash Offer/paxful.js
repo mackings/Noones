@@ -7,19 +7,19 @@ const querystring = require('querystring');
 const accounts = [
 
     {
-        clientId: 's2bZLeYYVBHEvk1xwxcAcki9Jl2fgZUfHofFCpqHBOoPKenx',
-        clientSecret: 'KZht2YgxXXV7rJdO0RBp53vgkdgvAkpYw173x7gKs07gzWBt',
+        clientId: 'jfq2785hEJcI02wkOyAc8DAi8Nq3VWX4JizWRyU4bqKa8zFX',
+        clientSecret: 'hTb6Qd0GxXh1mS6tGXlZJetVzkdUOZg76iclR75VLDSL2rT3',
         username: 'donviky19'
     },
     {
-        clientId: 'RyJRJu5aeR8SZn8gMbsI4NCpMwNbuNxelF1kNEKiJVktQLyp',
-        clientSecret: 'JZTYVyebdAH8KMhmQ2TRP58ak2YXpu6YgNK2no5Fc3rA8vsa',
+        clientId: 'aRu3DuHQmDrYU4K2uDlcYqf1osFXtWunxzzVmHjFP4MDnV75',
+        clientSecret: 'gulkKS7ono6bl79Yk3wnUCuSmePbc2V2t0kyghuKXtDMhmcd',
         username: 'Turbopay'
     },
 
     {
-        clientId: '3a9yVWziEKm48zOoWPujFlWSsY9Zp3rWklaEQ2LBmhs4Ft0t',
-        clientSecret: 'XFHjEV1Cjb3uYLS2NeaOaNhthAXshWNj1Xb8R4Cp9xc23ezq',
+        clientId: 'wxmoGdO4imV2bdnlBDtQ3YArvmN4iGdY3lYpDGQD7q0ngEaL',
+        clientSecret: 'BCfOm76u8oa9dBx0rAWLvKOYDKcUb1Bd0SBEs8sb6kBrm9Cs',
         username: '2fastpay'
     },
 
@@ -30,8 +30,8 @@ const accounts = [
     },
 
     {
-        clientId: 'ms6sGSHY2K5OTWEwV0tBXwd30MbWjrFQRFpPNgpxtJqb3CHj',
-        clientSecret:'8Rs5WLlBHnY0NY9sZwcGXaf9jyNEx31DHR4J4YHwrC30hwcT',
+        clientId: 'VEhXfpUv4yx0u5epHF2o94CUNslg6dmsCNdh6szBjg50JYkk',
+        clientSecret:'qaly6bA62RwyHKEei6tu2hU2rd6B6pgcDxDZEYrW36UnDKoo',
         username: '2minmax_pro'
     },
 
