@@ -15,28 +15,11 @@ const ManualUnassigned = require("../../Model/unassignedmodel");
 const accounts = [
 
     {
-        clientId: 'zAZErGl7XF4xRwTPgvlEXC6j9YhruABCu27B4zIODJ8nJOb3',
-        clientSecret: '9hCFso7sgBOfzv0WOWspVexH31vyQREbPtHN4WkwAxvMytk6',
-        username: '2minmax_pro'
+        clientId: 'xQpyqheZ9o0hmPlGmUbazV5VWY1Cv63qXVhZy450IN11bgvR',
+        clientSecret: '9R77pmoW58eJ2ZoVpWndDfdmLjDqQbfQ1UNa4DjGbqtpL0vp',
+        username: 'Eden_Ageh'
     },
 
-    {
-        clientId: 'm8znK0Vy7OZKJFqcHXMre33mfH9MCsqLeF04FFh1DRYdg6AW',
-        clientSecret: '7v4LVjMPH3tWDVMw6G2rUb2gZOUl7SnwcBQc1jA55aZg4kjn',
-        username: '2minutepay'
-    },  
-
-    {
-        clientId: 'FzTEKAG98abBwZcZhqCX3hfX58cB0jQ4j8h3krOIv8ZluOL4', 
-        clientSecret: 't4bPPOKuLYHOg1Q2okGPbISKr072lqWTmZYOLgbm6NNMtI5E',
-        username: 'Turbopay'
-    },
-
-    {
-        clientId: 'X3w5EtYbzn6LAjYjUBqnODua5rOXPbdkIgxyj7TSbcCM7XNW',
-        clientSecret: 'wrDnVuSgzAJpENF2g7MgAevKWXDYf5POgc0XWsZbuAeJP3JD',
-        username: '2fastpay'
-    },
 
 ];
 
