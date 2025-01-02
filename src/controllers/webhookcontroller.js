@@ -601,7 +601,22 @@ const webhookHandler = async (req, res) => {
 
       // Send bank account instruction message
       await sendMessage(username, tradeHash, 'Please provide your bank account details as per the instructions.');
-  } else {
+
+  } else if (webhookType === 'trade.cancelled_or_expired') {
+    const tradeHash = payload?.trade_hash;
+    const username = tradeAccountMap[tradeHash];
+
+    if (!username) {
+        console.warn(`No account mapping found for trade_hash: ${tradeHash}`);
+        res.status(400).json({ status: 'error', message: 'Unmapped trade hash' });
+        return;
+    }
+
+    // Send bank account instruction message
+    await sendMessage(username, tradeHash, 'We hate to see you go , lets have better trade next time.');
+} 
+
+  else {
       console.warn('Unhandled webhook type:', webhookType);
   }
 
