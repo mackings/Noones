@@ -583,7 +583,7 @@ const webhookHandler = async (req, res) => {
                   },
               }
           );
-          console.log(`Message sent successfully for ${username}:`, response.data);
+          console.log(`>>>>>>>>>>>>>>>>>>  Message sent for ${username}:`, response.data);
       } catch (error) {
           console.error(`Failed to send message for ${username}:`, error.response?.data || error.message);
       }
@@ -614,18 +614,38 @@ const webhookHandler = async (req, res) => {
       const username = payload?.buyer_name || 'defaultUsername';
 
       await sendMessage(username, tradeHash, 'Please provide your bank account details as per the instructions.');
-  } else if (webhookType === 'trade.cancelled_or_expired') {
+
+
+  } else if (webhookType === 'trade.bank_account_shared') {
       const tradeHash = payload?.trade_hash;
       const username = payload?.buyer_name || 'defaultUsername'; 
 
       // Send cancellation message
-      await sendMessage(username, tradeHash, 'We hate to see you go. Let’s have a better trade next time.');
-  } else {
+      await sendMessage(username, tradeHash, 'Account Seen, I will run it now.');
+
+  } else if (webhookType === 'trade.bank_account_selected') {
+    const tradeHash = payload?.trade_hash;
+    const username = payload?.buyer_name || 'defaultUsername'; 
+
+    // Send cancellation message
+    await sendMessage(username, tradeHash, 'I don see am Boss. i go run am now');
+} 
+  
+  else if (webhookType === 'trade.cancelled_or_expired') {
+    const tradeHash = payload?.trade_hash;
+    const username = payload?.buyer_name || 'defaultUsername'; 
+
+    // Send cancellation message
+    await sendMessage(username, tradeHash, 'We hate to see you go. Let’s have a better trade next time.');
+} 
+  
+  else {
       console.warn('Unhandled webhook type:', webhookType);
   }
 
   res.status(200).send('Webhook received');
 };
+
 
 
 
