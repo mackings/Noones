@@ -467,27 +467,46 @@ const getnoonesToken = async (clientId, clientSecret) => {
 
 const tokens = {};
 
+
 const getTokenForAccount = async (username) => {
-    const account = accounts.find(acc => acc.username === username);
-    if (!account) {
-        throw new Error('Account not found');
-    }
+  console.log("Username being checked:", username); // Debug log
 
-    // Check if token is stored and valid (expires in 5 hours)
-    const now = Date.now();
-    if (tokens[username] && tokens[username].expiry > now) {
-        return tokens[username].token;
-    }
+  // Find the account by username
+  const account = accounts.find(acc => acc.username === username);
+  if (!account) {
+      console.error(`Account not found for username: ${username}`);
+      throw new Error('Account not found');
+  }
 
-    // Token is either not present or expired, so generate a new one
-    const token = await getnoonesToken(account.clientId, account.clientSecret);
-    tokens[username] = {
-        token,
-        expiry: now + 5 * 60 * 60 * 1000 // Token expiry set to 5 hours
-    };
+  const now = Date.now();
 
-    return token;
+  // Check if token exists and is still valid
+  if (tokens[username] && tokens[username].expiry > now) {
+      console.log(`Using cached token for ${username}`);
+      return tokens[username].token;
+  }
+
+  // If token doesn't exist or is expired, fetch a new one
+  try {
+      console.log(`Fetching a new token for ${username}`);
+      const token = await getnoonesToken(account.clientId, account.clientSecret);
+
+      // Save the new token with an expiry time
+      tokens[username] = {
+          token,
+          expiry: now + 5 * 60 * 60 * 1000, // Token expiry set to 5 hours
+      };
+
+      console.log(`New token saved for ${username}`);
+      return tokens[username].token;
+  } catch (error) {
+      console.error(`Failed to fetch token for ${username}:`, error.message);
+      throw error;
+  }
 };
+
+
+
 
 
 // Signature validation function
@@ -576,19 +595,17 @@ const webhookHandler = async (req, res) => {
       await sendMessage(buyerName, tradeHash, 'Trade has started. Welcome!');
   } else if (webhookType === 'trade.chat_message_received') {
       const tradeHash = payload?.trade_hash;
-      const username = payload?.buyer_name || 'defaultUsername'; // Replace 'defaultUsername' with an actual fallback
+      const username = payload?.buyer_name || 'defaultUsername'; 
 
-      // Log the message content
-    //  console.log(`Received message for trade ${tradeHash} by ${username}:`, payload.text);
+
   } else if (webhookType === 'bank-account-instruction') {
       const tradeHash = payload?.trade_hash;
-      const username = payload?.buyer_name || 'defaultUsername'; // Replace 'defaultUsername' with an actual fallback
+      const username = payload?.buyer_name || 'defaultUsername';
 
-      // Send bank account instruction message
       await sendMessage(username, tradeHash, 'Please provide your bank account details as per the instructions.');
   } else if (webhookType === 'trade.cancelled_or_expired') {
       const tradeHash = payload?.trade_hash;
-      const username = payload?.buyer_name || 'defaultUsername'; // Replace 'defaultUsername' with an actual fallback
+      const username = payload?.buyer_name || 'defaultUsername'; 
 
       // Send cancellation message
       await sendMessage(username, tradeHash, 'We hate to see you go. Let’s have a better trade next time.');
