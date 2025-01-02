@@ -444,7 +444,7 @@ const accounts = [
       username: 'boompay',
   },
 
-  
+
 ];
 
 const tokens = {};
@@ -502,6 +502,7 @@ const getTokenForAccount = async (username) => {
       console.log(`Using cached token for ${username}`);
       return tokens[username].token;
   }
+
 
   try {
       console.log(`Fetching a new token for ${username}`);
@@ -660,7 +661,7 @@ const webhookHandler = async (req, res) => {
   }
 
   res.status(200).send('Webhook received');
-  console.log(oayload);
+  console.log(payload);
 };
 
 
