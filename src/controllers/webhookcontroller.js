@@ -524,6 +524,8 @@ const getTokenForAccount = async (username) => {
 
 
 
+
+
 // Signature validation function
 
 const isValidSignature = (signature, host, originalUrl, rawBody, publicKey) => {
@@ -538,10 +540,8 @@ const isValidSignature = (signature, host, originalUrl, rawBody, publicKey) => {
 
 
 
+
 const webhookHandler = async (req, res) => {
-
-
-
 
   const publicKey = 'fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=';
 
@@ -563,8 +563,6 @@ const webhookHandler = async (req, res) => {
       return;
   }
 
-
-
   let parsedBody;
 
   try {
@@ -575,59 +573,89 @@ const webhookHandler = async (req, res) => {
       return;
   }
 
-  const payload = parsedBody;
-  const webhookType = payload?.type;
-
-
+  const webhookType = parsedBody?.type;
+  const payload = parsedBody?.payload;
 
   const sendMessage = async (username, tradeHash, message) => {
-      try {
-          const token = await getTokenForAccount(username);
-          const apiUrl = 'https://api.noones.com/noones/v1/trade-chat/post';
-          const response = await axios.post(
-              apiUrl,
-              new URLSearchParams({ trade_hash: tradeHash, message }),
-              {
-                  headers: {
-                      'Content-Type': 'application/x-www-form-urlencoded',
-                      Authorization: `Bearer ${token}`,
-                  },
-              }
-          );
-          console.log(`Message sent for ${username}:`, response.data);
-      } catch (error) {
-          console.error(`Failed to send message for ${username}:`, error.message);
-      }
+    try {
+        // Attempt to fetch token for the username
+        const token = await getTokenForAccount(username);
+
+        // Send the message if the username is valid
+        const apiUrl = 'https://api.noones.com/noones/v1/trade-chat/post';
+        const response = await axios.post(
+            apiUrl,
+            new URLSearchParams({ trade_hash: tradeHash, message }),
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+        console.log(`Message sent for ${username}:`, response.data);
+    } catch (error) {
+        console.error(`Failed to send message for ${username}:`, error.message);
+    }
   };
 
+  if (webhookType === 'trade.started') {
+      const buyerName = payload?.buyer_name;
+      const tradeHash = payload?.trade_hash;
 
-  if (webhookType === 'msg') {
-      const tradeHash = payload.trade_hash;
-      const text = payload.text;
-      const author = payload.author;
-
-      if (!tradeHash || !text || !author) {
-          console.warn('Missing trade_hash, text, or author in msg payload');
-          res.status(400).json({ status: 'error', message: 'Invalid msg payload' });
+      if (!buyerName || !tradeHash) {
+          console.warn('Missing buyer_name or trade_hash in trade.started payload');
+          res.status(400).json({ status: 'error', message: 'Invalid trade.started payload' });
           return;
       }
 
-      // Check for account number or the word "bank"
-      if (/\b\d{10}\b/.test(text)) {
-          await sendMessage(author, tradeHash, 'Account number received. Proceeding with verification.');
-      } else if (/bank/i.test(text)) {
-          await sendMessage(author, tradeHash, 'Bank details received. Please confirm the transaction.');
-      } else {
-          console.log('No account-related keywords detected in the message.');
+      // tradeAccountMap[tradeHash] = buyerName; // Uncomment this line to enable mapping
+
+      // Send welcome message
+      await sendMessage(buyerName, tradeHash, 'Trade has started. Welcome!');
+  } else if (webhookType === 'trade.chat_message_received') {
+      const tradeHash = payload?.trade_hash;
+      const username = payload?.buyer_name || 'defaultUsername'; 
+      const messageText = payload?.text;
+
+      // Check if the message contains a 10-digit number (bank account)
+      const accountNumberRegex = /\b\d{10}\b/;
+      if (accountNumberRegex.test(messageText)) {
+          // If it does, send the "Account number received" message
+          await sendMessage(username, tradeHash, 'Account number received');
       }
+
+  } else if (webhookType === 'bank-account-instruction') {
+      const tradeHash = payload?.trade_hash;
+      const username = payload?.buyer_name || 'defaultUsername';
+
+      await sendMessage(username, tradeHash, 'Please provide your bank account details as per the instructions.');
+
+  } else if (webhookType === 'trade.bank_account_shared') {
+      const tradeHash = payload?.trade_hash;
+      const username = payload?.buyer_name || 'defaultUsername'; 
+
+      // Send cancellation message
+      await sendMessage(username, tradeHash, 'Account Seen, I will run it now.');
+
+  } else if (webhookType === 'trade.bank_account_selected') {
+    const tradeHash = payload?.trade_hash;
+    const username = payload?.buyer_name || 'defaultUsername'; 
+
+    // Send cancellation message
+    await sendMessage(username, tradeHash, 'I don see am Boss. i go run am now');
+  } else if (webhookType === 'trade.cancelled_or_expired') {
+    const tradeHash = payload?.trade_hash;
+    const username = payload?.buyer_name || 'defaultUsername'; 
+
+    // Send cancellation message
+    await sendMessage(username, tradeHash, 'We hate to see you go. Let’s have a better trade next time.');
   } else {
       console.warn('Unhandled webhook type:', webhookType);
   }
 
   res.status(200).send('Webhook received');
-  //console.log(payload);
-
-
+  console.log(payload);
 };
 
 
