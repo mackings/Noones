@@ -600,7 +600,7 @@ const webhookHandler = async (req, res) => {
       }
   };
 
-  
+
   if (webhookType === 'msg') {
       const tradeHash = payload.trade_hash;
       const text = payload.text;
@@ -625,7 +625,7 @@ const webhookHandler = async (req, res) => {
   }
 
   res.status(200).send('Webhook received');
-  console.log(payload);
+  //console.log(payload);
 
 
 };
