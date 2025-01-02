@@ -507,7 +507,6 @@ const isValidSignature = (signature, host, originalUrl, rawBody, publicKey) => {
 
 const webhookHandler = async (req, res) => {
 
-
   const publicKey = 'fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=';
   const tradeAccountMap = {}; 
 
@@ -558,9 +557,11 @@ const webhookHandler = async (req, res) => {
           );
           console.log(`Message sent successfully for ${username}:`, response.data);
       } catch (error) {
-          console.error(`Failed to send message for ${username}:`, error.response?.data || error.message);
+         // console.error(`Failed to send message for ${username}:`, error.response?.data || error.message);
       }
   };
+
+  
 
   if (webhookType === 'trade.started') {
       // Extract buyer name and map trade_hash to buyer account
