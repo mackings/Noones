@@ -432,45 +432,61 @@ const saveChatMessageToFirestore = async (payload, messages) => {
 
 
 const accounts = [
+
   {
       clientId: 'dwRTVx5ksV2UXq1JGZEusw0vTDcxdkmi4H53xiyfDmBYYuqo',
       clientSecret: 'vq6CInlEaUku4v5pnrU66bFNPD5tf5uxbBVVFBrMv6NKB3lq',
-      username: 'Readyfly894'
+      username: 'Readyfly894',
   },
   {
       clientId: 'Yq0XIIVCnyjYgDKJBUg0Atz37uFKFNAt66r13PnLkGK9cvTI',
       clientSecret: 'o5hICv2hrS8Vmuq2jrOmZj9WwMX4rCWIi6mPscfYCQrH2zyi',
-      username: 'boompays'
+      username: 'boompay',
   },
+
+  
 ];
 
+const tokens = {};
 
+// Cleanup old tokens for usernames that no longer exist in `accounts`
+const cleanupTokens = () => {
+  const validUsernames = accounts.map(acc => acc.username.toLowerCase()); // Get all valid usernames
+  const tokenUsernames = Object.keys(tokens);
+
+  tokenUsernames.forEach(username => {
+      if (!validUsernames.includes(username.toLowerCase())) {
+          console.log(`Removing token for old username: ${username}`);
+          delete tokens[username];
+      }
+  });
+};
 
 const getnoonesToken = async (clientId, clientSecret) => {
   const tokenEndpoint = 'https://auth.noones.com/oauth2/token';
   console.log(`Requesting token for client: ${clientId}`);
 
-  const response = await axios.post(tokenEndpoint, querystring.stringify({
-      grant_type: 'client_credentials',
-      client_id: clientId,
-      client_secret: clientSecret,
-  }), {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
+  const response = await axios.post(
+      tokenEndpoint,
+      querystring.stringify({
+          grant_type: 'client_credentials',
+          client_id: clientId,
+          client_secret: clientSecret,
+      }),
+      {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      }
+  );
 
   console.log(`Token Received for client: ${clientId}`);
-  console.log(response.data.access_token);
   return response.data.access_token;
 };
 
-
-
-const tokens = {};
-
-
-
 const getTokenForAccount = async (username) => {
   console.log("Validating username:", username);
+
+  // Cleanup tokens before processing
+  cleanupTokens();
 
   // Check if the account exists in the `accounts` array (case-insensitive match)
   const account = accounts.find(acc => acc.username.toLowerCase() === username.toLowerCase());
@@ -526,6 +542,8 @@ const isValidSignature = (signature, host, originalUrl, rawBody, publicKey) => {
 
 const webhookHandler = async (req, res) => {
 
+
+
   const publicKey = 'fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=';
   // const tradeAccountMap = {}; // Uncomment this when enabling trade.started mapping
 
@@ -547,7 +565,12 @@ const webhookHandler = async (req, res) => {
       return;
   }
 
+
+
+
+
   let parsedBody;
+
   try {
       parsedBody = JSON.parse(req.rawBody);
   } catch (err) {
@@ -637,6 +660,7 @@ const webhookHandler = async (req, res) => {
   }
 
   res.status(200).send('Webhook received');
+  console.log(oayload);
 };
 
 
