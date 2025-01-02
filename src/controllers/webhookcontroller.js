@@ -524,8 +524,6 @@ const getTokenForAccount = async (username) => {
 
 
 
-
-
 // Signature validation function
 
 const isValidSignature = (signature, host, originalUrl, rawBody, publicKey) => {
@@ -536,7 +534,6 @@ const isValidSignature = (signature, host, originalUrl, rawBody, publicKey) => {
         Buffer.from(publicKey, 'base64')
     );
 };
-
 
 
 
@@ -655,7 +652,7 @@ const webhookHandler = async (req, res) => {
   }
 
   res.status(200).send('Webhook received');
-  console.log(payload);
+ // console.log(payload);
 };
 
 
