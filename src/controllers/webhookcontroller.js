@@ -506,9 +506,8 @@ const isValidSignature = (signature, host, originalUrl, rawBody, publicKey) => {
 
 
 const webhookHandler = async (req, res) => {
-
   const publicKey = 'fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=';
-  const tradeAccountMap = {}; 
+  // const tradeAccountMap = {}; // Uncomment this when enabling trade.started mapping
 
   const challenge = req.headers['x-noones-request-challenge'];
   if (challenge) {
@@ -537,7 +536,6 @@ const webhookHandler = async (req, res) => {
       return;
   }
 
-
   const webhookType = parsedBody?.type;
   const payload = parsedBody?.payload;
 
@@ -557,11 +555,9 @@ const webhookHandler = async (req, res) => {
           );
           console.log(`Message sent successfully for ${username}:`, response.data);
       } catch (error) {
-         // console.error(`Failed to send message for ${username}:`, error.response?.data || error.message);
+          console.error(`Failed to send message for ${username}:`, error.response?.data || error.message);
       }
   };
-
-  
 
   if (webhookType === 'trade.started') {
       // Extract buyer name and map trade_hash to buyer account
@@ -574,55 +570,35 @@ const webhookHandler = async (req, res) => {
           return;
       }
 
-      tradeAccountMap[tradeHash] = buyerName; // Map trade_hash to buyer's username
+      // tradeAccountMap[tradeHash] = buyerName; // Uncomment this line to enable mapping
 
       // Send welcome message
       await sendMessage(buyerName, tradeHash, 'Trade has started. Welcome!');
   } else if (webhookType === 'trade.chat_message_received') {
       const tradeHash = payload?.trade_hash;
-      const username = tradeAccountMap[tradeHash];
-
-      if (!username) {
-         // console.warn(`No account mapping found for trade_hash: ${tradeHash}`);
-          res.status(400).json({ status: 'error', message: 'Unmapped trade hash' });
-          return;
-      }
+      const username = payload?.buyer_name || 'defaultUsername'; // Replace 'defaultUsername' with an actual fallback
 
       // Log the message content
       console.log(`Received message for trade ${tradeHash} by ${username}:`, payload.text);
   } else if (webhookType === 'bank-account-instruction') {
       const tradeHash = payload?.trade_hash;
-      const username = tradeAccountMap[tradeHash];
-
-      if (!username) {
-          console.warn(`No account mapping found for trade_hash: ${tradeHash}`);
-          res.status(400).json({ status: 'error', message: 'Unmapped trade hash' });
-          return;
-      }
+      const username = payload?.buyer_name || 'defaultUsername'; // Replace 'defaultUsername' with an actual fallback
 
       // Send bank account instruction message
       await sendMessage(username, tradeHash, 'Please provide your bank account details as per the instructions.');
-
   } else if (webhookType === 'trade.cancelled_or_expired') {
-    const tradeHash = payload?.trade_hash;
-    const username = tradeAccountMap[tradeHash];
+      const tradeHash = payload?.trade_hash;
+      const username = payload?.buyer_name || 'defaultUsername'; // Replace 'defaultUsername' with an actual fallback
 
-    if (!username) {
-        console.warn(`No account mapping found for trade_hash: ${tradeHash}`);
-        res.status(400).json({ status: 'error', message: 'Unmapped trade hash' });
-        return;
-    }
-
-    // Send bank account instruction message
-    await sendMessage(username, tradeHash, 'We hate to see you go , lets have better trade next time.');
-} 
-
-  else {
+      // Send cancellation message
+      await sendMessage(username, tradeHash, 'We hate to see you go. Let’s have a better trade next time.');
+  } else {
       console.warn('Unhandled webhook type:', webhookType);
   }
 
   res.status(200).send('Webhook received');
 };
+
 
 
 
