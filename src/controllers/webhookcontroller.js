@@ -504,6 +504,8 @@ const getTokenForAccount = async (username) => {
   }
 
 
+
+
   try {
       console.log(`Fetching a new token for ${username}`);
       const token = await getnoonesToken(account.clientId, account.clientSecret);
@@ -604,11 +606,13 @@ const webhookHandler = async (req, res) => {
   const webhookType = parsedBody?.type;
   const payload = parsedBody?.payload;
 
-  const sendMessage = async (username, tradeHash, message) => {
-
+const sendMessage = async (username, tradeHash, message) => {
     try {
+        console.log(`Attempting to send message: "${message}" for username: "${username}" and tradeHash: "${tradeHash}"`);
+        
         // Attempt to fetch token for the username
         const token = await getTokenForAccount(username);
+        console.log(`Token fetched for ${username}: ${token}`);
 
         // Send the message if the username is valid
         const apiUrl = 'https://api.noones.com/noones/v1/trade-chat/post';
@@ -622,11 +626,21 @@ const webhookHandler = async (req, res) => {
                 },
             }
         );
-        console.log(`Message sent for ${username}:`, response.data);
+
+        console.log(`Message successfully sent for ${username}:`, response.data);
     } catch (error) {
-        //console.error(`Failed to send message for ${username}:`, error.message);
+        // Improved error handling
+        if (error.response) {
+            console.error(`Error sending message for ${username}:`, error.response.data);
+        } else {
+            console.error(`Error sending message for ${username}:`, error.message);
+        }
     }
-  };
+};
+
+
+
+
 
   if (webhookType === 'trade.started') {
     await handleTradeStarted(parsedBody.payload);
