@@ -470,22 +470,18 @@ const tokens = {};
 
 
 const getTokenForAccount = async (username) => {
-  console.log("Username being checked:", username); 
+  console.log("Validating username:", username);
 
-  let account = accounts.find(acc => acc.username.toLowerCase() === username.toLowerCase());
-  
+  // Check if the account exists in the `accounts` array (case-insensitive match)
+  const account = accounts.find(acc => acc.username.toLowerCase() === username.toLowerCase());
   if (!account) {
-      console.warn(`Account not found for username: ${username}. Attempting to create a new token for the account.`);
-      account = {
-          clientId: 'default_client_id', 
-          clientSecret: 'default_client_secret',  
-          username: username
-      };
+      console.warn(`Account not found for username: ${username}. This username will be skipped.`);
+      throw new Error(`Invalid username: ${username}`);
   }
 
   const now = Date.now();
 
-  // Check if token exists and is still valid
+  // Check if a token exists and is still valid
   if (tokens[username] && tokens[username].expiry > now) {
       console.log(`Using cached token for ${username}`);
       return tokens[username].token;
@@ -512,6 +508,7 @@ const getTokenForAccount = async (username) => {
 
 
 
+
 // Signature validation function
 
 const isValidSignature = (signature, host, originalUrl, rawBody, publicKey) => {
@@ -528,7 +525,7 @@ const isValidSignature = (signature, host, originalUrl, rawBody, publicKey) => {
 
 
 const webhookHandler = async (req, res) => {
-  
+
   const publicKey = 'fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=';
   // const tradeAccountMap = {}; // Uncomment this when enabling trade.started mapping
 
@@ -563,24 +560,28 @@ const webhookHandler = async (req, res) => {
   const payload = parsedBody?.payload;
 
   const sendMessage = async (username, tradeHash, message) => {
-      try {
-          const token = await getTokenForAccount(username);
-          const apiUrl = 'https://api.noones.com/noones/v1/trade-chat/post';
-          const response = await axios.post(
-              apiUrl,
-              new URLSearchParams({ trade_hash: tradeHash, message }),
-              {
-                  headers: {
-                      'Content-Type': 'application/x-www-form-urlencoded',
-                      Authorization: `Bearer ${token}`,
-                  },
-              }
-          );
-          console.log(`>>>>  Message sent for ${username}:`, response.data);
-      } catch (error) {
-          console.error(`Failed to send message for ${username}:`, error.response?.data || error.message);
-      }
-  };
+    try {
+        // Attempt to fetch token for the username
+        const token = await getTokenForAccount(username);
+
+        // Send the message if the username is valid
+        const apiUrl = 'https://api.noones.com/noones/v1/trade-chat/post';
+        const response = await axios.post(
+            apiUrl,
+            new URLSearchParams({ trade_hash: tradeHash, message }),
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+        console.log(`Message sent for ${username}:`, response.data);
+    } catch (error) {
+        console.error(`Failed to send message for ${username}:`, error.message);
+    }
+};
+
 
   if (webhookType === 'trade.started') {
       const buyerName = payload?.buyer_name;
