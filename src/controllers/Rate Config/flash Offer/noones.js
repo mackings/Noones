@@ -9,6 +9,8 @@ const admin = require("firebase-admin");
 const ManualUnassigned = require("../../Model/unassignedmodel");
 
 
+
+
 const accounts = [
 
     {
@@ -16,23 +18,6 @@ const accounts = [
         clientSecret: 'o5hICv2hrS8Vmuq2jrOmZj9WwMX4rCWIi6mPscfYCQrH2zyi',
         username: 'boompay'
     },
-
-    {
-        clientId: 'Yq0XIIVCnyjYgDKJBUg0Atz37uFKFNAt66r13PnLkGK9cvTI',
-        clientSecret: 'o5hICv2hrS8Vmuq2jrOmZj9WwMX4rCWIi6mPscfYCQrH2zyi',
-        username: 'boompay'
-    },
-
-    {
-        clientId: 'Yq0XIIVCnyjYgDKJBUg0Atz37uFKFNAt66r13PnLkGK9cvTI',
-        clientSecret: 'o5hICv2hrS8Vmuq2jrOmZj9WwMX4rCWIi6mPscfYCQrH2zyi',
-        username: 'boompay'
-    },
-
-
-
-
-
 
 ];
 
