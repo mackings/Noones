@@ -540,6 +540,8 @@ const isValidSignature = (signature, host, originalUrl, rawBody, publicKey) => {
 
 const webhookHandler = async (req, res) => {
 
+
+
   const publicKey = 'fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=';
 
   const challenge = req.headers['x-noones-request-challenge'];
@@ -555,12 +557,17 @@ const webhookHandler = async (req, res) => {
       return;
   }
 
+
+
   if (!isValidSignature(signature, req.get('host'), req.originalUrl, req.rawBody, publicKey)) {
       res.status(403).json({ status: 'error', message: 'Invalid signature' });
       return;
   }
 
+
   let parsedBody;
+
+
 
   try {
       parsedBody = JSON.parse(req.rawBody);
@@ -569,6 +576,29 @@ const webhookHandler = async (req, res) => {
       res.status(400).json({ status: 'error', message: 'Invalid JSON body' });
       return;
   }
+
+
+      const handleTradeStarted = async (payload) => {
+        await saveTradeToFirestore(payload);
+    };
+
+    const handleTradeMessage = async (payload) => {
+        const messages = [{
+            id: payload.id,
+            timestamp: payload.timestamp,
+            type: payload.type,
+            trade_hash: payload.trade_hash,
+            is_for_moderator: payload.is_for_moderator,
+            author: payload.author,
+            security_awareness: payload.security_awareness,
+            status: payload.status,
+            text: payload.text,
+            author_uuid: payload.author_uuid,
+            sent_by_moderator: payload.sent_by_moderator,
+        }];
+        await saveChatMessageToFirestore(payload, messages); 
+    };
+
 
   const webhookType = parsedBody?.type;
   const payload = parsedBody?.payload;
@@ -597,6 +627,8 @@ const webhookHandler = async (req, res) => {
   };
 
   if (webhookType === 'trade.started') {
+    await handleTradeStarted(parsedBody.payload);
+
       const buyerName = payload?.buyer_name;
       const tradeHash = payload?.trade_hash;
 
@@ -611,6 +643,7 @@ const webhookHandler = async (req, res) => {
       // Send welcome message
       await sendMessage(buyerName, tradeHash, 'Trade has started. Welcome!');
   } else if (webhookType === 'trade.chat_message_received') {
+    await handleTradeMessage(parsedBody.payload);
       const tradeHash = payload?.trade_hash;
       const username = payload?.buyer_name || 'defaultUsername'; 
       const messageText = payload?.text;
