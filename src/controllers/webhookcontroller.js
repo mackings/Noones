@@ -429,6 +429,70 @@ const saveChatMessageToFirestore = async (payload, messages) => {
 
 
 
+
+//Webhook Center 
+
+
+const accounts = [
+
+    {
+        clientId: 'Yq0XIIVCnyjYgDKJBUg0Atz37uFKFNAt66r13PnLkGK9cvTI',
+        clientSecret: 'o5hICv2hrS8Vmuq2jrOmZj9WwMX4rCWIi6mPscfYCQrH2zyi',
+        username: 'boompay'
+    },
+
+    {
+        clientId: 'Yq0XIIVCnyjYgDKJBUg0Atz37uFKFNAt66r13PnLkGK9cvTI',
+        clientSecret: 'o5hICv2hrS8Vmuq2jrOmZj9WwMX4rCWIi6mPscfYCQrH2zyi',
+        username: 'boompays'
+    },
+
+];
+
+
+const getnoonesToken = async (clientId, clientSecret) => {
+    const tokenEndpoint = 'https://auth.noones.com/oauth2/token';
+    console.log(`Requesting token for client: ${clientId}`);
+
+    const response = await axios.post(tokenEndpoint, querystring.stringify({
+        grant_type: 'client_credentials',
+        client_id: clientId,
+        client_secret: clientSecret,
+    }), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+
+    console.log(`Token Received for client: ${clientId}`);
+    console.log(response.data.access_token);
+    return response.data.access_token;
+};
+
+
+const tokens = {};
+
+const getTokenForAccount = async (username) => {
+    const account = accounts.find(acc => acc.username === username);
+    if (!account) {
+        throw new Error('Account not found');
+    }
+
+    // Check if token is stored and valid (expires in 5 hours)
+    const now = Date.now();
+    if (tokens[username] && tokens[username].expiry > now) {
+        return tokens[username].token;
+    }
+
+    // Token is either not present or expired, so generate a new one
+    const token = await getnoonesToken(account.clientId, account.clientSecret);
+    tokens[username] = {
+        token,
+        expiry: now + 5 * 60 * 60 * 1000 // Token expiry set to 5 hours
+    };
+
+    return token;
+};
+
+
 // Signature validation function
 
 const isValidSignature = (signature, host, originalUrl, rawBody, publicKey) => {
@@ -443,79 +507,109 @@ const isValidSignature = (signature, host, originalUrl, rawBody, publicKey) => {
 
 
 
+
 const webhookHandler = async (req, res) => {
-    const publicKey = 'fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=';
-
-    const challenge = req.headers['x-noones-request-challenge'];
-
-    if (challenge) {
-        res.set('x-noones-request-challenge', challenge);
-        res.status(200).end();
-        return;
-    }
-
-    const signature = req.get('x-noones-signature');
-    if (!signature || !req.rawBody || req.rawBody.trim() === '') {
-        res.status(400).json({ status: 'error', message: 'Invalid request' });
-        return;
-    }
-
-    if (!isValidSignature(signature, req.get('host'), req.originalUrl, req.rawBody, publicKey)) {
-        res.status(403).json({ status: 'error', message: 'Invalid signature' });
-        return;
-    }
-
-    let parsedBody;
-    try {
-        parsedBody = JSON.parse(req.rawBody);
-    } catch (err) {
-        console.warn('Failed to parse webhook body as JSON:', req.rawBody);
-        res.status(400).json({ status: 'error', message: 'Invalid JSON body' });
-        return;
-    }
-
-    // Define your trade started and message handler functions
-    const handleTradeStarted = async (payload) => {
-        //console.log('Handling trade started event:', payload);
-        await saveTradeToFirestore(payload);
-    };
 
 
-    const handleTradeMessage = async (payload) => {
-      //  console.log('Handling trade message event:', payload);
-        const messages = [{
-            id: payload.id,
-            timestamp: payload.timestamp,
-            type: payload.type,
-            trade_hash: payload.trade_hash,
-            is_for_moderator: payload.is_for_moderator,
-            author: payload.author,
-            security_awareness: payload.security_awareness,
-            status: payload.status,
-            text: payload.text,
-            author_uuid: payload.author_uuid,
-            sent_by_moderator: payload.sent_by_moderator,
-        }];
-        await saveChatMessageToFirestore(payload, messages); 
-    };
+  const publicKey = 'fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=';
+  const tradeAccountMap = {}; 
+
+  const challenge = req.headers['x-noones-request-challenge'];
+  if (challenge) {
+      res.set('x-noones-request-challenge', challenge);
+      res.status(200).end();
+      return;
+  }
+
+  const signature = req.get('x-noones-signature');
+  if (!signature || !req.rawBody || req.rawBody.trim() === '') {
+      res.status(400).json({ status: 'error', message: 'Invalid request' });
+      return;
+  }
+
+  if (!isValidSignature(signature, req.get('host'), req.originalUrl, req.rawBody, publicKey)) {
+      res.status(403).json({ status: 'error', message: 'Invalid signature' });
+      return;
+  }
+
+  let parsedBody;
+  try {
+      parsedBody = JSON.parse(req.rawBody);
+  } catch (err) {
+      console.warn('Failed to parse webhook body as JSON:', req.rawBody);
+      res.status(400).json({ status: 'error', message: 'Invalid JSON body' });
+      return;
+  }
 
 
-    const webhookType = parsedBody?.type;
+  const webhookType = parsedBody?.type;
+  const payload = parsedBody?.payload;
 
-    if (webhookType === 'trade.started') {
-       await handleTradeStarted(parsedBody.payload);
-    } else if (webhookType === 'trade.chat_message_received') {
-     await handleTradeMessage(parsedBody.payload);
-    } else {
+  const sendMessage = async (username, tradeHash, message) => {
+      try {
+          const token = await getTokenForAccount(username);
+          const apiUrl = 'https://api.noones.com/noones/v1/trade-chat/post';
+          const response = await axios.post(
+              apiUrl,
+              new URLSearchParams({ trade_hash: tradeHash, message }),
+              {
+                  headers: {
+                      'Content-Type': 'application/x-www-form-urlencoded',
+                      Authorization: `Bearer ${token}`,
+                  },
+              }
+          );
+          console.log(`Message sent successfully for ${username}:`, response.data);
+      } catch (error) {
+          console.error(`Failed to send message for ${username}:`, error.response?.data || error.message);
+      }
+  };
 
-    }
+  if (webhookType === 'trade.started') {
+      // Extract buyer name and map trade_hash to buyer account
+      const buyerName = payload?.buyer_name;
+      const tradeHash = payload?.trade_hash;
 
+      if (!buyerName || !tradeHash) {
+          console.warn('Missing buyer_name or trade_hash in trade.started payload');
+          res.status(400).json({ status: 'error', message: 'Invalid trade.started payload' });
+          return;
+      }
 
-   // console.debug('Valid webhook received:', parsedBody);
+      tradeAccountMap[tradeHash] = buyerName; // Map trade_hash to buyer's username
 
-    res.status(200).send('Webhook received');
+      // Send welcome message
+      await sendMessage(buyerName, tradeHash, 'Trade has started. Welcome!');
+  } else if (webhookType === 'trade.chat_message_received') {
+      const tradeHash = payload?.trade_hash;
+      const username = tradeAccountMap[tradeHash];
+
+      if (!username) {
+          console.warn(`No account mapping found for trade_hash: ${tradeHash}`);
+          res.status(400).json({ status: 'error', message: 'Unmapped trade hash' });
+          return;
+      }
+
+      // Log the message content
+      console.log(`Received message for trade ${tradeHash} by ${username}:`, payload.text);
+  } else if (webhookType === 'bank-account-instruction') {
+      const tradeHash = payload?.trade_hash;
+      const username = tradeAccountMap[tradeHash];
+
+      if (!username) {
+          console.warn(`No account mapping found for trade_hash: ${tradeHash}`);
+          res.status(400).json({ status: 'error', message: 'Unmapped trade hash' });
+          return;
+      }
+
+      // Send bank account instruction message
+      await sendMessage(username, tradeHash, 'Please provide your bank account details as per the instructions.');
+  } else {
+      console.warn('Unhandled webhook type:', webhookType);
+  }
+
+  res.status(200).send('Webhook received');
 };
-
 
 
 
