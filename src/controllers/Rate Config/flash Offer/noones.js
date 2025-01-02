@@ -38,7 +38,6 @@ const accounts = [
 
 
 
-
 const getnoonesToken = async (clientId, clientSecret) => {
     const tokenEndpoint = 'https://auth.noones.com/oauth2/token';
     console.log(`Requesting token for client: ${clientId}`);

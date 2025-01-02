@@ -7,8 +7,8 @@ const SellingPrice = require("../Model/sellingprice");
 const getPaxfulRatesToken = async (clientId, clientSecret) => {
 
   const tokenEndpoint = 'https://accounts.paxful.com/oauth2/token';
-  const id = 'PrjznBZL5BidL6cNxy3uMCZZDr1IibTPC8jCFxEBgmkhScRT'; 
-  const secret = '7OBdAwpIB07gCDZKOCKAeoTIgHmqCj6vp10SFgV6vSD6UfeX';
+  const id = 'E53VOgIDNN7bOglY12HrSSTZMrf33pFI6lDSVBkQmaLNVz11'; 
+  const secret = 'EmfnR8buyg2N9ILhGWtm1MDOzItRpFV3sbmBftdklIM480tn';
 
   const response = await axios.post(tokenEndpoint, querystring.stringify({
       grant_type: 'client_credentials',
@@ -26,8 +26,8 @@ const getPaxfulRatesToken = async (clientId, clientSecret) => {
 const getNoonesRatesToken = async () => {
 
   const tokenEndpoint = 'https://auth.noones.com/oauth2/token';
-  const clientId = 'xQpyqheZ9o0hmPlGmUbazV5VWY1Cv63qXVhZy450IN11bgvR'; 
-  const clientSecret = '9R77pmoW58eJ2ZoVpWndDfdmLjDqQbfQ1UNa4DjGbqtpL0vp';
+  const clientId = 'Yq0XIIVCnyjYgDKJBUg0Atz37uFKFNAt66r13PnLkGK9cvTI'; 
+  const clientSecret = 'o5hICv2hrS8Vmuq2jrOmZj9WwMX4rCWIi6mPscfYCQrH2zyi';
 
   const response = await axios.post(tokenEndpoint, querystring.stringify({
       grant_type: 'client_credentials',
