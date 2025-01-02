@@ -491,7 +491,7 @@ const getTokenForAccount = async (username) => {
   // Check if the account exists in the `accounts` array (case-insensitive match)
   const account = accounts.find(acc => acc.username.toLowerCase() === username.toLowerCase());
   if (!account) {
-      console.warn(`Account not found for username: ${username}. This username will be skipped.`);
+     // console.warn(`Account not found for username: ${username}. This username will be skipped.`);
       throw new Error(`Invalid username: ${username}`);
   }
 
@@ -570,6 +570,7 @@ const webhookHandler = async (req, res) => {
 
 
   try {
+
       parsedBody = JSON.parse(req.rawBody);
   } catch (err) {
       console.warn('Failed to parse webhook body as JSON:', req.rawBody);
@@ -604,6 +605,7 @@ const webhookHandler = async (req, res) => {
   const payload = parsedBody?.payload;
 
   const sendMessage = async (username, tradeHash, message) => {
+
     try {
         // Attempt to fetch token for the username
         const token = await getTokenForAccount(username);
@@ -622,7 +624,7 @@ const webhookHandler = async (req, res) => {
         );
         console.log(`Message sent for ${username}:`, response.data);
     } catch (error) {
-        console.error(`Failed to send message for ${username}:`, error.message);
+        //console.error(`Failed to send message for ${username}:`, error.message);
     }
   };
 
@@ -642,20 +644,33 @@ const webhookHandler = async (req, res) => {
 
       // Send welcome message
       await sendMessage(buyerName, tradeHash, 'Trade has started. Welcome!');
+
+
   } else if (webhookType === 'trade.chat_message_received') {
     await handleTradeMessage(parsedBody.payload);
-      const tradeHash = payload?.trade_hash;
-      const username = payload?.buyer_name || 'defaultUsername'; 
-      const messageText = payload?.text;
+    const tradeHash = payload?.trade_hash;
+    const username = payload?.buyer_name || 'defaultUsername'; 
+    const messageText = payload?.text;
 
-      // Check if the message contains a 10-digit number (bank account)
-      const accountNumberRegex = /\b\d{10}\b/;
-      if (accountNumberRegex.test(messageText)) {
-          // If it does, send the "Account number received" message
-          await sendMessage(username, tradeHash, 'Account number received');
-      }
+    // Check if the message contains a 10-digit number (bank account) or the word "Bank"
+    const accountNumberRegex = /\b\d{10}\b/;
+    const bankKeywordRegex = /\bBank\b/i; // Case-insensitive match for the word "Bank"
 
-  } else if (webhookType === 'bank-account-instruction') {
+    if (accountNumberRegex.test(messageText)) {
+        // If the message contains a 10-digit number (likely a bank account), send the message
+        console.log("account Detected");
+        console.log(messageText);
+
+        await sendMessage(username, tradeHash, 'Account number received');
+    } else if (bankKeywordRegex.test(messageText)) {
+        // If the message contains the word "Bank", send the message
+        await sendMessage(username, tradeHash, 'Bank details received');
+    }
+}
+
+
+ else if (webhookType === 'bank-account-instruction') {
+
       const tradeHash = payload?.trade_hash;
       const username = payload?.buyer_name || 'defaultUsername';
 
