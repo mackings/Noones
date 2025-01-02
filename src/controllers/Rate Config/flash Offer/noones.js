@@ -9,16 +9,29 @@ const admin = require("firebase-admin");
 const ManualUnassigned = require("../../Model/unassignedmodel");
 
 
-
-
-
 const accounts = [
 
     {
-        clientId: 'xQpyqheZ9o0hmPlGmUbazV5VWY1Cv63qXVhZy450IN11bgvR',
-        clientSecret: '9R77pmoW58eJ2ZoVpWndDfdmLjDqQbfQ1UNa4DjGbqtpL0vp',
-        username: 'Eden_Ageh'
+        clientId: 'Yq0XIIVCnyjYgDKJBUg0Atz37uFKFNAt66r13PnLkGK9cvTI',
+        clientSecret: 'o5hICv2hrS8Vmuq2jrOmZj9WwMX4rCWIi6mPscfYCQrH2zyi',
+        username: 'boompay'
     },
+
+    {
+        clientId: 'Yq0XIIVCnyjYgDKJBUg0Atz37uFKFNAt66r13PnLkGK9cvTI',
+        clientSecret: 'o5hICv2hrS8Vmuq2jrOmZj9WwMX4rCWIi6mPscfYCQrH2zyi',
+        username: 'boompay'
+    },
+
+    {
+        clientId: 'Yq0XIIVCnyjYgDKJBUg0Atz37uFKFNAt66r13PnLkGK9cvTI',
+        clientSecret: 'o5hICv2hrS8Vmuq2jrOmZj9WwMX4rCWIi6mPscfYCQrH2zyi',
+        username: 'boompay'
+    },
+
+
+
+
 
 
 ];

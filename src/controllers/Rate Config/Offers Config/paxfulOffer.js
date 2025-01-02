@@ -7,8 +7,8 @@ const querystring = require('querystring');
 
 
 //2FASt
-const clientId = "Uf4lf48TlgAxN5bYuNU2iQd3MsWBuMiKJ2GFIyqkN1RNKRpd";
-const clientSecret = "8Bkc9hqlQBoeNrtXEIFmxyu2WZQXpWgoEOvQcOtbtJUuFA6u";
+const clientId = "E53VOgIDNN7bOglY12HrSSTZMrf33pFI6lDSVBkQmaLNVz11";
+const clientSecret = "EmfnR8buyg2N9ILhGWtm1MDOzItRpFV3sbmBftdklIM480tn";
 
 
 const getPaxfulToken = async () => {

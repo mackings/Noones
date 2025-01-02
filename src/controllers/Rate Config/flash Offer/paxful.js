@@ -7,11 +7,22 @@ const querystring = require('querystring');
 const accounts = [
 
     {
-        clientId: 'OQlHIa4n17WPQ6da437Z5tD1ZEkLp82z51Ip5X5DlekYBmtB',
-        clientSecret: 'lQ1AMyQ3xkLj5fkh2qDOnpfiJabhtXxRFZsfiuIM1iIiz4HQ',
-        username: 'Eden_Ageh'
+        clientId: 'E53VOgIDNN7bOglY12HrSSTZMrf33pFI6lDSVBkQmaLNVz11',
+        clientSecret: 'EmfnR8buyg2N9ILhGWtm1MDOzItRpFV3sbmBftdklIM480tn',
+        username: 'boompay'
     },
-    // Add more accounts as needed
+
+    {
+        clientId: 'E53VOgIDNN7bOglY12HrSSTZMrf33pFI6lDSVBkQmaLNVz11',
+        clientSecret: 'EmfnR8buyg2N9ILhGWtm1MDOzItRpFV3sbmBftdklIM480tn',
+        username: 'boompay'
+    },
+    {
+        clientId: 'E53VOgIDNN7bOglY12HrSSTZMrf33pFI6lDSVBkQmaLNVz11',
+        clientSecret: 'EmfnR8buyg2N9ILhGWtm1MDOzItRpFV3sbmBftdklIM480tn',
+        username: 'boompay'
+    },
+    
 ];
 
 // Function to get Paxful access token
