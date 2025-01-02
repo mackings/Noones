@@ -607,6 +607,7 @@ const webhookHandler = async (req, res) => {
   const payload = parsedBody?.payload;
 
 const sendMessage = async (username, tradeHash, message) => {
+  
     try {
         console.log(`Attempting to send message: "${message}" for username: "${username}" and tradeHash: "${tradeHash}"`);
         
@@ -628,6 +629,7 @@ const sendMessage = async (username, tradeHash, message) => {
         );
 
         console.log(`Message successfully sent for ${username}:`, response.data);
+
     } catch (error) {
         // Improved error handling
         if (error.response) {

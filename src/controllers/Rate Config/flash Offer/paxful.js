@@ -1,7 +1,7 @@
 const axios = require('axios');
 const querystring = require('querystring');
 
-// List of accounts with clientId, clientSecret, and username
+
 
 
 const accounts = [
@@ -11,9 +11,16 @@ const accounts = [
         clientSecret: 'EmfnR8buyg2N9ILhGWtm1MDOzItRpFV3sbmBftdklIM480tn',
         username: 'boompay'
     },
+
+    {
+        clientId: 'E53VOgIDNN7bOglY12HrSSTZMrf33pFI6lDSVBkQmaLNVz11',
+        clientSecret: 'EmfnR8buyg2N9ILhGWtm1MDOzItRpFV3sbmBftdklIM480tn',
+        username: 'boompay'
+    },
     
     
 ];
+
 
 // Function to get Paxful access token
 
@@ -33,20 +40,14 @@ const getPaxfulToken = async (clientId, clientSecret) => {
     return response.data.access_token;
 };
 
-
-
-
 const tokens = {};
 
-// Function to get the token for a specific account (checks expiration)
-
 const getTokenForAccount = async (username) => {
+
     const account = accounts.find(acc => acc.username === username);
     if (!account) {
         throw new Error('Account not found');
     }
-
-    // Check if token is stored and valid (expires in 5 hours)
     const now = Date.now();
     if (tokens[username] && tokens[username].expiry > now) {
         return tokens[username].token;
@@ -61,6 +62,89 @@ const getTokenForAccount = async (username) => {
 
     return token;
 };
+
+
+
+
+const offerApi = {
+
+    turnOn: 'https://api.paxful.com/paxful/v1/offer/turn-on',
+    turnOff: 'https://api.paxful.com/paxful/v1/offer/turn-off'
+    
+};
+
+// Shared function to toggle offers (reused by both endpoints)
+
+const toggleOffers = async (endpoint, action) => {
+    
+    const results = [];
+    for (const account of accounts) {
+        const { username } = account;
+        try {
+            // Get or refresh the token for the account
+            const token = await getTokenForAccount(username);
+
+            console.log(`${action} offers for account: ${username}`);
+
+            // Make the POST request to toggle offers
+            const response = await axios.post(endpoint, {}, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            console.log(`${action} offers success for account: ${username}`);
+
+            results.push({
+                username,
+                status: 'success',
+                response: response.data
+            });
+
+        } catch (error) {
+            console.error(`${action} offers failed for account: ${username}. Error: ${error.message}`);
+            results.push({
+                username,
+                status: 'error',
+                error: error.message
+            });
+        }
+    }
+
+    return results;
+};
+
+
+
+// Endpoint to turn ON offers
+exports.turnOnOffersForAllaccounts = async (req, res) => {
+    try {
+        const results = await toggleOffers(offerApi.turnOn, 'Turn on');
+        res.status(200).json({ results });
+        console.log(results);
+    } catch (error) {
+
+        console.error('Error turning on offers for all accounts:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+// Endpoint to turn OFF offers
+exports.turnOffOffersForAllAccounts = async (req, res) => {
+    try {
+        const results = await toggleOffers(offerApi.turnOff, 'Turn off');
+        res.status(200).json({ results });
+        console.log(results);
+    } catch (error) {
+        console.error('Error turning off offers for all accounts:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+
 
 
 
