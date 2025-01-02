@@ -431,51 +431,60 @@ const saveChatMessageToFirestore = async (payload, messages) => {
 
 
 const accounts = [
-
-    {
-        clientId: 'dwRTVx5ksV2UXq1JGZEusw0vTDcxdkmi4H53xiyfDmBYYuqo',
-        clientSecret: 'vq6CInlEaUku4v5pnrU66bFNPD5tf5uxbBVVFBrMv6NKB3lq',
-        username: 'Readyfly894'
-    },
-
-    // {
-    //     clientId: 'Yq0XIIVCnyjYgDKJBUg0Atz37uFKFNAt66r13PnLkGK9cvTI',
-    //     clientSecret: 'o5hICv2hrS8Vmuq2jrOmZj9WwMX4rCWIi6mPscfYCQrH2zyi',
-    //     username: 'boompays'
-    // },
-
+  {
+      clientId: 'dwRTVx5ksV2UXq1JGZEusw0vTDcxdkmi4H53xiyfDmBYYuqo',
+      clientSecret: 'vq6CInlEaUku4v5pnrU66bFNPD5tf5uxbBVVFBrMv6NKB3lq',
+      username: 'Readyfly894'
+  },
+  {
+      clientId: 'Yq0XIIVCnyjYgDKJBUg0Atz37uFKFNAt66r13PnLkGK9cvTI',
+      clientSecret: 'o5hICv2hrS8Vmuq2jrOmZj9WwMX4rCWIi6mPscfYCQrH2zyi',
+      username: 'boompays'
+  },
 ];
 
 
+
 const getnoonesToken = async (clientId, clientSecret) => {
-    const tokenEndpoint = 'https://auth.noones.com/oauth2/token';
-    console.log(`Requesting token for client: ${clientId}`);
+  const tokenEndpoint = 'https://auth.noones.com/oauth2/token';
+  console.log(`Requesting token for client: ${clientId}`);
 
-    const response = await axios.post(tokenEndpoint, querystring.stringify({
-        grant_type: 'client_credentials',
-        client_id: clientId,
-        client_secret: clientSecret,
-    }), {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    });
+  const response = await axios.post(tokenEndpoint, querystring.stringify({
+      grant_type: 'client_credentials',
+      client_id: clientId,
+      client_secret: clientSecret,
+  }), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  });
 
-    console.log(`Token Received for client: ${clientId}`);
-    console.log(response.data.access_token);
-    return response.data.access_token;
+  console.log(`Token Received for client: ${clientId}`);
+  console.log(response.data.access_token);
+  return response.data.access_token;
 };
+
 
 
 const tokens = {};
 
 
+
 const getTokenForAccount = async (username) => {
   console.log("Username being checked:", username); // Debug log
 
-  // Find the account by username
-  const account = accounts.find(acc => acc.username === username);
+  // Try to find the account in the array
+  let account = accounts.find(acc => acc.username.toLowerCase() === username.toLowerCase());
+  
+  // If account isn't found, log it and generate token with a new generic account
   if (!account) {
-      console.error(`Account not found for username: ${username}`);
-      throw new Error('Account not found');
+      console.warn(`Account not found for username: ${username}. Attempting to create a new token for the account.`);
+
+      // Optionally, you could create a new account mapping here dynamically or
+      // fall back to a generic client ID and secret for unknown users.
+      account = {
+          clientId: 'default_client_id',  // Replace with actual default clientId
+          clientSecret: 'default_client_secret',  // Replace with actual default clientSecret
+          username: username
+      };
   }
 
   const now = Date.now();
@@ -504,7 +513,6 @@ const getTokenForAccount = async (username) => {
       throw error;
   }
 };
-
 
 
 
