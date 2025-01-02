@@ -20,9 +20,9 @@ const accounts = [
     },
 
     {
-        clientId: 'Yq0XIIVCnyjYgDKJBUg0Atz37uFKFNAt66r13PnLkGK9cvTI',
-        clientSecret: 'o5hICv2hrS8Vmuq2jrOmZj9WwMX4rCWIi6mPscfYCQrH2zyi',
-        username: 'boompays'
+        clientId: 'dwRTVx5ksV2UXq1JGZEusw0vTDcxdkmi4H53xiyfDmBYYuqo',
+        clientSecret: 'vq6CInlEaUku4v5pnrU66bFNPD5tf5uxbBVVFBrMv6NKB3lq',
+        username: 'Readyfly894'
     },
 
 ];
@@ -435,6 +435,7 @@ const updateNoonesWebhooksForAllAccounts = async () => {
                     const requestBody = {
                         tag: "string",
                         endpoints: [
+
                             {
                                 event_type: "trade.started",
                                 url: "https://b-backend-xe8q.onrender.com/webhook",

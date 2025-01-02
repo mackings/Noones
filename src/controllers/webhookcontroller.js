@@ -183,8 +183,6 @@ setInterval(() => {
  // 120000 ms = 2 minutes
 
 
-
-
  
  const assignUnassignedTrades = async () => {
   try {
@@ -472,20 +470,15 @@ const tokens = {};
 
 
 const getTokenForAccount = async (username) => {
-  console.log("Username being checked:", username); // Debug log
+  console.log("Username being checked:", username); 
 
-  // Try to find the account in the array
   let account = accounts.find(acc => acc.username.toLowerCase() === username.toLowerCase());
   
-  // If account isn't found, log it and generate token with a new generic account
   if (!account) {
       console.warn(`Account not found for username: ${username}. Attempting to create a new token for the account.`);
-
-      // Optionally, you could create a new account mapping here dynamically or
-      // fall back to a generic client ID and secret for unknown users.
       account = {
-          clientId: 'default_client_id',  // Replace with actual default clientId
-          clientSecret: 'default_client_secret',  // Replace with actual default clientSecret
+          clientId: 'default_client_id', 
+          clientSecret: 'default_client_secret',  
           username: username
       };
   }
@@ -498,7 +491,6 @@ const getTokenForAccount = async (username) => {
       return tokens[username].token;
   }
 
-  // If token doesn't exist or is expired, fetch a new one
   try {
       console.log(`Fetching a new token for ${username}`);
       const token = await getnoonesToken(account.clientId, account.clientSecret);
@@ -536,6 +528,7 @@ const isValidSignature = (signature, host, originalUrl, rawBody, publicKey) => {
 
 
 const webhookHandler = async (req, res) => {
+  
   const publicKey = 'fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=';
   // const tradeAccountMap = {}; // Uncomment this when enabling trade.started mapping
 
@@ -583,14 +576,13 @@ const webhookHandler = async (req, res) => {
                   },
               }
           );
-          console.log(`>>>>>>>>>>>>>>>>>>  Message sent for ${username}:`, response.data);
+          console.log(`>>>>  Message sent for ${username}:`, response.data);
       } catch (error) {
           console.error(`Failed to send message for ${username}:`, error.response?.data || error.message);
       }
   };
 
   if (webhookType === 'trade.started') {
-      // Extract buyer name and map trade_hash to buyer account
       const buyerName = payload?.buyer_name;
       const tradeHash = payload?.trade_hash;
 
@@ -645,8 +637,6 @@ const webhookHandler = async (req, res) => {
 
   res.status(200).send('Webhook received');
 };
-
-
 
 
 
