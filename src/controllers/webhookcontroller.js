@@ -310,18 +310,15 @@ const saveTradeToFirestore = async (payload) => {
 
     // Step 1: Strict Deduplication - Skip if already saved
     if (strictCache.has(tradeHash)) {
-    //  console.log(`Trade ${tradeHash} is already saved. Skipping.`);
-      return; // Exit if the trade is already saved
+      return; 
     }
 
     // Step 2: Temporary Deduplication - Skip if being processed
     if (processedCache.has(tradeHash)) {
-     // console.log(`Trade ${tradeHash} is currently being processed. Skipping.`);
+
       return; // Exit if the trade is being processed
     }
 
-    // Step 3: Add to processedCache and start processing
-   // console.log(`Processing trade ${tradeHash}...`);
     processedCache.set(tradeHash, true); // Mark as being processed (expires in 2 seconds)
 
     // Save to Firestore
@@ -585,7 +582,7 @@ const webhookHandler = async (req, res) => {
       const username = tradeAccountMap[tradeHash];
 
       if (!username) {
-          console.warn(`No account mapping found for trade_hash: ${tradeHash}`);
+         // console.warn(`No account mapping found for trade_hash: ${tradeHash}`);
           res.status(400).json({ status: 'error', message: 'Unmapped trade hash' });
           return;
       }
