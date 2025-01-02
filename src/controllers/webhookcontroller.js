@@ -579,7 +579,7 @@ const webhookHandler = async (req, res) => {
       const username = payload?.buyer_name || 'defaultUsername'; // Replace 'defaultUsername' with an actual fallback
 
       // Log the message content
-      console.log(`Received message for trade ${tradeHash} by ${username}:`, payload.text);
+    //  console.log(`Received message for trade ${tradeHash} by ${username}:`, payload.text);
   } else if (webhookType === 'bank-account-instruction') {
       const tradeHash = payload?.trade_hash;
       const username = payload?.buyer_name || 'defaultUsername'; // Replace 'defaultUsername' with an actual fallback
