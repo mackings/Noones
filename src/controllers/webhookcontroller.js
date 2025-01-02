@@ -13,6 +13,9 @@ const NodeCache = require('node-cache');
 const ObjectId = mongoose.Types.ObjectId; 
 
 
+
+
+
 const serviceAccount = {
     type: "service_account",
     project_id: process.env.FIREBASE_PROJECT_ID,
@@ -290,12 +293,6 @@ const processUnassignedTrades = async () => {
   }
 };
 
-// // Schedule a cron job to run every minute
-// cron.schedule("*/1 * * * *", async () => {
-//   console.log("Running cron job for unassigned trades...");
-//   await processUnassignedTrades();
-// });
-
 
 
 // Newest Saving of Trades
@@ -432,177 +429,6 @@ const saveChatMessageToFirestore = async (payload, messages) => {
 
 
 
-// // Periodically clear the caches to reduce memory load
-// setInterval(() => {
-//   // Log to see if clear is being called
-//   console.log('Clearing messageProcessingCache and tradeMessageCache to free memory...');
-  
-//   if (messageProcessingCache.clear) {
-//     messageProcessingCache.clear(); // Clear the temporary cache for message processing
-//   } else {
-//     console.error('Error: messageProcessingCache.clear is not a function');
-//   }
-
-//   if (tradeMessageCache.clear) {
-//     tradeMessageCache.clear(); // Clear the strict cache for unique trade messages
-//   } else {
-//     console.error('Error: tradeMessageCache.clear is not a function');
-//   }
-
-// }, 120000); // Clear every 2 minutes
-// // Clear every 2 minutes
-
-
-
-
-
-
-///Saving of Trdes OLD
-
-
-// // First list (temporary check for duplicates)
-// const processedTradeHashes = new Set();
-
-// // Second list (strict check to process and save unique trade hashes)
-// const strictTradeHashes = new Set();
-
-// const saveTradeToFirestore = async (payload) => {
-//   try {
-//     // Check if the trade is in the first list (processedTradeHashes)
-//     if (processedTradeHashes.has(payload.trade_hash)) {
-//      // console.log(`Trade ${payload.trade_hash} already exists in the first check list. Skipping initial check.`);
-      
-//       // Now check in the second list (strict check)
-//       if (strictTradeHashes.has(payload.trade_hash)) {
-//         console.log(`Trade ${payload.trade_hash} is already processed and saved. Skipping Firestore save.`);
-//         return; // Exit if trade hash already processed in strict check list
-//       }
-
-//       // Wait for 3 seconds to ensure there are no duplicates when moving to second list
-//      // console.log(`Waiting for 3 seconds before moving trade ${payload.trade_hash} to strict check list...`);
-//       await new Promise(resolve => setTimeout(resolve, 3000));
-
-//       // Add to the second list for strict checking
-//       strictTradeHashes.add(payload.trade_hash);
-//       console.log(`Trade ${payload.trade_hash} added to strict check list.`);
-//     } else {
-//       // If the trade hash is not in the first list, add it and proceed with saving
-//      // console.log(`Adding trade ${payload.trade_hash} to first check list.`);
-//       processedTradeHashes.add(payload.trade_hash);
-//     }
-
-//     // Save the trade to Firestore after 3 seconds of verification
-//     console.log(`Saving trade ${payload.trade_hash} to Firestore...`);
-//     const docRef = db.collection('manualsystem').doc(payload.trade_hash);
-//     await docRef.set({
-//       ...payload,
-//       timestamp: admin.firestore.FieldValue.serverTimestamp(),
-//     });
-
-//     console.log(`Noones Trade ${payload.trade_hash} saved to Firestore DB >>>>>>>>>>>>>`);
-
-//     // Assign the trade to a staff member
-//     await assignTradeToStaff(payload);
-
-//   } catch (error) {
-//     console.error('Error saving the trade to Firestore:', error);
-//   }
-// };
-
-// // Periodically clear the processedTradeHashes and strictTradeHashes every 2 minutes
-// setInterval(() => {
-// //  console.log('Clearing processedTradeHashes and strictTradeHashes sets to reduce memory load...');
-//   processedTradeHashes.clear();
-//   strictTradeHashes.clear();
-// }, 120000); // 120000 ms = 2 minutes
-//  // 120000 ms = 2 minutes
-
-
-
-
-//Messages OLD
-
-//  const normalProcessingMessages = new Map(); // Tracks messages for normal processing
-//  const strictProcessingMessages = new Map(); // Tracks unique messages for strict processing
- 
-//  const saveChatMessageToFirestore = async (payload, messages) => {
-//    try {
-//      // First list: Filter out duplicates for normal processing
-//      const normalMessages = messages.filter((message) => {
-//        const existingMessages = normalProcessingMessages.get(message.trade_hash) || new Set();
- 
-//        if (existingMessages.has(message.id)) {
-//         // console.log(`Message ID ${message.id} for trade ${message.trade_hash} already processed in normal check. Skipping.`);
-//          return false;
-//        }
- 
-//        // Mark the message as processed in the normal list
-//        existingMessages.add(message.id);
-//        normalProcessingMessages.set(message.trade_hash, existingMessages);
-//        return true;
-//      });
- 
-//      if (normalMessages.length === 0) {
-//       // console.log(`No new messages to process for trade ${payload.trade_hash} in normal list.`);
-//        return; // Exit if no new messages for normal processing
-//      }
- 
-//      // Second list: Strict check to ensure no duplicate trade_hash and text in Firestore
-//      const uniqueMessages = normalMessages.filter((message) => {
-//        const existingTexts = strictProcessingMessages.get(message.trade_hash) || new Set();
- 
-//        if (existingTexts.has(message.text)) {
-//        //  console.log(`Duplicate message text for trade ${message.trade_hash}: "${message.text}". Skipping strict check.`);
-//          return false;
-//        }
- 
-//        // Mark the message as processed in the strict list
-//        existingTexts.add(message.text);
-//        strictProcessingMessages.set(message.trade_hash, existingTexts);
-//        return true;
-//      });
- 
-//      if (uniqueMessages.length === 0) {
-//       // console.log(`No new unique messages to save for trade ${payload.trade_hash} in strict list.`);
-//        return; // Exit if no unique messages for strict processing
-//      }
- 
-//      // Save to Firestore
-//      const docRef = db.collection('manualmessages').doc(payload.trade_hash);
-//      const doc = await docRef.get();
- 
-//      if (!doc.exists) {
-//        console.log(`Initializing chat for trade ${payload.trade_hash}.`);
-//        await docRef.set({
-//          trade_hash: payload.trade_hash,
-//          messages: uniqueMessages,
-//          timestamp: admin.firestore.FieldValue.serverTimestamp(),
-//        });
-//      } else {
-//       // console.log(`Updating chat for trade ${payload.trade_hash}.`);
-//        await docRef.update({
-//          messages: admin.firestore.FieldValue.arrayUnion(...uniqueMessages),
-//          timestamp: admin.firestore.FieldValue.serverTimestamp(),
-//        });
-//      }
- 
-//      console.log(`Messages for trade ${payload.trade_hash} saved successfully.`);
-//    } catch (error) {
-//      console.error('Error saving chat messages to Firestore:', error);
-//    }
-//  };
- 
-//  // Periodically clear the two maps to reduce memory load
-//  setInterval(() => {
-//   // console.log('Clearing normalProcessingMessages and strictProcessingMessages maps to reduce memory load...');
-//    normalProcessingMessages.clear();
-//    strictProcessingMessages.clear();
-//  }, 120000); // Clear every 2 minutes
- 
-
-
-
-
 // Signature validation function
 
 const isValidSignature = (signature, host, originalUrl, rawBody, publicKey) => {
@@ -613,6 +439,9 @@ const isValidSignature = (signature, host, originalUrl, rawBody, publicKey) => {
         Buffer.from(publicKey, 'base64')
     );
 };
+
+
+
 
 const webhookHandler = async (req, res) => {
     const publicKey = 'fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=';
@@ -651,6 +480,7 @@ const webhookHandler = async (req, res) => {
         await saveTradeToFirestore(payload);
     };
 
+
     const handleTradeMessage = async (payload) => {
       //  console.log('Handling trade message event:', payload);
         const messages = [{
@@ -681,10 +511,14 @@ const webhookHandler = async (req, res) => {
     }
 
 
-    //console.debug('Valid webhook received:', parsedBody);
+    console.debug('Valid webhook received:', parsedBody);
 
     res.status(200).send('Webhook received');
 };
+
+
+
+
 
 module.exports = {
   webhookHandler,
