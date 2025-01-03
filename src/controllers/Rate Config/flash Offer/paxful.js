@@ -12,10 +12,11 @@ const accounts = [
         username: 'boompay'
     },
 
+
     {
-        clientId: 'E53VOgIDNN7bOglY12HrSSTZMrf33pFI6lDSVBkQmaLNVz11',
-        clientSecret: 'EmfnR8buyg2N9ILhGWtm1MDOzItRpFV3sbmBftdklIM480tn',
-        username: 'boompay'
+        clientId: 'PrjznBZL5BidL6cNxy3uMCZZDr1IibTPC8jCFxEBgmkhScRT',
+        clientSecret: '7OBdAwpIB07gCDZKOCKAeoTIgHmqCj6vp10SFgV6vSD6UfeX',
+        username: 'Mexc'
     },
     
     
