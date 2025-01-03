@@ -717,7 +717,7 @@ const sendMessage = async (username, tradeHash, message) => {
   }
 
   res.status(200).send('Webhook received');
- // console.log(payload);
+  console.log(payload);
 };
 
 
