@@ -569,8 +569,6 @@ const webhookHandler = async (req, res) => {
 
   let parsedBody;
 
-
-
   try {
 
       parsedBody = JSON.parse(req.rawBody);
@@ -656,6 +654,7 @@ const sendMessage = async (username, tradeHash, message) => {
           return;
       }
 
+
       // tradeAccountMap[tradeHash] = buyerName; // Uncomment this line to enable mapping
 
       // Send welcome message
@@ -678,11 +677,13 @@ const sendMessage = async (username, tradeHash, message) => {
         console.log(messageText);
 
         await sendMessage(username, tradeHash, 'Account number received');
+
     } else if (bankKeywordRegex.test(messageText)) {
         // If the message contains the word "Bank", send the message
         await sendMessage(username, tradeHash, 'Bank details received');
     }
 }
+
 
 
  else if (webhookType === 'bank-account-instruction') {

@@ -65,7 +65,6 @@ const getTokenForAccount = async (username) => {
 
 
 
-
 const offerApi = {
 
     turnOn: 'https://api.paxful.com/paxful/v1/offer/turn-on',
@@ -118,7 +117,7 @@ const toggleOffers = async (endpoint, action) => {
 
 
 // Endpoint to turn ON offers
-exports.turnOnOffersForAllaccounts = async (req, res) => {
+exports.turnOnPaxfulOffersForAllaccounts = async (req, res) => {
     try {
         const results = await toggleOffers(offerApi.turnOn, 'Turn on');
         res.status(200).json({ results });
@@ -132,7 +131,7 @@ exports.turnOnOffersForAllaccounts = async (req, res) => {
 
 
 // Endpoint to turn OFF offers
-exports.turnOffOffersForAllAccounts = async (req, res) => {
+exports.turnOffPaxfulOffersForAllAccounts = async (req, res) => {
     try {
         const results = await toggleOffers(offerApi.turnOff, 'Turn off');
         res.status(200).json({ results });
