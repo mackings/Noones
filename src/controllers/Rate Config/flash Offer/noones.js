@@ -438,12 +438,13 @@ const updateNoonesWebhooksForAllAccounts = async () => {
 
                             {
                                 event_type: "trade.started",
-                                url: "https://b-backend-xe8q.onrender.com/webhook",
+                                url: "https://noones-t.onrender.com/webhook",
+                                //"https://b-backend-xe8q.onrender.com/webhook",
                                 enabled: true
                             },
                             {
                                 event_type: "trade.chat_message_received",
-                                url: "https://b-backend-xe8q.onrender.com/webhook",
+                                url: "https://noones-t.onrender.com/webhook",
                                 enabled: true
                             }
                         ]
