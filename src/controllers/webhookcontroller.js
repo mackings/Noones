@@ -478,12 +478,12 @@ const getnoonesToken = async (clientId, clientSecret) => {
       }
   );
 
-  console.log(`Token Received for client: ${clientId}`);
+ // console.log(`Token Received for client: ${clientId}`);
   return response.data.access_token;
 };
 
 const getTokenForAccount = async (username) => {
-  console.log("Validating username:", username);
+ // console.log("Validating username:", username);
 
   // Cleanup tokens before processing
   cleanupTokens();
