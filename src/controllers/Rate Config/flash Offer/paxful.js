@@ -89,7 +89,7 @@ const toggleOffers = async (endpoint, action) => {
             const response = await axios.post(endpoint, {}, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 }
             });
 
