@@ -447,6 +447,8 @@ const accounts = [
 
 ];
 
+
+
 const tokens = {};
 
 // Cleanup old tokens for usernames that no longer exist in `accounts`
@@ -543,7 +545,6 @@ const isValidSignature = (signature, host, originalUrl, rawBody, publicKey) => {
 const webhookHandler = async (req, res) => {
 
 
-
   const publicKey = 'fvcYFZlQl21obFbW5+RK2/foq8JzK/Y5fCEqg+NEy+k=';
 
   const challenge = req.headers['x-noones-request-challenge'];
@@ -584,6 +585,7 @@ const webhookHandler = async (req, res) => {
     };
 
     const handleTradeMessage = async (payload) => {
+
         const messages = [{
             id: payload.id,
             timestamp: payload.timestamp,
@@ -597,12 +599,14 @@ const webhookHandler = async (req, res) => {
             author_uuid: payload.author_uuid,
             sent_by_moderator: payload.sent_by_moderator,
         }];
+
         await saveChatMessageToFirestore(payload, messages); 
     };
 
 
   const webhookType = parsedBody?.type;
   const payload = parsedBody?.payload;
+
 
 const sendMessage = async (username, tradeHash, message) => {
   
@@ -631,18 +635,17 @@ const sendMessage = async (username, tradeHash, message) => {
     } catch (error) {
         // Improved error handling
         if (error.response) {
-            console.error(`Error sending message for ${username}:`, error.response.data);
+          //  console.error(`Error sending message for ${username}:`, error.response.data);
         } else {
-            console.error(`Error sending message for ${username}:`, error.message);
+         //   console.error(`Error sending message for ${username}:`, error.message);
         }
     }
 };
 
 
 
-
-
   if (webhookType === 'trade.started') {
+
     await handleTradeStarted(parsedBody.payload);
 
       const buyerName = payload?.buyer_name;
@@ -654,7 +657,6 @@ const sendMessage = async (username, tradeHash, message) => {
           return;
       }
 
-
       // tradeAccountMap[tradeHash] = buyerName; // Uncomment this line to enable mapping
 
       // Send welcome message
@@ -662,6 +664,7 @@ const sendMessage = async (username, tradeHash, message) => {
 
 
   } else if (webhookType === 'trade.chat_message_received') {
+
     await handleTradeMessage(parsedBody.payload);
     const tradeHash = payload?.trade_hash;
     const username = payload?.buyer_name || 'defaultUsername'; 
