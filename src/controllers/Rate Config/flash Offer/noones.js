@@ -82,6 +82,7 @@ const offerApi = {
 // Shared function to toggle offers (reused by both endpoints)
 
 const toggleOffers = async (endpoint, action) => {
+    
     const results = [];
     for (const account of accounts) {
         const { username } = account;

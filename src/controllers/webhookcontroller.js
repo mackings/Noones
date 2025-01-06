@@ -663,29 +663,39 @@ const sendMessage = async (username, tradeHash, message) => {
       await sendMessage(buyerName, tradeHash, 'Trade has started. Welcome!');
 
 
-  } else if (webhookType === 'trade.chat_message_received') {
-    await handleTradeMessage(parsedBody.payload);
-    const tradeHash = payload?.trade_hash;
-    const username = payload?.buyer_name || 'defaultUsername'; 
-    const messageText = payload?.text;
-
-    // Check if the message contains a 10-digit number (bank account) or the word "Bank"
-    const accountNumberRegex = /\b\d{10}\b/;
-    const bankKeywordRegex = /\bBank\b/i; // Case-insensitive match for the word "Bank"
-
-    if (accountNumberRegex.test(messageText)) {
-        // If the message contains a 10-digit number (likely a bank account), send the message
-        console.log("account Detected");
-        console.log(messageText);
-
-        await sendMessage(username, tradeHash, 'Account number received');
-
-    } else if (bankKeywordRegex.test(messageText)) {
-        // If the message contains the word "Bank", send the message
-        await sendMessage(username, tradeHash, 'Bank details received');
-    }
-}
-
+    } else if (webhookType === 'trade.chat_message_received') {
+      
+      await handleTradeMessage(parsedBody.payload);
+  
+      const tradeHash = payload?.trade_hash;
+      const messageText = payload?.text;
+  
+      if (!tradeHash || !messageText) {
+          console.warn('Missing tradeHash or messageText in trade.chat_message_received payload');
+          res.status(400).json({ status: 'error', message: 'Invalid trade.chat_message_received payload' });
+          return;
+      }
+  
+      // Use tradeHash as a unique identifier for the trade
+      const username = payload?.buyer_name || tradeHash;
+  
+      // Check if the message contains a 10-digit number (bank account) or the word "Bank"
+      const accountNumberRegex = /\b\d{10}\b/;
+      const bankKeywordRegex = /\bBank\b/i; // Case-insensitive match for the word "Bank"
+  
+      if (accountNumberRegex.test(messageText)) {
+          // If the message contains a 10-digit number (likely a bank account), send the message
+          console.log('Account Detected:', messageText);
+          await sendMessage(username, tradeHash, 'Account number received');
+      } else if (bankKeywordRegex.test(messageText)) {
+          // If the message contains the word "Bank", send the message
+          console.log('Bank keyword detected:', messageText);
+          await sendMessage(username, tradeHash, 'Bank details received');
+      } else {
+          console.log('No actionable keywords detected in message');
+      }
+  }
+  
 
 
  else if (webhookType === 'bank-account-instruction') {
