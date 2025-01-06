@@ -605,8 +605,7 @@ const webhookHandler = async (req, res) => {
 
 
 
-
-
+    
 
 const webhookType = parsedBody?.type;
 const payload = parsedBody?.payload;
@@ -639,9 +638,6 @@ const sendMessage = async (username, tradeHash, message) => {
         }
     }
 };
-
-
-
 
 
 
