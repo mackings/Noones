@@ -13,6 +13,8 @@ const NodeCache = require('node-cache');
 const querystring = require('querystring');
 const ObjectId = mongoose.Types.ObjectId;
 const tradeCache = new NodeCache({ stdTTL: 3600 });
+const sentMessagesCache = new NodeCache({ stdTTL: 3600 });
+
 
 
 
@@ -605,121 +607,129 @@ const webhookHandler = async (req, res) => {
 
 
 
+
+
+    const webhookType = parsedBody?.type;
+    const payload = parsedBody?.payload;
     
-
-const webhookType = parsedBody?.type;
-const payload = parsedBody?.payload;
-
-const sendMessage = async (username, tradeHash, message) => {
-    try {
-        console.log(`Attempting to send message: "${message}" for username: "${username}" and tradeHash: "${tradeHash}"`);
-
-        const token = await getTokenForAccount(username);
-        console.log(`Token fetched for ${username}: ${token}`);
-
-        const apiUrl = 'https://api.noones.com/noones/v1/trade-chat/post';
-        const response = await axios.post(
-            apiUrl,
-            new URLSearchParams({ trade_hash: tradeHash, message }),
-            {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    Authorization: `Bearer ${token}`,
-                },
+    const sendMessage = async (username, tradeHash, message, eventType) => {
+        try {
+            // Check if the message for this tradeHash and eventType has already been sent
+            const sentKey = `${tradeHash}:${eventType}`;
+            if (sentMessagesCache.get(sentKey)) {
+                console.log(`Message for event "${eventType}" and tradeHash "${tradeHash}" already sent. Skipping.`);
+                return;
             }
-        );
-
-        console.log(`Message successfully sent for ${username}:`, response.data);
-    } catch (error) {
-        if (error.response) {
-            console.error(`Error sending message for ${username}:`, error.response.data);
-        } else {
-            console.error(`Error sending message for ${username}:`, error.message);
+    
+            console.log(`Attempting to send message: "${message}" for username: "${username}" and tradeHash: "${tradeHash}"`);
+    
+            const token = await getTokenForAccount(username);
+            console.log(`Token fetched for ${username}: ${token}`);
+    
+            const apiUrl = 'https://api.noones.com/noones/v1/trade-chat/post';
+            const response = await axios.post(
+                apiUrl,
+                new URLSearchParams({ trade_hash: tradeHash, message }),
+                {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+    
+            console.log(`Message successfully sent for ${username}:`, response.data);
+    
+            // Mark this message as sent
+            sentMessagesCache.set(sentKey, true);
+        } catch (error) {
+            if (error.response) {
+                console.error(`Error sending message for ${username}:`, error.response.data);
+            } else {
+                console.error(`Error sending message for ${username}:`, error.message);
+            }
         }
-    }
-};
+    };
 
 
 
 
 if (webhookType === 'trade.started') {
-  await handleTradeStarted(parsedBody.payload);
+    await handleTradeStarted(parsedBody.payload);
 
-  const buyerName = payload?.buyer_name;
-  const tradeHash = payload?.trade_hash;
+    const buyerName = payload?.buyer_name;
+    const tradeHash = payload?.trade_hash;
 
-  if (!buyerName || !tradeHash) {
-      console.warn('Missing buyer_name or trade_hash in trade.started payload');
-      res.status(400).json({ status: 'error', message: 'Invalid trade.started payload' });
-      return;
-  }
+    if (!buyerName || !tradeHash) {
+        console.warn('Missing buyer_name or trade_hash in trade.started payload');
+        res.status(400).json({ status: 'error', message: 'Invalid trade.started payload' });
+        return;
+    }
 
-  // Store tradeHash and buyerName in cache
-  tradeCache.set(tradeHash, buyerName);
+    // Store tradeHash and buyerName in cache
+    tradeCache.set(tradeHash, buyerName);
 
-  // Send welcome message
-  await sendMessage(buyerName, tradeHash, 'Trade has started. Welcome!');
+    // Send welcome message
+    await sendMessage(buyerName, tradeHash, 'Trade has started. Welcome!', 'trade.started');
 } else if (webhookType === 'trade.chat_message_received') {
-  await handleTradeMessage(parsedBody.payload);
+    await handleTradeMessage(parsedBody.payload);
 
-  const tradeHash = payload?.trade_hash;
-  const messageText = payload?.text;
+    const tradeHash = payload?.trade_hash;
+    const messageText = payload?.text;
 
-  if (!tradeHash || !messageText) {
-      console.warn('Missing tradeHash or messageText in trade.chat_message_received payload');
-      res.status(400).json({ status: 'error', message: 'Invalid trade.chat_message_received payload' });
-      return;
-  }
+    if (!tradeHash || !messageText) {
+        console.warn('Missing tradeHash or messageText in trade.chat_message_received payload');
+        res.status(400).json({ status: 'error', message: 'Invalid trade.chat_message_received payload' });
+        return;
+    }
 
-  // Retrieve buyerName from cache using tradeHash
-  const username = tradeCache.get(tradeHash);
+    const username = tradeCache.get(tradeHash);
+    if (!username) {
+        console.error(`No buyer_name found in cache for tradeHash: ${tradeHash}`);
+        return;
+    }
 
-  if (!username) {
-      console.error(`No buyer_name found in cache for tradeHash: ${tradeHash}`);
-      return;
-  }
+    const accountNumberRegex = /\b\d{10}\b/;
+    const bankKeywordRegex = /\bBank\b/i;
 
-  // Check for keywords in the message
-  const accountNumberRegex = /\b\d{10}\b/;
-  const bankKeywordRegex = /\bBank\b/i;
-
-  if (accountNumberRegex.test(messageText)) {
-      console.log('Account Detected:', messageText);
-      await sendMessage(username, tradeHash, 'Account number received');
-  } else if (bankKeywordRegex.test(messageText)) {
-      console.log('Bank keyword detected:', messageText);
-      await sendMessage(username, tradeHash, 'Bank details received');
-  } else {
-      console.log('No actionable keywords detected in message');
-  }
+    if (accountNumberRegex.test(messageText)) {
+        console.log('Account Detected:', messageText);
+        await sendMessage(username, tradeHash, 'Account number received', 'account.detected');
+    } else if (bankKeywordRegex.test(messageText)) {
+        console.log('Bank keyword detected:', messageText);
+        await sendMessage(username, tradeHash, 'Bank details received', 'bank.details');
+    } else {
+        console.log('No actionable keywords detected in message');
+    }
 } else if (webhookType === 'bank-account-instruction') {
-  const tradeHash = payload?.trade_hash;
-  const username = tradeCache.get(tradeHash) || 'defaultUsername';
+    const tradeHash = payload?.trade_hash;
+    const username = tradeCache.get(tradeHash) || 'defaultUsername';
 
-  await sendMessage(username, tradeHash, 'Please provide your bank account details as per the instructions.');
+    await sendMessage(username, tradeHash, 'Please provide your bank account details as per the instructions.', 'bank.instruction');
 } else if (webhookType === 'trade.bank_account_shared') {
-  const tradeHash = payload?.trade_hash;
-  const username = tradeCache.get(tradeHash) || 'defaultUsername';
+    const tradeHash = payload?.trade_hash;
+    const username = tradeCache.get(tradeHash) || 'defaultUsername';
 
-  await sendMessage(username, tradeHash, 'Account Seen, I will run it now.');
+    await sendMessage(username, tradeHash, 'Account Seen, I will run it now.', 'bank.account.shared');
 } else if (webhookType === 'trade.bank_account_selected') {
-  const tradeHash = payload?.trade_hash;
-  const username = tradeCache.get(tradeHash) || 'defaultUsername';
+    const tradeHash = payload?.trade_hash;
+    const username = tradeCache.get(tradeHash) || 'defaultUsername';
 
-  await sendMessage(username, tradeHash, 'I don see am Boss. I go run am now.');
+    await sendMessage(username, tradeHash, 'I don see am Boss. I go run am now.', 'bank.account.selected');
 } else if (webhookType === 'trade.cancelled_or_expired') {
-  const tradeHash = payload?.trade_hash;
-  const username = tradeCache.get(tradeHash) || 'defaultUsername';
+    const tradeHash = payload?.trade_hash;
+    const username = tradeCache.get(tradeHash) || 'defaultUsername';
 
-  await sendMessage(username, tradeHash, 'We hate to see you go. Let’s have a better trade next time.');
+    await sendMessage(username, tradeHash, 'We hate to see you go. Let’s have a better trade next time.', 'trade.cancelled_or_expired');
 } else {
-  console.warn('Unhandled webhook type:', webhookType);
+    console.warn('Unhandled webhook type:', webhookType);
 }
 
 
 
+
   res.status(200).send('Webhook received');
-  console.log(payload);
+  //console.log(payload);
 };
 
 
