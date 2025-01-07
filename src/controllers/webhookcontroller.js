@@ -622,7 +622,7 @@ const sendMessage = async (username, tradeHash, message, eventType) => {
             return;
         }
 
-        console.log(`Attempting to send message: "${message}" for username: "${username}" and tradeHash: "${tradeHash}"`);
+      //  console.log(`Attempting to send message: "${message}" for username: "${username}" and tradeHash: "${tradeHash}"`);
 
         const token = await getTokenForAccount(username);
         console.log(`Token fetched for ${username}: ${token}`);
