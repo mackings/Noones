@@ -645,9 +645,9 @@ const sendMessage = async (username, tradeHash, message, eventType) => {
         sentMessagesCache.set(sentKey, true);
     } catch (error) {
         if (error.response) {
-            console.error(`Error sending message for ${username}:`, error.response.data);
+          //  console.error(`Error sending message for ${username}:`, error.response.data);
         } else {
-            console.error(`Error sending message for ${username}:`, error.message);
+        //    console.error(`Error sending message for ${username}:`, error.message);
         }
     }
 };
