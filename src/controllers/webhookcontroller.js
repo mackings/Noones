@@ -588,6 +588,7 @@ const webhookHandler = async (req, res) => {
     };
 
     const handleTradeMessage = async (payload) => {
+
         const messages = [{
             id: payload.id,
             timestamp: payload.timestamp,
@@ -607,12 +608,13 @@ const webhookHandler = async (req, res) => {
 
 
 
-
+ 
 
     const webhookType = parsedBody?.type;
     const payload = parsedBody?.payload;
     
     const sendMessage = async (username, tradeHash, message, eventType) => {
+
         try {
             // Check if the message for this tradeHash and eventType has already been sent
             const sentKey = `${tradeHash}:${eventType}`;
