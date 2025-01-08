@@ -67,8 +67,6 @@ const assignTradeToStaff = async (tradePayload) => {
   try {
     // First list check to avoid duplicate trade assignments
     if (assignedTradeHashes.has(tradePayload.trade_hash)) {
-      //console.log(`Trade ${tradePayload.trade_hash} is already being processed.`);
-      //console.log(`Waiting 3 seconds before adding trade ${tradePayload.trade_hash} to the strict check list.`);
       await new Promise(resolve => setTimeout(resolve, 3000));
       strictAssignedTradeHashes.add(tradePayload.trade_hash);
      // console.log(`Trade ${tradePayload.trade_hash} added to the strict check list.`);
@@ -466,7 +464,7 @@ const cleanupTokens = () => {
   });
 };
 
-const getnoonesToken = async (clientId, clientSecret) => {
+const getnoonesToken = async (clientId, clientSecret) => { 
   const tokenEndpoint = 'https://auth.noones.com/oauth2/token';
   console.log(`Requesting token for client: ${clientId}`);
 
@@ -656,6 +654,7 @@ const webhookHandler = async (req, res) => {
 
 
 
+
 if (webhookType === 'trade.started') {
     await handleTradeStarted(parsedBody.payload);
 
@@ -678,7 +677,7 @@ if (webhookType === 'trade.started') {
 
     const tradeHash = payload?.trade_hash;
     const messageText = payload?.text;
-
+' '
     if (!tradeHash || !messageText) {
         console.warn('Missing tradeHash or messageText in trade.chat_message_received payload');
         res.status(400).json({ status: 'error', message: 'Invalid trade.chat_message_received payload' });

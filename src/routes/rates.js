@@ -4,6 +4,7 @@ const { getPaxfulOffers, UpdateSingleMargin } = require('../controllers/Rate Con
 const { getMultiplePaxfulOffers, updatePricesForAllAccounts, updateOffersForSpecificAccount, turnOnPaxfulOffersForAllaccounts } = require('../controllers/Rate Config/flash Offer/paxful');
 const { getBinanceRate, getAllDollarRates, saveSellingPrice, getSellingPrice } = require('../controllers/Rate Config/marketrates');
 const { getMultiplenoonesOffers, updatenoonesPricesForAllAccounts, updatenoonesOffersForSpecificAccount, updateNoonesWebhooksForAllAccounts, GetNoonesWebhooksForAllAccounts, getNoonesWebhooksForAllAccounts, checkWalletBalances, turnOnOffersForAllAccounts, turnOffOffersForAllAccounts } = require('../controllers/Rate Config/flash Offer/noones');
+const { getBinanceBalance } = require('../controllers/Rate Config/flash Offer/binance');
 const router = express.Router();
 
 
@@ -63,5 +64,13 @@ router.get("/get-sprice", getSellingPrice);
 //Wallet Balances
 
 router.get("/wallet/noones/balance", checkWalletBalances);
+
+
+
+
+//Binance
+
+
+router.get("/binance/balance", getBinanceBalance);
 
 module.exports = router;
