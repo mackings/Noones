@@ -13,6 +13,7 @@
   "dependencies": {
     "asynckit": "^0.4.0",
     "axios": "^1.7.5",
+    "axios-https-proxy-fix": "^0.17.1",
     "bcrypt": "^5.1.1",
     "binance": "^2.15.2",
     "body-parser": "^1.20.3",
