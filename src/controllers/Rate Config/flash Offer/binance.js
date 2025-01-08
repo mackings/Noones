@@ -2,7 +2,8 @@ const express = require('express');
 const axios = require('axios');
 const crypto = require('crypto');
 const querystring = require('querystring');
-const HttpsProxyAgent = require('https-proxy-agent');
+const { HttpsProxyAgent } = require('https-proxy-agent');
+
 
 // Binance API keys
 const API_KEY = 'WlrmfciTl4gtCwYeHiZMSvMMWqilFPCweBZeWHEEUnNOsJZYsaXlnxB55APRXgQU';
