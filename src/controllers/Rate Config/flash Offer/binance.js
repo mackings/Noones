@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const crypto = require('crypto');
 const querystring = require('querystring');
+const HttpsProxyAgent = require('https-proxy-agent');
 
 // Binance API keys
 const API_KEY = 'WlrmfciTl4gtCwYeHiZMSvMMWqilFPCweBZeWHEEUnNOsJZYsaXlnxB55APRXgQU';
@@ -12,14 +13,18 @@ function createSignature(queryString) {
     return crypto.createHmac('sha256', API_SECRET).update(queryString).digest('hex');
 }
 
+const proxyAgent = new HttpsProxyAgent('47.237.92.86:8081'); // Replace with actual proxy
+
 // Function to get BTC balance
 exports.getBinanceBalance = async () => {
+
     try {
         const timestamp = Date.now();
         const query = `timestamp=${timestamp}`;
         const signature = createSignature(query);
 
         const config = {
+            httpsAgent: proxyAgent,
             headers: {
                 'X-MBX-APIKEY': API_KEY,
             },
