@@ -51,35 +51,43 @@
 
 
 
-const Binance = require('node-binance-api');
-const binance = new Binance().options({
-    APIKEY: 'WlrmfciTl4gtCwYeHiZMSvMMWqilFPCweBZeWHEEUnNOsJZYsaXlnxB55APRXgQU',
-    APISECRET: 'cyHA4Df2tkXMM0xWge6kYsDSYOiSA2SKp5axiEtGCxdZBQ10KSyi69JlbMF1JNxE',
+
+
+
+const { USDMClient } = require('binance');
+
+// Binance API credentials
+const API_KEY = 'WlrmfciTl4gtCwYeHiZMSvMMWqilFPCweBZeWHEEUnNOsJZYsaXlnxB55APRXgQU';
+const API_SECRET = 'cyHA4Df2tkXMM0xWge6kYsDSYOiSA2SKp5axiEtGCxdZBQ10KSyi69JlbMF1JNxE';
+
+// Initialize the USDMClient for Futures API
+const client = new USDMClient({
+  api_key: API_KEY,
+  api_secret: API_SECRET,
 });
 
-// Function to get BTC Futures balance using the Binance Futures API package
+// Function to get BTC Futures balance
 exports.getBinanceBalance = async () => {
-    try {
-        // Fetch Futures account info
-        await binance.useServerTime();  // Ensure server time is synced
-        const accountInfo = await binance.futuresAccount();
-
-        // Find the BTC balance from Futures account info
-        const btcBalance = accountInfo.assets.find(asset => asset.asset === 'BTC');
-        
-        if (!btcBalance) {
-            return { message: 'BTC balance not found' };
-        }
-
-        return {
-            asset: 'BTC',
-            free: btcBalance.availableBalance,
-            locked: btcBalance.unrealizedProfit,  // Adjust if needed based on actual data
-        };
-    } catch (error) {
-        console.error(error);
-        return { error: 'Failed to fetch BTC balance' };
+  try {
+    // Get the balance for all assets in the Futures account
+    const balance = await client.getBalance();
+    
+    // Find the BTC balance from the result
+    const btcBalance = balance.find(asset => asset.asset === 'BTC');
+    
+    if (!btcBalance) {
+      return { message: 'BTC balance not found' };
     }
+
+    return {
+      asset: 'BTC',
+      free: btcBalance.availableBalance,
+      locked: btcBalance.allocatedBalance,
+    };
+  } catch (error) {
+    console.error('Error fetching balance: ', error);
+    return { error: 'Failed to fetch BTC balance' };
+  }
 };
 
 
