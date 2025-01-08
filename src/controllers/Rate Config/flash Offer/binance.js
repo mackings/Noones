@@ -26,7 +26,7 @@ exports.getBinanceBalance = async () => {
         };
 
         const response = await axios.get(
-            `https://api.binance.com/api/v3/account?${query}&signature=${signature}`,
+            `https://api.binance.us/api/v3/account?${query}&signature=${signature}`,
             config
         );
         console.log(response);
