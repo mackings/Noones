@@ -1,9 +1,6 @@
-const express = require('express');
+const HttpProxyAgent = require('http-proxy-agent');  // Use http-proxy-agent for HTTP proxies
 const axios = require('axios');
 const crypto = require('crypto');
-const querystring = require('querystring');
-const { HttpsProxyAgent } = require('https-proxy-agent');
-
 
 // Binance API keys
 const API_KEY = 'WlrmfciTl4gtCwYeHiZMSvMMWqilFPCweBZeWHEEUnNOsJZYsaXlnxB55APRXgQU';
@@ -14,11 +11,11 @@ function createSignature(queryString) {
     return crypto.createHmac('sha256', API_SECRET).update(queryString).digest('hex');
 }
 
-const proxyAgent = new HttpsProxyAgent('http://47.237.92.86:8081'); // Replace with actual proxy
+// Use HTTP Proxy Agent if the proxy does not support HTTPS
+const proxyAgent = new HttpProxyAgent('http://47.237.92.86:8081');  // Ensure HTTP protocol is used
 
 // Function to get BTC balance
 exports.getBinanceBalance = async () => {
-
     try {
         const timestamp = Date.now();
         const query = `timestamp=${timestamp}`;
@@ -52,4 +49,3 @@ exports.getBinanceBalance = async () => {
         return { error: 'Failed to fetch BTC balance' };
     }
 };
-
