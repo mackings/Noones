@@ -14,7 +14,7 @@ function createSignature(queryString) {
     return crypto.createHmac('sha256', API_SECRET).update(queryString).digest('hex');
 }
 
-const proxyAgent = new HttpsProxyAgent('47.237.92.86:8081'); // Replace with actual proxy
+const proxyAgent = new HttpsProxyAgent('http://47.237.92.86:8081'); // Replace with actual proxy
 
 // Function to get BTC balance
 exports.getBinanceBalance = async () => {
