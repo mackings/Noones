@@ -15,6 +15,7 @@ function createSignature(queryString) {
 
 // Function to get BTC balance
 exports.getBinanceBalance = async () => {
+    
     try {
         const timestamp = Date.now();
         const query = `timestamp=${timestamp}`;
@@ -53,55 +54,59 @@ exports.getBinanceBalance = async () => {
 
 
 
-// const express = require('express');
-// const axios = require('axios');
-// const crypto = require('crypto');
-// const querystring = require('querystring');
-// const axiosProxy = require('axios-https-proxy-fix'); // Import proxy package
+
+
 
 // // Binance API keys
 // const API_KEY = 'WlrmfciTl4gtCwYeHiZMSvMMWqilFPCweBZeWHEEUnNOsJZYsaXlnxB55APRXgQU';
 // const API_SECRET = 'cyHA4Df2tkXMM0xWge6kYsDSYOiSA2SKp5axiEtGCxdZBQ10KSyi69JlbMF1JNxE';
+// const PROXY_SERVER_IP = '47.251.122.81';
+// const PROXY_SERVER_PORT = '8888';
 
-// // Utility function to create a signature
 // function createSignature(queryString) {
 //     return crypto.createHmac('sha256', API_SECRET).update(queryString).digest('hex');
 // }
 
-// // Configure Axios to use a proxy
-// const proxy = {
-//     host: '67.43.236.19',
-//     port: 10009, // replace with your proxy's port
-//     protocol: 'http', // or 'https'
-//     // auth: {
-//     //     username: 'proxyUsername', // if authentication is required
-//     //     password: 'proxyPassword'
-//     // }
-// };
+// const axios = require('axios');
 
-// const axiosInstance = axiosProxy.create({
-//     proxy: proxy
-// });
-
-// // Function to get BTC balance
 // exports.getBinanceBalance = async () => {
+
 //     try {
 //         const timestamp = Date.now();
-//         const query = `timestamp=${timestamp}`;
+//         const query = timestamp=${timestamp};
 //         const signature = createSignature(query);
 
+//         // Proxy configuration
+//         const proxy = {
+//             host: PROXY_SERVER_IP,
+//             port: PROXY_SERVER_PORT
+//         };
+//         // const proxy = {
+//         //     host: PROXY_SERVER_IP,
+//         //     port: PROXY_SERVER_PORT,
+//         //     auth: {
+//         //         username: 'your-proxy-username',
+//         //         password: 'your-proxy-password',
+//         //     },
+//         // };
+
+//         // Axios configuration
 //         const config = {
 //             headers: {
 //                 'X-MBX-APIKEY': API_KEY,
 //             },
+//             proxy, // Include the proxy configuration
 //         };
 
-//         // Make the request using the configured axios instance with proxy
-//         const response = await axiosInstance.get(
-//             `https://api.binance.com/api/v3/account?${query}&signature=${signature}`,
+//         // Binance API call
+//         const response = await axios.get(
+//             https://api.binance.com/api/v3/account?${query}&signature=${signature},
 //             config
 //         );
 
+//         console.log(response);
+
+//         // Extract BTC balance
 //         const btcBalance = response.data.balances.find(asset => asset.asset === 'BTC');
 //         if (!btcBalance) {
 //             return { message: 'BTC balance not found' };
@@ -117,5 +122,3 @@ exports.getBinanceBalance = async () => {
 //         return { error: 'Failed to fetch BTC balance' };
 //     }
 // };
-
-
