@@ -436,10 +436,10 @@ const saveChatMessageToFirestore = async (payload, messages) => {
 const accounts = [
 
   {
-      clientId: 'IaHVBWme6wLyfSm3ghfLzhcTa23BM5dY6vjEF77DSgYQSplq',
-      clientSecret: 'bIF7GMGdmKvOXLcqNyXL3WXeh3ESRgoMbIfCAp9K39JNgE3U',
-      username: 'Kemptfinch431',
-  },
+    clientId: '92twe0hGBcx9fN2dRDldyp498r8wSFjAyu31AJepJHgTxaGe',
+    clientSecret: 'crmf6iwp9l13PubYPFsnZrHjd8BoWNc0JBgaqAZ6Q6f8HPrj',
+    username: 'SnugSleeper88',
+},
 
   {
       clientId: 'Yq0XIIVCnyjYgDKJBUg0Atz37uFKFNAt66r13PnLkGK9cvTI',
