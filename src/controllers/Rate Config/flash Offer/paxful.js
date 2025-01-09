@@ -22,6 +22,9 @@ const accounts = [
 ];
 
 
+
+
+
 // Function to get Paxful access token
 
 const getPaxfulToken = async (clientId, clientSecret) => {
@@ -63,6 +66,7 @@ const getTokenForAccount = async (username) => {
 
     return token;
 };
+
 
 
 
