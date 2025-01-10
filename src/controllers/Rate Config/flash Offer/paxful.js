@@ -159,12 +159,17 @@ const checkWalletBalances = async () => {
             // Get the token for the account
             const token = await getTokenForAccount(account.username);
 
-            // Make the GET request to retrieve wallet balance
-            const response = await axios.get(apiEndpoint, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            // Make the POST request to retrieve wallet balance
+            const response = await axios.post(
+                apiEndpoint,
+                {}, // Add any body payload if required
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                }
+            );
 
             const walletData = response.data?.data; // Access the data property
             if (!walletData) {
@@ -190,8 +195,10 @@ const checkWalletBalances = async () => {
 
             console.log(`Balances for ${account.username}:`, balances[account.username]);
         } catch (error) {
-            console.error(`Error retrieving wallet balances for ${account.username}:`, 
-                error.response ? error.response.data : error.message);
+            console.error(
+                `Error retrieving wallet balances for ${account.username}:`,
+                error.response ? error.response.data : error.message
+            );
             balances[account.username] = {
                 error: error.response ? error.response.data : error.message,
             };
@@ -206,6 +213,7 @@ const checkWalletBalances = async () => {
 
     return balances;
 };
+
 
 
 
