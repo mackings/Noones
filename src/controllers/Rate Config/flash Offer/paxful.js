@@ -64,6 +64,7 @@ const getTokenForAccount = async (username) => {
     return token;
 };
 
+
 const getnewTokenForAccount = async (username) => {
     const account = accounts.find(acc => acc.username === username);
     if (!account) {
