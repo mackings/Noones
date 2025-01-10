@@ -64,6 +64,17 @@ const getTokenForAccount = async (username) => {
     return token;
 };
 
+const getnewTokenForAccount = async (username) => {
+    const account = accounts.find(acc => acc.username === username);
+    if (!account) {
+        throw new Error('Account not found');
+    }
+
+    // Always fetch a new token, no caching or refresh
+    const token = await getPaxfulToken(account.clientId, account.clientSecret);
+    return token;
+};
+
 
 
 const offerApi = {
@@ -82,7 +93,7 @@ const toggleOffers = async (endpoint, action) => {
         const { username } = account;
         try {
             // Get or refresh the token for the account
-            const token = await getTokenForAccount(username);
+            const token = await getnewTokenForAccount(username);
 
             console.log(`${action} offers for account: ${username}`);
 
