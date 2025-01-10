@@ -36,45 +36,74 @@ const accounts = [
 
 
 
-const getNoonesToken = async (clientId, clientSecret) => {
+const getnoonesToken = async (clientId, clientSecret) => {
     const tokenEndpoint = 'https://auth.noones.com/oauth2/token';
     console.log(`Requesting token for client: ${clientId}`);
 
-    const response = await axios.post(
-        tokenEndpoint,
-        querystring.stringify({
-            grant_type: 'client_credentials',
-            client_id: clientId,
-            client_secret: clientSecret,
-        }),
-        {
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        }
-    );
+    const response = await axios.post(tokenEndpoint, querystring.stringify({
+        grant_type: 'client_credentials',
+        client_id: clientId,
+        client_secret: clientSecret,
+    }), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
 
-    console.log(`Token received for client: ${clientId}`);
+    console.log(`Token Received for client: ${clientId}`);
+    console.log(response.data.access_token);
     return response.data.access_token;
 };
 
-// Function to handle offer toggling (shared logic)
-const handleOfferToggle = async (endpoint, accounts, action) => {
+
+const tokens = {};
+
+const getTokenForAccount = async (username) => {
+    const account = accounts.find(acc => acc.username === username);
+    if (!account) {
+        throw new Error('Account not found');
+    }
+
+    // Check if token is stored and valid (expires in 5 hours)
+    const now = Date.now();
+    if (tokens[username] && tokens[username].expiry > now) {
+        return tokens[username].token;
+    }
+
+    // Token is either not present or expired, so generate a new one
+    const token = await getnoonesToken(account.clientId, account.clientSecret);
+    tokens[username] = {
+        token,
+        expiry: now + 5 * 60 * 60 * 1000 // Token expiry set to 5 hours
+    };
+
+    return token;
+};
+
+
+
+
+const offerApi = {
+    turnOn: 'https://api.noones.com/noones/v1/offer/turn-on',
+    turnOff: 'https://api.noones.com/noones/v1/offer/turn-off'
+};
+
+// Shared function to toggle offers (reused by both endpoints)
+
+const toggleOffers = async (endpoint, action) => {
     const results = [];
-
     for (const account of accounts) {
-        const { username, clientId, clientSecret } = account;
-
+        const { username } = account;
         try {
-            // Always generate a fresh token
-            const token = await getNoonesToken(clientId, clientSecret);
+            // Get or refresh the token for the account
+            const token = await getTokenForAccount(username);
 
             console.log(`${action} offers for account: ${username}`);
 
-            // Make the POST request to the endpoint
+            // Make the POST request to toggle offers
             const response = await axios.post(endpoint, {}, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
             });
 
             console.log(`${action} offers success for account: ${username}`);
@@ -82,14 +111,15 @@ const handleOfferToggle = async (endpoint, accounts, action) => {
             results.push({
                 username,
                 status: 'success',
-                response: response.data,
+                response: response.data
             });
+
         } catch (error) {
             console.error(`${action} offers failed for account: ${username}. Error: ${error.message}`);
             results.push({
                 username,
                 status: 'error',
-                error: error.message,
+                error: error.message
             });
         }
     }
@@ -98,38 +128,32 @@ const handleOfferToggle = async (endpoint, accounts, action) => {
 };
 
 
-// Endpoint to turn ON offers
-exports.turnOffOffersForAllAccounts= async (req, res) => {
-    try {
-        const results = await handleOfferToggle(
-            'https://api.noones.com/noones/v1/offer/turn-on',
-            accounts,
-            'Turn on'
-        );
-        res.status(200).json({ results });
-    } catch (error) {
-        console.error('Error turning on offers:', error);
-        res.status(500).json({ error: error.message });
-    }
-};
 
-// Endpoint to turn OFF offers
+// Endpoint to turn ON offers
 exports.turnOnOffersForAllAccounts = async (req, res) => {
     try {
-        const results = await handleOfferToggle(
-            'https://api.noones.com/noones/v1/offer/turn-off',
-            accounts,
-            'Turn off'
-        );
+        const results = await toggleOffers(offerApi.turnOn, 'Turn on');
         res.status(200).json({ results });
+        console.log(results);
     } catch (error) {
-        console.error('Error turning off offers:', error);
+
+        console.error('Error turning on offers for all accounts:', error);
         res.status(500).json({ error: error.message });
     }
 };
 
 
-
+// Endpoint to turn OFF offers
+exports.turnOffOffersForAllAccounts = async (req, res) => {
+    try {
+        const results = await toggleOffers(offerApi.turnOff, 'Turn off');
+        res.status(200).json({ results });
+        console.log(results);
+    } catch (error) {
+        console.error('Error turning off offers for all accounts:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
 
 
 
