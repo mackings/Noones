@@ -147,7 +147,6 @@ exports.turnOffPaxfulOffersForAllAccounts = async (req, res) => {
 
 
 const checkWalletBalances = async () => {
-    
     const apiEndpoint = 'https://api.paxful.com/paxful/v1/wallet/balance';
     const balances = {};
     let totalBTC = 0;
@@ -160,30 +159,39 @@ const checkWalletBalances = async () => {
             // Get the token for the account
             const token = await getTokenForAccount(account.username);
 
-            // Make the GET request to retrieve wallet summary
+            // Make the GET request to retrieve wallet balance
             const response = await axios.get(apiEndpoint, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
             });
 
-            const walletAssets = response.data.assets;
-            balances[account.username] = {};
+            const walletData = response.data?.data; // Access the data property
+            if (!walletData) {
+                throw new Error('Invalid response format');
+            }
 
-            // Parse the assets for BTC and USDT balances
-            ['BTC', 'USDT'].forEach((crypto) => {
-                const asset = walletAssets.find((a) => a.currency_code === crypto);
-                const balance = parseFloat(asset?.balance || 0);
-                balances[account.username][crypto] = balance;
+            balances[account.username] = {
+                BTC: 0,
+                USDT: 0,
+            };
 
-                // Add to total balances
-                if (crypto === 'BTC') totalBTC += balance;
-                if (crypto === 'USDT') totalUSDT += balance;
-            });
+            // Extract balance details
+            const cryptoCurrencyCode = walletData.crypto_currency_code;
+            const balance = parseFloat(walletData.balance || 0);
+
+            if (cryptoCurrencyCode === 'BTC') {
+                balances[account.username].BTC = balance;
+                totalBTC += balance;
+            } else if (cryptoCurrencyCode === 'USDT') {
+                balances[account.username].USDT = balance;
+                totalUSDT += balance;
+            }
 
             console.log(`Balances for ${account.username}:`, balances[account.username]);
         } catch (error) {
-            console.error(`Error retrieving wallet balances for ${account.username}:`, error.response ? error.response.data : error.message);
+            console.error(`Error retrieving wallet balances for ${account.username}:`, 
+                error.response ? error.response.data : error.message);
             balances[account.username] = {
                 error: error.response ? error.response.data : error.message,
             };
@@ -198,6 +206,7 @@ const checkWalletBalances = async () => {
 
     return balances;
 };
+
 
 
 
