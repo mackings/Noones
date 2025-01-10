@@ -447,6 +447,12 @@ const accounts = [
       username: 'boompay',
   },
 
+  {
+        clientId: 'dwRTVx5ksV2UXq1JGZEusw0vTDcxdkmi4H53xiyfDmBYYuqo',
+        clientSecret: 'vq6CInlEaUku4v5pnrU66bFNPD5tf5uxbBVVFBrMv6NKB3lq',
+        username: 'Readyfly894'
+    },
+
 
 ];
 
@@ -657,24 +663,30 @@ const webhookHandler = async (req, res) => {
 
 
 
-if (webhookType === 'trade.started') {
-    await handleTradeStarted(parsedBody.payload);
-
-    const buyerName = payload?.buyer_name;
-    const tradeHash = payload?.trade_hash;
-
-    if (!buyerName || !tradeHash) {
-        console.warn('Missing buyer_name or trade_hash in trade.started payload');
-        res.status(400).json({ status: 'error', message: 'Invalid trade.started payload' });
-        return;
-    }
-
-    // Store tradeHash and buyerName in cache
-    tradeCache.set(tradeHash, buyerName);
-
-    // Send welcome message
-    await sendMessage(buyerName, tradeHash, 'Trade has started. Welcome!', 'trade.started');
-} else if (webhookType === 'trade.chat_message_received') {
+    if (webhookType === 'trade.started') {
+      await handleTradeStarted(parsedBody.payload);
+  
+      const buyerName = payload?.buyer_name;
+      const tradeHash = payload?.trade_hash;
+  
+      if (!buyerName || !tradeHash) {
+          console.warn('Missing buyer_name or trade_hash in trade.started payload');
+          res.status(400).json({ status: 'error', message: 'Invalid trade.started payload' });
+          return;
+      }
+  
+      // Store tradeHash and buyerName in cache
+      tradeCache.set(tradeHash, buyerName);
+  
+      // Use cache to prevent duplicate messages
+      const sentKey = `${tradeHash}:trade.started`;
+      if (!sentMessagesCache.get(sentKey)) {
+          await sendMessage(buyerName, tradeHash, 'Trade has started. Welcome!', 'trade.started');
+      } else {
+          console.log(`Duplicate message detected for trade.started: tradeHash=${tradeHash}`);
+      }
+  }
+   else if (webhookType === 'trade.chat_message_received') {
     await handleTradeMessage(parsedBody.payload);
 
     const tradeHash = payload?.trade_hash;
