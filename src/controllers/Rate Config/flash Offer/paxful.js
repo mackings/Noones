@@ -65,127 +65,83 @@ const getTokenForAccount = async (username) => {
 };
 
 
-const getnewTokenForAccount = async (username) => {
-    const account = accounts.find(acc => acc.username === username);
-    if (!account) {
-        throw new Error('Account not found');
-    }
-
-    // Always fetch a new token, no caching or refresh
-    const token = await getPaxfulToken(account.clientId, account.clientSecret);
-    return token;
-};
-
 
 const offerApi = {
+
     turnOn: 'https://api.paxful.com/paxful/v1/offer/turn-on',
     turnOff: 'https://api.paxful.com/paxful/v1/offer/turn-off'
+    
 };
 
+// Shared function to toggle offers (reused by both endpoints)
+
+const toggleOffers = async (endpoint, action) => {
+    
+    const results = [];
+    for (const account of accounts) {
+        const { username } = account;
+        try {
+            // Get or refresh the token for the account
+            const token = await getTokenForAccount(username);
+
+            console.log(`${action} offers for account: ${username}`);
+
+            // Make the POST request to toggle offers
+            const response = await axios.post(endpoint, {}, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            });
+
+            console.log(`${action} offers success for account: ${username}`);
+
+            results.push({
+                username,
+                status: 'success',
+                response: response.data
+            });
+
+        } catch (error) {
+            console.error(`${action} offers failed for account: ${username}. Error: ${error.message}`);
+            results.push({
+                username,
+                status: 'error',
+                error: error.message
+            });
+        }
+    }
+
+    return results;
+};
 
 
 
 // Endpoint to turn ON offers
-
-
-
 exports.turnOnPaxfulOffersForAllaccounts = async (req, res) => {
-
-    
     try {
-        const results = [];
-        for (const account of accounts) {
-            const { username } = account;
-            try {
-                // Get a new token for each account
-                const token = await getnewTokenForAccount(username);
-
-                console.log(`Turning on offers for account: ${username}`);
-
-                // Make the POST request to turn on offers
-                const response = await axios.post(offerApi.turnOn, {}, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    }
-                });
-
-                console.log(`Turned on offers successfully for account: ${username}`);
-
-                results.push({
-                    username,
-                    status: 'success',
-                    response: response.data
-                });
-
-            } catch (error) {
-                console.error(`Error turning on offers for account: ${username}. Error: ${error.message}`);
-                results.push({
-                    username,
-                    status: 'error',
-                    error: error.message
-                });
-            }
-        }
-
+        const results = await toggleOffers(offerApi.turnOn, 'Turn on');
         res.status(200).json({ results });
         console.log(results);
-
     } catch (error) {
+
         console.error('Error turning on offers for all accounts:', error);
         res.status(500).json({ error: error.message });
     }
 };
 
 
-
 // Endpoint to turn OFF offers
 exports.turnOffPaxfulOffersForAllAccounts = async (req, res) => {
     try {
-        const results = [];
-        for (const account of accounts) {
-            const { username } = account;
-            try {
-                // Get a new token for each account
-                const token = await getnewTokenForAccount(username);
-
-                console.log(`Turning off offers for account: ${username}`);
-
-                // Make the POST request to turn off offers
-                const response = await axios.post(offerApi.turnOff, {}, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    }
-                });
-
-                console.log(`Turned off offers successfully for account: ${username}`);
-
-                results.push({
-                    username,
-                    status: 'success',
-                    response: response.data
-                });
-
-            } catch (error) {
-                console.error(`Error turning off offers for account: ${username}. Error: ${error.message}`);
-                results.push({
-                    username,
-                    status: 'error',
-                    error: error.message
-                });
-            }
-        }
-
+        const results = await toggleOffers(offerApi.turnOff, 'Turn off');
         res.status(200).json({ results });
         console.log(results);
-
     } catch (error) {
         console.error('Error turning off offers for all accounts:', error);
         res.status(500).json({ error: error.message });
     }
 };
-
 
 
 
