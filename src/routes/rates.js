@@ -1,7 +1,7 @@
 const express = require('express');
 const { updatePaxfulPrice, getPaxfulUserInfo, getMultiplePaxfulUserInfo } = require('../controllers/Rate Config/paxful');
 const { getPaxfulOffers, UpdateSingleMargin } = require('../controllers/Rate Config/Offers Config/paxfulOffer');
-const { getMultiplePaxfulOffers, updatePricesForAllAccounts, updateOffersForSpecificAccount, turnOnPaxfulOffersForAllaccounts, turnOffPaxfulOffersForAllAccounts } = require('../controllers/Rate Config/flash Offer/paxful');
+const { getMultiplePaxfulOffers, updatePricesForAllAccounts, updateOffersForSpecificAccount, turnOnPaxfulOffersForAllaccounts, turnOffPaxfulOffersForAllAccounts, checkpaxfulWalletBalances } = require('../controllers/Rate Config/flash Offer/paxful');
 const { getBinanceRate, getAllDollarRates, saveSellingPrice, getSellingPrice } = require('../controllers/Rate Config/marketrates');
 const { getMultiplenoonesOffers, updatenoonesPricesForAllAccounts, updatenoonesOffersForSpecificAccount, updateNoonesWebhooksForAllAccounts, GetNoonesWebhooksForAllAccounts, getNoonesWebhooksForAllAccounts, checkWalletBalances, turnOnOffersForAllAccounts, turnOffOffersForAllAccounts } = require('../controllers/Rate Config/flash Offer/noones');
 const router = express.Router();
@@ -63,5 +63,6 @@ router.get("/get-sprice", getSellingPrice);
 //Wallet Balances
 
 router.get("/wallet/noones/balance", checkWalletBalances);
+router.get("/wallet/paxful/balance", checkpaxfulWalletBalances);
 
 module.exports = router;

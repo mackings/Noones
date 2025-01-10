@@ -146,6 +146,74 @@ exports.turnOffPaxfulOffersForAllAccounts = async (req, res) => {
 
 
 
+const checkWalletBalances = async () => {
+    
+    const apiEndpoint = 'https://api.paxful.com/paxful/v1/wallet/balance';
+    const balances = {};
+    let totalBTC = 0;
+    let totalUSDT = 0;
+
+    for (const account of accounts) {
+        try {
+            console.log(`Checking wallet balances for username: ${account.username}`);
+            
+            // Get the token for the account
+            const token = await getTokenForAccount(account.username);
+
+            // Make the GET request to retrieve wallet summary
+            const response = await axios.get(apiEndpoint, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            const walletAssets = response.data.assets;
+            balances[account.username] = {};
+
+            // Parse the assets for BTC and USDT balances
+            ['BTC', 'USDT'].forEach((crypto) => {
+                const asset = walletAssets.find((a) => a.currency_code === crypto);
+                const balance = parseFloat(asset?.balance || 0);
+                balances[account.username][crypto] = balance;
+
+                // Add to total balances
+                if (crypto === 'BTC') totalBTC += balance;
+                if (crypto === 'USDT') totalUSDT += balance;
+            });
+
+            console.log(`Balances for ${account.username}:`, balances[account.username]);
+        } catch (error) {
+            console.error(`Error retrieving wallet balances for ${account.username}:`, error.response ? error.response.data : error.message);
+            balances[account.username] = {
+                error: error.response ? error.response.data : error.message,
+            };
+        }
+    }
+
+    // Add total balances to the result
+    balances.total = {
+        BTC: totalBTC,
+        USDT: totalUSDT,
+    };
+
+    return balances;
+};
+
+
+
+exports.checkpaxfulWalletBalances = async (req, res) => {
+    try {
+        const balances = await checkWalletBalances();
+        return res.status(200).json(balances);
+    } catch (error) {
+        console.error('Error checking wallet balances:', error.message);
+        return res.status(500).json({ error: 'Failed to check wallet balances.', details: error.message });
+    }
+};
+
+
+
+
 
 
 exports.checkPaxfulTrade = async (req, res) => {
