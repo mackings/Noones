@@ -11,26 +11,29 @@ const ManualUnassigned = require("../../Model/unassignedmodel");
 
 
 
-
 const accounts = [
 
+    
     {
-        clientId: 'Yq0XIIVCnyjYgDKJBUg0Atz37uFKFNAt66r13PnLkGK9cvTI',
-        clientSecret: 'o5hICv2hrS8Vmuq2jrOmZj9WwMX4rCWIi6mPscfYCQrH2zyi',
-        username: 'boompay'
+        clientId: '92twe0hGBcx9fN2dRDldyp498r8wSFjAyu31AJepJHgTxaGe',
+        clientSecret: 'crmf6iwp9l13PubYPFsnZrHjd8BoWNc0JBgaqAZ6Q6f8HPrj',
+        username: 'SnugSleeper88',
     },
 
-    {
-        clientId: 'IaHVBWme6wLyfSm3ghfLzhcTa23BM5dY6vjEF77DSgYQSplq',
-        clientSecret: 'bIF7GMGdmKvOXLcqNyXL3WXeh3ESRgoMbIfCAp9K39JNgE3U',
-        username: 'Kemptfinch431',
-      },
-      
-    {
-        clientId: 'dwRTVx5ksV2UXq1JGZEusw0vTDcxdkmi4H53xiyfDmBYYuqo',
-        clientSecret: 'vq6CInlEaUku4v5pnrU66bFNPD5tf5uxbBVVFBrMv6NKB3lq',
-        username: 'Readyfly894'
-    },
+
+    // {
+    //     clientId: 'IaHVBWme6wLyfSm3ghfLzhcTa23BM5dY6vjEF77DSgYQSplq',
+    //     clientSecret: 'bIF7GMGdmKvOXLcqNyXL3WXeh3ESRgoMbIfCAp9K39JNgE3U',
+    //     username: 'Kemptfinch431',
+    // },
+
+    // {
+    //     clientId: 'dwRTVx5ksV2UXq1JGZEusw0vTDcxdkmi4H53xiyfDmBYYuqo',
+    //     clientSecret: 'vq6CInlEaUku4v5pnrU66bFNPD5tf5uxbBVVFBrMv6NKB3lq',
+    //     username: 'Readyfly894'
+    // },
+
+    ///
 
 ];
 
@@ -79,18 +82,6 @@ const getTokenForAccount = async (username) => {
 };
 
 
-const getnewTokenForAccount = async (username) => {
-    const account = accounts.find(acc => acc.username === username);
-    if (!account) {
-        throw new Error('Account not found');
-    }
-
-    // Always fetch a new token, no caching or refresh
-    const token = await getnoonesToken(account.clientId, account.clientSecret);
-    return token;
-};
-
-
 
 
 const offerApi = {
@@ -101,12 +92,13 @@ const offerApi = {
 // Shared function to toggle offers (reused by both endpoints)
 
 const toggleOffers = async (endpoint, action) => {
+    
     const results = [];
     for (const account of accounts) {
         const { username } = account;
         try {
             // Get or refresh the token for the account
-            const token = await getnewTokenForAccount(username);
+            const token = await getTokenForAccount(username);
 
             console.log(`${action} offers for account: ${username}`);
 
@@ -457,12 +449,13 @@ const updateNoonesWebhooksForAllAccounts = async () => {
 
                             {
                                 event_type: "trade.started",
-                                url: "https://b-backend-xe8q.onrender.com/webhook",
+                                url: "https://noones-t.onrender.com/webhook",
+                                //"https://b-backend-xe8q.onrender.com/webhook",
                                 enabled: true
                             },
                             {
                                 event_type: "trade.chat_message_received",
-                                url: "https://b-backend-xe8q.onrender.com/webhook",
+                                url: "https://noones-t.onrender.com/webhook",
                                 enabled: true
                             }
                         ]
