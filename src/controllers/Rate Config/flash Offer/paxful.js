@@ -151,11 +151,18 @@ exports.turnOffPaxfulOffersForAllAccounts = async (req, res) => {
 
 
 const checkWalletBalances = async () => {
-    
     const apiEndpoint = 'https://api.paxful.com/paxful/v1/wallet/balance';
     const balances = {};
     let totalBTC = 0;
     let totalUSDT = 0;
+
+    // Initialize aggregated totals for fullData
+    const totalFullData = {
+        balance: 0,
+        incoming_amount: 0,
+        balance_escrow: 0,
+        crypto_currency_code: null, // Placeholder to confirm consistency later
+    };
 
     for (const account of accounts) {
         try {
@@ -192,6 +199,19 @@ const checkWalletBalances = async () => {
             // Extract balance details
             const cryptoCurrencyCode = walletData.crypto_currency_code;
             const balance = parseFloat(walletData.balance || 0);
+            const incomingAmount = parseFloat(walletData.incoming_amount || 0);
+            const balanceEscrow = parseFloat(walletData.balance_escrow || 0);
+
+            // Aggregate fullData into totalFullData
+            totalFullData.balance += balance;
+            totalFullData.incoming_amount += incomingAmount;
+            totalFullData.balance_escrow += balanceEscrow;
+
+            if (!totalFullData.crypto_currency_code) {
+                totalFullData.crypto_currency_code = cryptoCurrencyCode; // Set initial code
+            } else if (totalFullData.crypto_currency_code !== cryptoCurrencyCode) {
+                totalFullData.crypto_currency_code = "MIXED"; // Indicate mixed currencies if codes differ
+            }
 
             if (cryptoCurrencyCode === 'BTC') {
                 balances[account.username].BTC = balance;
@@ -213,15 +233,20 @@ const checkWalletBalances = async () => {
         }
     }
 
-    // Add total balances to the result
+    // Add total balances and aggregated full data to the result
     balances.total = {
         BTC: totalBTC,
         USDT: totalUSDT,
+        fullData: {
+            balance: totalFullData.balance.toString(),
+            incoming_amount: totalFullData.incoming_amount.toString(),
+            balance_escrow: totalFullData.balance_escrow.toString(),
+            crypto_currency_code: totalFullData.crypto_currency_code,
+        },
     };
 
     return balances;
 };
-
 
 
 
