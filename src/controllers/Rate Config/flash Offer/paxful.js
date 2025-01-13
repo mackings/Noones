@@ -131,7 +131,10 @@ exports.turnOnPaxfulOffersForAllaccounts = async (req, res) => {
 };
 
 
+
+
 // Endpoint to turn OFF offers
+
 exports.turnOffPaxfulOffersForAllAccounts = async (req, res) => {
     try {
         const results = await toggleOffers(offerApi.turnOff, 'Turn off');
@@ -146,7 +149,9 @@ exports.turnOffPaxfulOffersForAllAccounts = async (req, res) => {
 
 
 
+
 const checkWalletBalances = async () => {
+    
     const apiEndpoint = 'https://api.paxful.com/paxful/v1/wallet/balance';
     const balances = {};
     let totalBTC = 0;
@@ -177,9 +182,11 @@ const checkWalletBalances = async () => {
             }
             console.log(walletData);
 
+            // Add the full wallet data to balances
             balances[account.username] = {
                 BTC: 0,
                 USDT: 0,
+                fullData: walletData, // Add the full wallet data
             };
 
             // Extract balance details
@@ -214,6 +221,7 @@ const checkWalletBalances = async () => {
 
     return balances;
 };
+
 
 
 
