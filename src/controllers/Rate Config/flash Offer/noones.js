@@ -231,7 +231,7 @@ exports.getNoonesWebhooksForAllAccounts = async (req, res) => {
 
 const checkWalletBalances = async () => {
     
-    const apiEndpoint = 'https://api.noones.com/wallet/v1/summary';
+    const apiEndpoint = 'https://api.noones.com/wallet/v2/summary';
     const balances = {};
     let totalBTC = 0;
     let totalUSDT = 0;
