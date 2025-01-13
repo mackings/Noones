@@ -139,6 +139,8 @@ const toggleOffers = async (endpoint, action) => {
 
 
 
+
+
 // Endpoint to turn ON offers
 exports.turnOnOffersForAllAccounts = async (req, res) => {
     try {
@@ -510,6 +512,7 @@ const getnoonesOffersForAllAccounts = async () => {
         // Get the token for the current account
         console.log(`Fetching token for account: ${username}`);
         const token = await getnoonesToken(clientId, clientSecret);
+       
 
         // Fetch the offers for this account
         console.log(`Fetching offers for account: ${username}`);
@@ -631,7 +634,8 @@ exports.getMultiplenoonesOffers = async (req, res) => {
         for (const account of accounts) {
             const { clientId, clientSecret, username } = account;
 
-            const token = await getnoonesToken(clientId, clientSecret);
+           // const token = await getnoonesToken(clientId, clientSecret);
+           const token = await getTokenForAccount(username);
 
             const response = await axios.post(
                 'https://api.noones.com/noones/v1/offer/list',
