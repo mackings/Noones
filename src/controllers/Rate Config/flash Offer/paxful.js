@@ -175,6 +175,7 @@ const checkWalletBalances = async () => {
             if (!walletData) {
                 throw new Error('Invalid response format');
             }
+            console.log(walletData);
 
             balances[account.username] = {
                 BTC: 0,
