@@ -252,6 +252,7 @@ const checkWalletBalances = async () => {
 
             const walletAssets = response.data.assets;
             balances[account.username] = {};
+            console.log(response.data);
 
             // Parse the assets for BTC and USDT balances
             ['BTC', 'USDT'].forEach((crypto) => {
