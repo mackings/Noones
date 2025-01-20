@@ -58,9 +58,9 @@ const getTokenForAccount = async (username) => {
     const token = await getPaxfulToken(account.clientId, account.clientSecret);
     tokens[username] = {
         token,
-        expiry: now + 5 * 60 * 60 * 1000 // Token expiry set to 5 hours
+        expiry: now + 10 * 60 * 60 * 1000 // Token expiry set to 10 hours
     };
-
+    
     return token;
 };
 
