@@ -13,6 +13,23 @@ const dotenv = require("dotenv").config();
 const app = express();
 const port = 3000;
 
+// ----- CORS FIX (Add this at the top) -----
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*"); 
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  // Handle preflight
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
+// ------------------------------------------
+
+
+// Raw body capture
 app.use(function(req, res, next) {
     req.rawBody = '';
     req.on('data', function(chunk) {
@@ -33,9 +50,9 @@ app.use(hrRoutes);
 app.use(rateRoutes);
 
 
-app.listen(port,async () => {
-    
+app.listen(port, async () => {
     console.log("RUNNING_LOCALS >>>", process.env.PORT || 3000);
+
     try {
         const conn = await mongoose.connect(process.env.DB_URL, {
             useNewUrlParser: true,
