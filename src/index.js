@@ -14,13 +14,16 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// ----- CORS FIX (Using cors package) -----
+// ----- CORS FIX -----
 app.use(cors({
-  origin: '*', // Allow all origins (or specify your frontend URL for security)
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  credentials: false  // Change this to false when using origin: '*'
 }));
+
+// Handle preflight
+app.options('*', cors());
 // ------------------------------------------
 
 // Raw body capture
