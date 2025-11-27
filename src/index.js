@@ -9,10 +9,24 @@ const rateRoutes = require('./routes/rates');
 const Staffs = require('./routes/staffs')
 const mongoose = require("mongoose");
 const dotenv = require("dotenv").config();
+const cors = require("cors");
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
+// ----- CORS FIX -----
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false  // Change this to false when using origin: '*'
+}));
+
+// Handle preflight
+app.options('*', cors());
+// ------------------------------------------
+
+// Raw body capture
 app.use(function(req, res, next) {
     req.rawBody = '';
     req.on('data', function(chunk) {
@@ -32,10 +46,9 @@ app.use(manualRoutes);
 app.use(hrRoutes);
 app.use(rateRoutes);
 
+app.listen(port, async () => {
+    console.log("RUNNING_LOCALS >>>", port);
 
-app.listen(port,async () => {
-    
-    console.log("RUNNING_LOCALS >>>", process.env.PORT || 3000);
     try {
         const conn = await mongoose.connect(process.env.DB_URL, {
             useNewUrlParser: true,
